@@ -20,8 +20,15 @@ module.exports = {
   COOKIE_SECRET: process.env.COOKIE_SECRET || 'your-cookie-secret-key-here',
 
   // CORS Configuration (default values)
-  FRONTEND_URL: 'http://localhost:5173',
-  ALLOWED_ORIGINS: ['http://localhost:5173', 'http://localhost:3000'],
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  ALLOWED_ORIGINS: [
+    'http://localhost:5173', 
+    'http://localhost:3000',
+    'https://pather-khonje-p7f8.vercel.app',
+    'https://pather-khonje-p7f8-git-main-pather-khonjes-projects.vercel.app',
+    'https://pather-khonje-p7f8-gc5gk9jgy-pather-khonjes-projects.vercel.app',
+    'https://pather-khonje.vercel.app'
+  ],
 
   // Admin Configuration
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@patherkhonje.com',
