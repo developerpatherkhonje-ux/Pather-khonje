@@ -136,6 +136,11 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Allow any Vercel domain (for dynamic URLs)
+    if (origin.includes('.vercel.app')) {
+      return callback(null, true);
+    }
+    
     if (config.ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }

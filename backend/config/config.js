@@ -25,6 +25,7 @@ module.exports = {
     'http://localhost:5173', 
     'http://localhost:3000',
     'https://pather-khonje.vercel.app',
+    'https://pather-khonje-f7fn2vyf6-pather-khonjes-projects.vercel.app',
     'https://pather-khonje.onrender.com'
   ],
 
