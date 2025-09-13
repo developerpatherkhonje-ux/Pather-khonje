@@ -1,0 +1,317 @@
+{
+  service: 'pather-khonje-api',
+  port: 5000,
+  environment: 'development',
+  frontendUrl: 'http://localhost:5173',
+  level: 'info',
+  message: 'Server started',
+  timestamp: '2025-09-12 19:45:27'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:14:20:42 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 19:50:42'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:14:20:43 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 19:50:43'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c21906b673f8f3c4391804"),
+  timestamp: '2025-09-12 19:50:43',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:14:20:43 +0000] "POST /api/auth/verify-token HTTP/1.1" 200 218 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 19:50:43'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c21906b673f8f3c4391804"),
+  timestamp: '2025-09-12 19:50:43',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:14:20:43 +0000] "POST /api/auth/verify-token HTTP/1.1" 200 218 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 19:50:43'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:14:20:51 +0000] "OPTIONS /api/auth/logout HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 19:50:51'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/logout',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c21906b673f8f3c4391804"),
+  timestamp: '2025-09-12 19:50:51',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:14:20:51 +0000] "POST /api/auth/logout HTTP/1.1" 200 52 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 19:50:51'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: 'SIGINT received. Shutting down gracefully...',
+  timestamp: '2025-09-12 19:55:58'
+}
+{
+  service: 'pather-khonje-api',
+  port: 5000,
+  environment: 'development',
+  frontendUrl: 'http://localhost:5173',
+  level: 'info',
+  message: 'Server started',
+  timestamp: '2025-09-12 19:59:13'
+}
+{
+  service: 'pather-khonje-api',
+  port: 5000,
+  environment: 'development',
+  frontendUrl: 'http://localhost:5173',
+  level: 'info',
+  message: 'Server started',
+  timestamp: '2025-09-12 20:08:33'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:14:44:00 +0000] "OPTIONS /api/auth/login HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 20:14:00'
+}
+{
+  service: 'pather-khonje-api',
+  userId: new ObjectId("68c21906b673f8f3c4391804"),
+  email: 'admin@patherkhonje.com',
+  role: 'admin',
+  isNew: false,
+  level: 'info',
+  message: 'User saved',
+  timestamp: '2025-09-12 20:14:00'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:14:44:01 +0000] "POST /api/auth/login HTTP/1.1" 200 876 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 20:14:01'
+}
+{
+  service: 'pather-khonje-api',
+  port: 5000,
+  environment: 'development',
+  frontendUrl: 'http://localhost:5173',
+  level: 'info',
+  message: 'Server started',
+  timestamp: '2025-09-12 20:57:35'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:27:57 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 20:57:57'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:27:57 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 20:57:57'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c38abf2910c05d439174c5"),
+  timestamp: '2025-09-12 20:57:57',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:27:57 +0000] "POST /api/auth/verify-token HTTP/1.1" 200 223 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 20:57:57'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c38abf2910c05d439174c5"),
+  timestamp: '2025-09-12 20:57:57',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:27:57 +0000] "POST /api/auth/verify-token HTTP/1.1" 200 223 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 20:57:57'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:34:11 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:04:11'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:34:11 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:04:11'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c38abf2910c05d439174c5"),
+  timestamp: '2025-09-12 21:04:12',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:34:12 +0000] "POST /api/auth/verify-token HTTP/1.1" 200 223 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:04:12'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c38abf2910c05d439174c5"),
+  timestamp: '2025-09-12 21:04:12',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:34:12 +0000] "POST /api/auth/verify-token HTTP/1.1" 200 223 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:04:12'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:38:30 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:08:30'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:38:30 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:08:30'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c38abf2910c05d439174c5"),
+  timestamp: '2025-09-12 21:08:30',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:38:30 +0000] "POST /api/auth/verify-token HTTP/1.1" 200 223 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:08:30'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c38abf2910c05d439174c5"),
+  timestamp: '2025-09-12 21:08:30',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:38:30 +0000] "POST /api/auth/verify-token HTTP/1.1" 200 223 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:08:30'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:39:07 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:09:07'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:39:07 +0000] "OPTIONS /api/auth/verify-token HTTP/1.1" 204 0 "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:09:07'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:39:08 +0000] "POST /api/auth/verify-token HTTP/1.1" - - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:09:08'
+}
+{
+  service: 'pather-khonje-api',
+  level: 'info',
+  message: '::1 - - [12/Sep/2025:15:39:08 +0000] "POST /api/auth/verify-token HTTP/1.1" - - "http://localhost:5173/" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36"',
+  timestamp: '2025-09-12 21:09:08'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c38abf2910c05d439174c5"),
+  timestamp: '2025-09-12 21:09:09',
+  level: 'info',
+  message: 'API request'
+}
+{
+  service: 'pather-khonje-api',
+  method: 'POST',
+  url: '/api/auth/verify-token',
+  ip: '::1',
+  userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
+  userId: new ObjectId("68c38abf2910c05d439174c5"),
+  timestamp: '2025-09-12 21:09:09',
+  level: 'info',
+  message: 'API request'
+}

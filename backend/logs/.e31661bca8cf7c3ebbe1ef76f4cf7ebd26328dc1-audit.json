@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": false,
+        "amount": 5
+    },
+    "auditLog": "D:\\CodeFlare Labs\\Pather Khonje1\\backend\\logs\\.e31661bca8cf7c3ebbe1ef76f4cf7ebd26328dc1-audit.json",
+    "files": [
+        {
+            "date": 1757550440556,
+            "name": "D:\\CodeFlare Labs\\Pather Khonje1\\backend\\logs\\error-2025-09-11.log",
+            "hash": "20596a323604a6612c0d2d8bbcf049c8aa9afe98b9790b5ee730e23519c20a5b"
+        }
+    ],
+    "hashType": "sha256"
+}

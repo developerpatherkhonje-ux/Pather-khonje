@@ -202,19 +202,6 @@ app.use(session({
 // Database connection
 const connectDB = async () => {
   try {
-    // Set up connection event listeners
-    mongoose.connection.on('connected', () => {
-      console.log('Database is connected');
-    });
-    
-    mongoose.connection.on('error', (error) => {
-      console.log('❌ MongoDB Connection Error:', error.message);
-    });
-    
-    mongoose.connection.on('disconnected', () => {
-      console.log('⚠️  MongoDB Disconnected');
-    });
-    
     // Connect to MongoDB with options
     await mongoose.connect(config.MONGODB_URI, {
       useNewUrlParser: true,
@@ -223,10 +210,11 @@ const connectDB = async () => {
       socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
     });
     
+    console.log('Database is connected');
+    
   } catch (error) {
     console.log('❌ MongoDB Connection Failed!');
     console.log(`   Error: ${error.message}`);
-    console.log(`   URI: ${config.MONGODB_URI ? 'Set' : 'Not Set'}`);
     
     logger.database.connection('failed', { error: error.message });
     logger.error('MongoDB connection error', { error: error.message });
