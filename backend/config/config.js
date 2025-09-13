@@ -21,7 +21,12 @@ module.exports = {
 
   // CORS Configuration
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
-  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:5173', 'http://localhost:3000'],
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [
+    'http://localhost:5173', 
+    'http://localhost:3000',
+    'https://pather-khonje.vercel.app',
+    'https://pather-khonje.onrender.com'
+  ],
 
   // Admin Configuration
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@patherkhonje.com',
