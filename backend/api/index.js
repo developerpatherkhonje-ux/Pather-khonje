@@ -3,43 +3,64 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-// Simple configuration for serverless
+// Serverless-optimized configuration
 const config = {
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/pather-khonje',
   JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here',
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'your-refresh-token-secret-key-here',
-  SESSION_SECRET: process.env.SESSION_SECRET || 'your-session-secret-key-here'
+  SESSION_SECRET: process.env.SESSION_SECRET || 'your-session-secret-key-here',
+  NODE_ENV: process.env.NODE_ENV || 'production',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'https://pather-khonje.vercel.app',
+  ALLOWED_ORIGINS: [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://pather-khonje.vercel.app',
+    'https://pather-khonjes-projects.vercel.app'
+  ]
 };
 
-// Import routes
-const authRoutes = require('../routes/auth');
+// Import routes with serverless-compatible middleware
+const authRoutes = require('../routes/serverless-auth');
 const adminRoutes = require('../routes/admin');
 const placesRoutes = require('../routes/places');
 const hotelsRoutes = require('../routes/hotels');
-const uploadRoutes = require('../routes/upload');
+const uploadRoutes = require('../routes/serverless-upload');
 const packageRoutes = require('../routes/packages');
 
 const app = express();
 
-// Database connection with better error handling for serverless
+// Database connection with serverless optimization
 let isConnected = false;
+let connectionPromise = null;
 
 const connectDB = async () => {
-  if (isConnected) return;
+  if (isConnected) {
+    return mongoose.connection;
+  }
   
-  try {
-    await mongoose.connect(process.env.MONGODB_URI || config.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-      serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000,
-    });
+  if (connectionPromise) {
+    return connectionPromise;
+  }
+  
+  connectionPromise = mongoose.connect(config.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+    maxPoolSize: 1, // Maintain only one connection in serverless
+    bufferCommands: false, // Disable mongoose buffering
+    bufferMaxEntries: 0 // Disable mongoose buffering
+  }).then(() => {
     isConnected = true;
     console.log('✅ MongoDB connected successfully');
-  } catch (error) {
+    return mongoose.connection;
+  }).catch((error) => {
     console.error('❌ MongoDB connection error:', error.message);
-    // Don't crash in serverless environment
-  }
+    connectionPromise = null;
+    throw error;
+  });
+  
+  return connectionPromise;
 };
 
 // CORS configuration
@@ -48,22 +69,23 @@ app.use(cors({
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
     
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'http://localhost:3000',
-      'https://pather-khonje.vercel.app',
-      'https://pather-khonjes-projects.vercel.app'
-    ];
+    // Allow localhost for development
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
     
-    if (allowedOrigins.includes(origin) || origin.includes('vercel.app')) {
+    // Allow Vercel domains
+    if (origin.includes('vercel.app') || config.ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
     
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'x-filename']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-filename', 'X-CSRF-Token', 'X-API-Key', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  optionsSuccessStatus: 200
 }));
 
 // Body parsing middleware
@@ -91,16 +113,17 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Connect to database before handling requests
+// Connect to database before handling requests (serverless optimized)
 app.use(async (req, res, next) => {
   try {
     await connectDB();
     next();
   } catch (error) {
-    console.error('Database connection failed:', error);
+    console.error('Database connection failed:', error.message);
     res.status(500).json({
       success: false,
-      message: 'Database connection failed'
+      message: 'Database connection failed',
+      error: config.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
