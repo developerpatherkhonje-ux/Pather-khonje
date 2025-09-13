@@ -19,13 +19,13 @@ const config = {
   ]
 };
 
-// Import routes with serverless-compatible middleware
-const authRoutes = require('../routes/serverless-auth');
-const adminRoutes = require('../routes/serverless-admin');
-const placesRoutes = require('../routes/serverless-places');
-const hotelsRoutes = require('../routes/serverless-hotels');
-const uploadRoutes = require('../routes/serverless-upload');
-const packageRoutes = require('../routes/serverless-packages');
+// Import routes
+const authRoutes = require('../routes/auth');
+const adminRoutes = require('../routes/admin');
+const placesRoutes = require('../routes/places');
+const hotelsRoutes = require('../routes/hotels');
+const uploadRoutes = require('../routes/upload');
+const packageRoutes = require('../routes/packages');
 
 const app = express();
 
