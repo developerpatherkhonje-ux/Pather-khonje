@@ -4,25 +4,6 @@ A comprehensive **Travel Management Platform** built with **React (frontend)** a
 
 ---
 
-## 🏗️ Project Structure
-pather-khonje/
-│── frontend/ # React (Vite) frontend
-│ ├── src/
-│ ├── public/
-│ └── package.json
-│
-│── backend/ # Node.js (Express) backend
-│ ├── src/
-│ ├── config/
-│ ├── models/
-│ ├── routes/
-│ ├── controllers/
-│ └── package.json
-│
-│── README.md
-
----
-
 ## 🚀 Features
 
 ### ✅ Frontend
