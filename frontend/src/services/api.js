@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://pather-khonje.vercel.app/api';
 
 class ApiService {
   constructor() {
@@ -11,7 +11,7 @@ class ApiService {
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     if (path.startsWith('/uploads') || path.startsWith('/api/upload/gridfs')) {
       try {
-        const origin = new URL(this.baseURL).origin; // e.g., http://localhost:5000
+        const origin = new URL(this.baseURL).origin; // e.g., https://pather-khonje.vercel.app
         return `${origin}${path}`;
       } catch {
         return path;
