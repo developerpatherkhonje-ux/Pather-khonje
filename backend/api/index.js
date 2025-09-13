@@ -1,15 +1,7 @@
+// Vercel Serverless Function Entry Point
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const session = require('express-session');
-const MongoStore = require('connect-mongo');
-const mongoSanitize = require('express-mongo-sanitize');
-const xss = require('xss');
-const hpp = require('hpp');
-const compression = require('compression');
-const morgan = require('morgan');
 
 // Import configuration
 const config = require('../config/config');
@@ -24,39 +16,26 @@ const packageRoutes = require('../routes/packages');
 
 const app = express();
 
-// Database connection
+// Database connection with better error handling for serverless
+let isConnected = false;
+
 const connectDB = async () => {
+  if (isConnected) return;
+  
   try {
-    await mongoose.connect(config.MONGODB_URI, {
+    await mongoose.connect(process.env.MONGODB_URI || config.MONGODB_URI, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
       socketTimeoutMS: 45000,
     });
+    isConnected = true;
     console.log('✅ MongoDB connected successfully');
   } catch (error) {
-    console.error('❌ MongoDB connection error:', error);
-    // Don't exit in serverless environment
-    if (process.env.NODE_ENV !== 'production') {
-      process.exit(1);
-    }
+    console.error('❌ MongoDB connection error:', error.message);
+    // Don't crash in serverless environment
   }
 };
-
-// Connect to database
-connectDB();
-
-// Security middleware
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", "data:", "https:"],
-    },
-  },
-}));
 
 // CORS configuration
 app.use(cors({
@@ -68,8 +47,7 @@ app.use(cors({
       'http://localhost:5173',
       'http://localhost:3000',
       'https://pather-khonje.vercel.app',
-      'https://pather-khonjes-projects.vercel.app',
-      'https://*.vercel.app'
+      'https://pather-khonjes-projects.vercel.app'
     ];
     
     if (allowedOrigins.includes(origin) || origin.includes('vercel.app')) {
@@ -83,56 +61,43 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'x-filename']
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: config.RATE_LIMIT.windowMs,
-  max: config.RATE_LIMIT.max,
-  message: {
-    error: 'Too many requests from this IP, please try again later.',
-    retryAfter: Math.ceil(config.RATE_LIMIT.windowMs / 1000)
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-app.use('/api/', limiter);
-
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Security middleware
-app.use(mongoSanitize());
-app.use(hpp());
-app.use(compression());
-
-// Session configuration
-app.use(session({
-  secret: config.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: config.MONGODB_URI,
-    touchAfter: 24 * 3600 // lazy session update
-  }),
-  cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
-
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0',
-    database: {
-      status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
-    }
-  });
+app.get('/api/health', async (req, res) => {
+  try {
+    await connectDB();
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      version: '1.0.0',
+      database: {
+        status: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      message: error.message
+    });
+  }
+});
+
+// Connect to database before handling requests
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Database connection failed'
+    });
+  }
 });
 
 // API routes
