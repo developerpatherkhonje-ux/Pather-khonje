@@ -3,8 +3,13 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-// Import configuration
-const config = require('../config/config');
+// Simple configuration for serverless
+const config = {
+  MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/pather-khonje',
+  JWT_SECRET: process.env.JWT_SECRET || 'your-super-secret-jwt-key-here',
+  JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'your-refresh-token-secret-key-here',
+  SESSION_SECRET: process.env.SESSION_SECRET || 'your-session-secret-key-here'
+};
 
 // Import routes
 const authRoutes = require('../routes/auth');
