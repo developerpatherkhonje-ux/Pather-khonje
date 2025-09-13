@@ -19,7 +19,9 @@ export default defineConfig({
           router: ['react-router-dom']
         }
       }
-    }
+    },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 1000,
   },
   server: {
     port: 5173,
@@ -28,5 +30,9 @@ export default defineConfig({
   preview: {
     port: 4173,
     host: true
+  },
+  // Define environment variables
+  define: {
+    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
   }
 });
