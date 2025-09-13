@@ -10,22 +10,22 @@ const config = {
   JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET || 'your-refresh-token-secret-key-here',
   SESSION_SECRET: process.env.SESSION_SECRET || 'your-session-secret-key-here',
   NODE_ENV: process.env.NODE_ENV || 'production',
-  FRONTEND_URL: process.env.FRONTEND_URL || 'https://pather-khonje.vercel.app',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'https://patherkhonje.vercel.app',
   ALLOWED_ORIGINS: [
     'http://localhost:5173',
     'http://localhost:3000',
-    'https://pather-khonje.vercel.app',
+    'https://patherkhonje.vercel.app',
     'https://pather-khonjes-projects.vercel.app'
   ]
 };
 
 // Import routes with serverless-compatible middleware
 const authRoutes = require('../routes/serverless-auth');
-const adminRoutes = require('../routes/admin');
-const placesRoutes = require('../routes/places');
-const hotelsRoutes = require('../routes/hotels');
+const adminRoutes = require('../routes/serverless-admin');
+const placesRoutes = require('../routes/serverless-places');
+const hotelsRoutes = require('../routes/serverless-hotels');
 const uploadRoutes = require('../routes/serverless-upload');
-const packageRoutes = require('../routes/packages');
+const packageRoutes = require('../routes/serverless-packages');
 
 const app = express();
 
