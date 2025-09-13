@@ -109,6 +109,14 @@ yarn.lock
 # Uploads and media files (these should be handled by CDN)
 backend/uploads/
 backend/middleware/uploads/
+frontend/uploads/
+
+# Documentation files (keep only essential ones)
+*_FIX_GUIDE.md
+*_TROUBLESHOOTING.md
+*_CONNECTION.md
+env.production
+env.example
 
 # Database files
 *.db
