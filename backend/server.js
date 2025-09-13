@@ -136,11 +136,6 @@ app.use(cors({
       return callback(null, true);
     }
     
-    // Allow Vercel deployments (any subdomain of vercel.app)
-    if (origin.includes('.vercel.app')) {
-      return callback(null, true);
-    }
-    
     if (config.ALLOWED_ORIGINS.includes(origin)) {
       return callback(null, true);
     }
