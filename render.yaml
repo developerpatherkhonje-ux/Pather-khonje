@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: pather-khonje-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
+      - key: COOKIE_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        value: admin@patherkhonje.com
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: MANAGER_EMAIL
+        value: rajdip.mitra@patherkhonje.com
+      - key: MANAGER_PASSWORD
+        sync: false
+      - key: PROPRIETOR_EMAIL
+        value: somashah.mitra@patherkhonje.com
+      - key: PROPRIETOR_PASSWORD
+        sync: false
+      - key: FRONTEND_URL
+        value: https://your-frontend-domain.com
+      - key: ALLOWED_ORIGINS
+        value: https://your-frontend-domain.com,https://your-admin-domain.com

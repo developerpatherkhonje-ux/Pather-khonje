@@ -2,9 +2,9 @@ const path = require('path');
 require('dotenv').config();
 
 module.exports = {
-  // Server Configuration (default values)
-  PORT: 5000,
-  NODE_ENV: 'development',
+  // Server Configuration
+  PORT: process.env.PORT || 5000,
+  NODE_ENV: process.env.NODE_ENV || 'development',
 
   // Database Configuration
   MONGODB_URI: process.env.MONGODB_URI || 'mongodb://localhost:27017/pather-khonje',
@@ -19,9 +19,9 @@ module.exports = {
   SESSION_SECRET: process.env.SESSION_SECRET || 'your-session-secret-key-here',
   COOKIE_SECRET: process.env.COOKIE_SECRET || 'your-cookie-secret-key-here',
 
-  // CORS Configuration (default values)
-  FRONTEND_URL: 'http://localhost:5173',
-  ALLOWED_ORIGINS: ['http://localhost:5173', 'http://localhost:3000'],
+  // CORS Configuration
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:5173',
+  ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:5173', 'http://localhost:3000'],
 
   // Admin Configuration
   ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@patherkhonje.com',
@@ -37,11 +37,11 @@ module.exports = {
   PROPRIETOR_PASSWORD: process.env.PROPRIETOR_PASSWORD || 'somashah@123',
   PROPRIETOR_NAME: process.env.PROPRIETOR_NAME || 'Somashah Mitra',
 
-  // Rate Limiting Configuration (default values)
+  // Rate Limiting Configuration
   RATE_LIMIT: {
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // Increased for development
-    loginMax: 20, // Increased for development
+    max: process.env.NODE_ENV === 'production' ? 100 : 1000, // Lower limit for production
+    loginMax: process.env.NODE_ENV === 'production' ? 5 : 20, // Lower limit for production
   },
 
   // Account Security Configuration
