@@ -26,7 +26,9 @@ module.exports = {
     'http://localhost:3000',
     'https://pather-khonje.vercel.app',
     'https://pather-khonje-f7fn2vyf6-pather-khonjes-projects.vercel.app',
-    'https://pather-khonje.onrender.com'
+    'https://pather-khonje.onrender.com',
+    'https://www.patherkhonje.com',
+    'https://patherkhonje.com'
   ],
 
   // Admin Configuration
