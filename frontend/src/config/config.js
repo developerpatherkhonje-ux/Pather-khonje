@@ -1,7 +1,22 @@
 // Frontend configuration
+const getApiBaseUrl = () => {
+  // Check if we're running in development
+  if (import.meta.env.DEV) {
+    return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  }
+  
+  // Check if we're on the custom domain
+  if (window.location.hostname === 'www.patherkhonje.com' || window.location.hostname === 'patherkhonje.com') {
+    return 'https://pather-khonje.onrender.com/api';
+  }
+  
+  // Default to Vercel environment
+  return import.meta.env.VITE_API_URL || 'https://pather-khonje.onrender.com/api';
+};
+
 export const config = {
   // API Configuration
-  API_BASE_URL: import.meta.env.VITE_API_URL || 'https://pather-khonje.onrender.com/api',
+  API_BASE_URL: getApiBaseUrl(),
   
   // App Configuration
   APP_NAME: import.meta.env.VITE_APP_NAME || 'Pather Khonje',
@@ -20,7 +35,11 @@ export const config = {
   
   // Environment
   NODE_ENV: import.meta.env.MODE || 'development',
-  IS_PRODUCTION: import.meta.env.MODE === 'production'
+  IS_PRODUCTION: import.meta.env.MODE === 'production',
+  
+  // Current domain info
+  CURRENT_DOMAIN: window.location.hostname,
+  IS_CUSTOM_DOMAIN: window.location.hostname === 'www.patherkhonje.com' || window.location.hostname === 'patherkhonje.com'
 };
 
 // Validate configuration

@@ -28,7 +28,10 @@ module.exports = {
     'https://pather-khonje-f7fn2vyf6-pather-khonjes-projects.vercel.app',
     'https://pather-khonje.onrender.com',
     'https://www.patherkhonje.com',
-    'https://patherkhonje.com'
+    'https://patherkhonje.com',
+    // Allow any Vercel deployment URL
+    'https://pather-khonje-git-*.vercel.app',
+    'https://pather-khonje-*.vercel.app'
   ],
 
   // Admin Configuration

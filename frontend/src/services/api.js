@@ -1,8 +1,18 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://pather-khonje.onrender.com/api';
+import { config } from '../config/config.js';
+
+const API_BASE_URL = config.API_BASE_URL;
 
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
+    
+    // Debug logging
+    console.log('🔧 API Service initialized:', {
+      baseURL: this.baseURL,
+      currentDomain: config.CURRENT_DOMAIN,
+      isCustomDomain: config.IS_CUSTOM_DOMAIN,
+      environment: config.NODE_ENV
+    });
   }
 
   // Convert relative media paths to absolute URLs against the API origin

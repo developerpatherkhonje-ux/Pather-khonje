@@ -141,7 +141,22 @@ app.use(cors({
       return callback(null, true);
     }
     
+    // Check exact matches first
     if (config.ALLOWED_ORIGINS.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Check wildcard patterns
+    const isAllowed = config.ALLOWED_ORIGINS.some(allowedOrigin => {
+      if (allowedOrigin.includes('*')) {
+        const pattern = allowedOrigin.replace(/\*/g, '.*');
+        const regex = new RegExp(`^${pattern}$`);
+        return regex.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
       return callback(null, true);
     }
     
