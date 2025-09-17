@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { MapPin, Star, RefreshCw } from 'lucide-react';
+import { MapPin, Star } from 'lucide-react';
 import hero6 from '/assets/hero6.jpg';
 import apiService from '../services/api';
 
@@ -49,14 +49,6 @@ function Hotels() {
           >
             <div className="flex justify-center items-center space-x-4 mb-6">
               <h1 className="text-5xl md:text-6xl font-bold">Hotels & Destinations</h1>
-              <button
-                onClick={fetchPlaces}
-                disabled={loading}
-                className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-                <span className="text-sm font-medium">Refresh</span>
-              </button>
             </div>
             <p className="text-xl md:text-2xl max-w-3xl mx-auto">
               Discover premium accommodations in India's most beautiful destinations

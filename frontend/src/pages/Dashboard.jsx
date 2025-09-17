@@ -20,6 +20,8 @@ import PlaceManagement from '../components/dashboard/PlaceManagement';
 import HotelManagement from '../components/dashboard/HotelManagement';
 import PackageManagement from '../components/dashboard/PackageManagement';
 import InvoiceManagement from '../components/dashboard/InvoiceManagement';
+import HotelInvoicePage from '../pages/admin/HotelInvoicePage';
+import TourInvoicePage from '../pages/admin/TourInvoicePage';
 import PaymentVouchers from '../components/dashboard/PaymentVouchers';
 import Analytics from '../components/dashboard/Analytics';
 import UserProfile from '../components/dashboard/UserProfile';
@@ -148,6 +150,8 @@ function Dashboard() {
               <Route path="/hotels" element={<HotelManagement />} />
               <Route path="/packages" element={<PackageManagement />} />
               <Route path="/invoices" element={<InvoiceManagement />} />
+              <Route path="/invoices/hotel" element={<HotelInvoicePage />} />
+              <Route path="/invoices/tour" element={<TourInvoicePage />} />
               <Route path="/vouchers" element={<PaymentVouchers />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/profile" element={<UserProfile />} />

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, MapPin, Star, RefreshCw, Upload, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, MapPin, Star, Upload, X } from 'lucide-react';
 import apiService from '../../services/api';
 
 function PlaceManagement() {
@@ -241,14 +241,6 @@ function PlaceManagement() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900">Place Management</h1>
         <div className="flex items-center space-x-3">
-          <button
-            onClick={fetchPlaces}
-            disabled={loading}
-            className="flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </button>
           <button
             onClick={() => setShowAddForm(true)}
             className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors flex items-center space-x-2"

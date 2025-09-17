@@ -17,15 +17,18 @@ const config = require('./config/config');
 const logger = require('./utils/logger');
 const SecurityUtils = require('./utils/security');
 
-// Validate critical environment variables
+// Validate critical environment variables (allow defaults in development)
 const validateEnvironment = () => {
   const requiredVars = ['MONGODB_URI', 'JWT_SECRET', 'JWT_REFRESH_SECRET', 'SESSION_SECRET'];
-  const missing = requiredVars.filter(varName => !process.env[varName]);
-  
+  const missing = requiredVars.filter(varName => !process.env[varName] && !config[varName]);
   if (missing.length > 0) {
-    console.error('❌ Missing required environment variables:', missing.join(', '));
-    console.error('   Please check your .env file or environment configuration.');
-    process.exit(1);
+    if (config.NODE_ENV === 'production') {
+      console.error('❌ Missing required environment variables:', missing.join(', '));
+      console.error('   Please check your .env file or environment configuration.');
+      process.exit(1);
+    } else {
+      console.warn('⚠️  Missing environment variables (using safe defaults in development):', missing.join(', '));
+    }
   }
 };
 
@@ -38,6 +41,7 @@ const placesRoutes = require('./routes/places');
 const hotelsRoutes = require('./routes/hotels');
 const uploadRoutes = require('./routes/upload');
 const packageRoutes = require('./routes/packages');
+const invoiceRoutes = require('./routes/invoiceRoutes');
 
 const app = express();
 
@@ -235,10 +239,13 @@ const connectDB = async () => {
   } catch (error) {
     console.log('❌ MongoDB Connection Failed!');
     console.log(`   Error: ${error.message}`);
-    
     logger.database.connection('failed', { error: error.message });
     logger.error('MongoDB connection error', { error: error.message });
-    throw error; // Re-throw to be handled by startServer
+    if (config.NODE_ENV === 'production') {
+      throw error;
+    } else {
+      console.warn('⚠️  Continuing without database connection in development mode.');
+    }
   }
 };
 
@@ -326,6 +333,7 @@ app.use('/api/places', placesRoutes);
 app.use('/api/hotels', hotelsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/packages', packageRoutes);
+app.use('/api/invoices', invoiceRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -511,7 +519,9 @@ const startServer = async () => {
   } catch (error) {
     console.error('❌ Failed to start server:', error.message);
     logger.error('Server startup failed', { error: error.message });
-    process.exit(1);
+    if (config.NODE_ENV === 'production') {
+      process.exit(1);
+    }
   }
 };
 

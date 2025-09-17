@@ -169,6 +169,16 @@ const AuthPage = () => {
             </p>
           </div>
         </div>
+        {/* Go to Website Link */}
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="inline-flex items-center text-sky-700 hover:text-sky-900 font-bold"
+          >
+            Go to Website <span className="ml-1">→</span>
+          </button>
+        </div>
       </motion.div>
     </div>
   );

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Star, Users, MapPin, Calendar, Plane, Camera, Heart, User, 
-  Hotel, Car, Train, Briefcase, Building2, Map, Gift } from 'lucide-react';
+  Hotel, Car, Train, Briefcase, Building2, Map, Gift, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 function Home() {
@@ -145,6 +145,12 @@ function Home() {
       image: "/service/flight-booking.jpg",
       service: "Flight Booking",
       description: "Book domestic and international flights at the best competitive prices."
+    },
+    {
+      icon: Shield,
+      image: "/service/travel-insurance.jpg",
+      service: "Travel Insurance",
+      description: "Comprehensive coverage for medical emergencies, trip cancellations, and lost baggage so you can travel worry-free."
     }
 ];
 

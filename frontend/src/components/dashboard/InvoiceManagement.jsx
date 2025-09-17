@@ -1,65 +1,68 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Search, FileText, Download, Eye, Calendar, IndianRupee } from 'lucide-react';
+import HotelInvoiceForm from '../invoices/HotelInvoiceForm';
+import TourInvoiceForm from '../invoices/TourInvoiceForm';
+import InvoiceList from '../invoices/InvoiceList';
+import api from '../../services/api';
+import { useNavigate } from 'react-router-dom';
 
 function InvoiceManagement() {
-  const [invoices, setInvoices] = useState([
-    {
-      id: '1',
-      type: 'hotel',
-      invoiceNumber: 'HTL001',
-      customerName: 'Rajesh Kumar',
-      customerPhone: '+91 9876543210',
-      customerEmail: 'rajesh@email.com',
-      amount: 25000,
-      advance: 10000,
-      due: 15000,
-      status: 'pending',
-      createdAt: '2025-01-15',
-      details: {
-        hotelName: 'The Grand Mountain Resort',
-        checkIn: '2025-02-01',
-        checkOut: '2025-02-05',
-        nights: 4,
-        rooms: 1
-      }
-    },
-    {
-      id: '2',
-      type: 'tour',
-      invoiceNumber: 'TUR002',
-      customerName: 'Priya Sharma',
-      customerPhone: '+91 9876543211',
-      customerEmail: 'priya@email.com',
-      amount: 45000,
-      advance: 20000,
-      due: 25000,
-      status: 'paid',
-      createdAt: '2025-01-14',
-      details: {
-        packageName: 'Himalayan Adventure',
-        startDate: '2025-03-01',
-        endDate: '2025-03-08',
-        adults: 2,
-        children: 0
-      }
-    }
-  ]);
+  const navigate = useNavigate();
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [createType, setCreateType] = useState('hotel');
+  const [reloadKey, setReloadKey] = useState(0);
+  const [editData, setEditData] = useState(null);
 
-  const filteredInvoices = invoices.filter(invoice => {
-    const matchesSearch = invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.customerEmail.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesType = filterType === 'all' || invoice.type === filterType;
-    const matchesStatus = filterStatus === 'all' || invoice.status === filterStatus;
-    return matchesSearch && matchesType && matchesStatus;
-  });
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const res = await api.listInvoices({ page: 1, limit: 200 });
+        const items = res.data?.items || res.data || [];
+        // Sort invoices in ascending order by invoice number (HTL0001 first, HTL0002 second, etc.)
+        const sortedInvoices = items.sort((a, b) => {
+          const aNumber = a.invoiceNumber || '';
+          const bNumber = b.invoiceNumber || '';
+          return aNumber.localeCompare(bNumber, undefined, { numeric: true });
+        });
+        setInvoices(sortedInvoices);
+      } catch (e) {
+        console.error(e);
+        setError(e.message || 'Failed to load invoices');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [reloadKey]);
+
+  const filteredInvoices = useMemo(() => {
+    const q = searchTerm.trim().toLowerCase();
+    return invoices.filter((invoice) => {
+      const name = invoice.customer?.name || invoice.customerName || '';
+      const email = invoice.customer?.email || invoice.customerEmail || '';
+      const invoiceNumber = invoice.invoiceNumber || '';
+      const matchesSearch = !q || name.toLowerCase().includes(q) || email.toLowerCase().includes(q) || invoiceNumber.toLowerCase().includes(q);
+      const matchesType = filterType === 'all' || (invoice.type === filterType);
+      // Use the status field from database, or calculate based on due amount
+      let status = invoice.status;
+      if (!status) {
+        const dueAmount = Number(invoice.total || 0) - Number(invoice.advancePaid || 0);
+        status = dueAmount <= 0 ? 'paid' : 'pending';
+      }
+      const matchesStatus = filterStatus === 'all' || status === filterStatus;
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [invoices, searchTerm, filterType, filterStatus]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -75,21 +78,88 @@ function InvoiceManagement() {
   };
 
   const handleCreateInvoice = (type) => {
-    setCreateType(type);
-    setShowCreateForm(true);
+    navigate(`/dashboard/invoices/${type}`);
   };
 
-  const handleDownloadInvoice = (invoice) => {
-    alert(`Downloading invoice ${invoice.invoiceNumber}...`);
+  const handleDownloadInvoice = async (invoice) => {
+    await api.downloadInvoicePdf(invoice._id || invoice.id);
   };
 
   const handleViewInvoice = (invoice) => {
-    alert(`Viewing invoice ${invoice.invoiceNumber}...`);
+    setCreateType(invoice.type);
+    setEditData(invoice);
+    setShowCreateForm(true);
   };
 
-  const totalRevenue = invoices.reduce((sum, invoice) => sum + invoice.amount, 0);
-  const totalAdvance = invoices.reduce((sum, invoice) => sum + invoice.advance, 0);
-  const totalDue = invoices.reduce((sum, invoice) => sum + invoice.due, 0);
+  // Helper function to get invoice status
+  const getInvoiceStatus = (invoice) => {
+    if (invoice.status) return invoice.status;
+    const dueAmount = Number(invoice.total || 0) - Number(invoice.advancePaid || 0);
+    return dueAmount <= 0 ? 'paid' : 'pending';
+  };
+
+  // Calculate amounts based on status
+  const totalRevenue = useMemo(() => {
+    return invoices.reduce((sum, invoice) => {
+      const status = getInvoiceStatus(invoice);
+      // Only count revenue for paid invoices (completed transactions)
+      if (status === 'paid') {
+        return sum + Number(invoice.total || invoice.amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [invoices]);
+
+  const totalAdvance = useMemo(() => {
+    return invoices.reduce((sum, invoice) => {
+      const status = getInvoiceStatus(invoice);
+      // Count advance for all invoices (money already received)
+      return sum + Number(invoice.advancePaid || 0);
+    }, 0);
+  }, [invoices]);
+
+  const totalDue = useMemo(() => {
+    return invoices.reduce((sum, invoice) => {
+      const status = getInvoiceStatus(invoice);
+      // Only count due amounts for pending and overdue invoices
+      if (status === 'pending' || status === 'overdue') {
+        const dueAmount = Number(invoice.dueAmount || Math.max((invoice.total || 0) - (invoice.advancePaid || 0), 0));
+        return sum + dueAmount;
+      }
+      return sum;
+    }, 0);
+  }, [invoices]);
+
+  // Additional status-based calculations
+  const paidRevenue = useMemo(() => {
+    return invoices.reduce((sum, invoice) => {
+      const status = getInvoiceStatus(invoice);
+      if (status === 'paid') {
+        return sum + Number(invoice.total || invoice.amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [invoices]);
+
+  const pendingRevenue = useMemo(() => {
+    return invoices.reduce((sum, invoice) => {
+      const status = getInvoiceStatus(invoice);
+      if (status === 'pending') {
+        return sum + Number(invoice.total || invoice.amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [invoices]);
+
+  const overdueRevenue = useMemo(() => {
+    return invoices.reduce((sum, invoice) => {
+      const status = getInvoiceStatus(invoice);
+      if (status === 'overdue') {
+        return sum + Number(invoice.total || invoice.amount || 0);
+      }
+      return sum;
+    }, 0);
+  }, [invoices]);
 
   return (
     <div className="space-y-6">
@@ -115,19 +185,23 @@ function InvoiceManagement() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-blue-100">
-              <IndianRupee className="h-6 w-6 text-blue-600" />
+            <div className="p-3 rounded-lg bg-green-100">
+              <IndianRupee className="h-6 w-6 text-green-600" />
             </div>
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-1">₹{totalRevenue.toLocaleString()}</h3>
-          <p className="text-gray-600">Total Revenue</p>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">₹{paidRevenue.toLocaleString()}</h3>
+          <p className="text-gray-600">Paid Revenue</p>
+          <div className="mt-2 text-sm text-gray-500">
+            <div>Pending: ₹{pendingRevenue.toLocaleString()}</div>
+            <div>Overdue: ₹{overdueRevenue.toLocaleString()}</div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -137,12 +211,16 @@ function InvoiceManagement() {
           className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-green-100">
-              <IndianRupee className="h-6 w-6 text-green-600" />
+            <div className="p-3 rounded-lg bg-blue-100">
+              <IndianRupee className="h-6 w-6 text-blue-600" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">₹{totalAdvance.toLocaleString()}</h3>
-          <p className="text-gray-600">Total Advance</p>
+          <p className="text-gray-600">Total Advance Received</p>
+          <div className="mt-2 text-sm text-gray-500">
+            <div>From all invoices</div>
+            <div>Cash flow indicator</div>
+          </div>
         </motion.div>
 
         <motion.div
@@ -152,12 +230,35 @@ function InvoiceManagement() {
           className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="p-3 rounded-lg bg-orange-100">
-              <IndianRupee className="h-6 w-6 text-orange-600" />
+            <div className="p-3 rounded-lg bg-red-100">
+              <IndianRupee className="h-6 w-6 text-red-600" />
             </div>
           </div>
           <h3 className="text-2xl font-bold text-gray-900 mb-1">₹{totalDue.toLocaleString()}</h3>
-          <p className="text-gray-600">Total Due</p>
+          <p className="text-gray-600">Outstanding Amount</p>
+          <div className="mt-2 text-sm text-gray-500">
+            <div>Pending + Overdue</div>
+            <div>Collection target</div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-purple-100">
+              <IndianRupee className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">₹{(paidRevenue + pendingRevenue + overdueRevenue).toLocaleString()}</h3>
+          <p className="text-gray-600">Total Potential Revenue</p>
+          <div className="mt-2 text-sm text-gray-500">
+            <div>All invoices combined</div>
+            <div>Business volume</div>
+          </div>
         </motion.div>
       </div>
 
@@ -202,105 +303,20 @@ function InvoiceManagement() {
         </div>
       </div>
 
-      {/* Invoices Table */}
+      {/* Invoices Table - data-backed */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Invoice
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Customer
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredInvoices.map((invoice) => (
-                <motion.tr
-                  key={invoice.id}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="hover:bg-gray-50 transition-colors"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{invoice.invoiceNumber}</div>
-                      <div className="text-sm text-gray-500">
-                        {invoice.type === 'hotel' ? invoice.details.hotelName : invoice.details.packageName}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{invoice.customerName}</div>
-                      <div className="text-sm text-gray-500">{invoice.customerPhone}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      invoice.type === 'hotel' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                    }`}>
-                      {invoice.type === 'hotel' ? 'Hotel' : 'Tour'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">₹{invoice.amount.toLocaleString()}</div>
-                      <div className="text-sm text-gray-500">
-                        Advance: ₹{invoice.advance.toLocaleString()} | Due: ₹{invoice.due.toLocaleString()}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(invoice.status)}`}>
-                      {invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {invoice.createdAt}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => handleViewInvoice(invoice)}
-                        className="text-sky-600 hover:text-sky-900 transition-colors"
-                        title="View Invoice"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDownloadInvoice(invoice)}
-                        className="text-green-600 hover:text-green-900 transition-colors"
-                        title="Download PDF"
-                      >
-                        <Download className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+          {error && <div className="p-4 text-red-600">{error}</div>}
+          {loading ? (
+            <div className="p-6">Loading...</div>
+          ) : (
+            <InvoiceList
+              onEdit={handleViewInvoice}
+              onDeleted={() => setReloadKey(k => k + 1)}
+              onStatusUpdated={() => setReloadKey(k => k + 1)}
+              items={filteredInvoices}
+            />
+          )}
         </div>
       </div>
 
@@ -333,31 +349,57 @@ function InvoiceManagement() {
         </div>
       )}
 
-      {/* Create Invoice Modal Placeholder */}
+      {/* Create Invoice Modal */}
       {showCreateForm && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-1 sm:p-2 md:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCreateForm(false);
+              setEditData(null);
+            }
+          }}
         >
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-2xl p-6 w-full max-w-md"
+            className="bg-white rounded-2xl w-full max-w-7xl max-h-[98vh] flex flex-col shadow-2xl"
           >
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              Create {createType === 'hotel' ? 'Hotel' : 'Tour'} Invoice
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Invoice creation form will be implemented here with all the fields mentioned in the requirements.
-            </p>
-            <div className="flex space-x-3">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                {editData ? 'View' : 'Create'} {createType === 'hotel' ? 'Hotel' : 'Tour'} Invoice
+              </h2>
               <button
-                onClick={() => setShowCreateForm(false)}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                onClick={() => { setShowCreateForm(false); setEditData(null); }}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                title="Close"
               >
-                Close
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
+            </div>
+            
+            {/* Modal Content - Scrollable */}
+            <div className="flex-1 overflow-y-auto p-2 sm:p-4 md:p-6">
+              {createType === 'hotel' ? (
+                <HotelInvoiceForm
+                  initial={editData?.type === 'hotel' ? editData : null}
+                  onCreated={() => { setShowCreateForm(false); setEditData(null); setReloadKey(k => k + 1); }}
+                  onCancel={() => { setShowCreateForm(false); setEditData(null); }}
+                  inlineButtons={false}
+                />
+              ) : (
+                <TourInvoiceForm
+                  initial={editData?.type === 'tour' ? editData : null}
+                  onCreated={() => { setShowCreateForm(false); setEditData(null); setReloadKey(k => k + 1); }}
+                  onCancel={() => { setShowCreateForm(false); setEditData(null); }}
+                  inlineButtons={false}
+                />
+              )}
             </div>
           </motion.div>
         </motion.div>

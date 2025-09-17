@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, MapPin, Package, IndianRupee, Star, AlertCircle, RefreshCw } from 'lucide-react';
+import { TrendingUp, Users, MapPin, Package, IndianRupee, Star, AlertCircle } from 'lucide-react';
 import apiService from '../../services/api';
 
 function DashboardHome() {
@@ -198,14 +198,6 @@ function DashboardHome() {
               </div>
             )}
           </div>
-          <button
-            onClick={fetchDashboardData}
-            disabled={loading}
-            className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors duration-200 disabled:opacity-50"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            <span className="text-sm font-medium">Refresh</span>
-          </button>
         </div>
       </motion.div>
 

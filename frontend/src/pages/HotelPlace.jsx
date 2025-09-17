@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Star, MapPin, Wifi, Car, Coffee, Dumbbell, Users, RefreshCw } from 'lucide-react';
+import { Star, MapPin, Wifi, Car, Coffee, Dumbbell, Users } from 'lucide-react';
 import apiService from '../services/api';
 
 function HotelPlace() {
@@ -98,16 +98,8 @@ function HotelPlace() {
             </nav>
             <div className="flex justify-center items-center space-x-4 mb-4">
               <h1 className="text-4xl md:text-5xl font-bold">
-                Hotels in {placeName}
+                Our Associate Hotels in {placeName}
               </h1>
-              <button
-                onClick={fetchPlaceHotels}
-                disabled={loading}
-                className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                <span className="text-sm font-medium">Refresh</span>
-              </button>
             </div>
             <p className="text-xl opacity-90">
               Discover premium accommodations in this beautiful destination
@@ -172,7 +164,7 @@ function HotelPlace() {
                         <MapPin className="h-4 w-4 mr-1" />
                         <span>{hotel.address}</span>
                       </div>
-                      <p className="text-2xl font-bold text-sky-600 mb-4">{hotel.priceRange}</p>
+                      <p className="text-2xl font-bold text-sky-600 mb-4">{hotel.priceRange} ₹</p>
                     </div>
 
                     {/* Amenities */}
@@ -205,12 +197,7 @@ function HotelPlace() {
 
                     {/* Action Buttons */}
                     <div className="flex space-x-4">
-                      <Link
-                        to={`/hotel/${hotel.id}`}
-                        className="flex-1 bg-gray-100 text-gray-700 text-center py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-300"
-                      >
-                        View Details
-                      </Link>
+                      
                       <button
                         onClick={() => handleWhatsAppBooking(hotel)}
                         className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-all duration-300"

@@ -35,6 +35,8 @@ export function AuthProvider({ children }) {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           // Don't redirect here as it might cause infinite loops
+          // Set user to null to prevent context errors
+          setUser(null);
         }
       }
       setIsLoading(false);

@@ -1,10 +1,12 @@
 import { config } from '../config/config.js';
 
 const API_BASE_URL = config.API_BASE_URL;
+const PROD_BASE_URL = 'https://pather-khonje.onrender.com/api';
 
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
+    this.fallbackBaseURL = PROD_BASE_URL;
     
     // Debug logging
     console.log('🔧 API Service initialized:', {
@@ -69,8 +71,12 @@ class ApiService {
       delete config.headers['Content-Type'];
     }
 
+    const doFetch = async (fullUrl) => {
+      return fetch(fullUrl, config);
+    };
+
     try {
-      const response = await fetch(url, config);
+      let response = await doFetch(url);
       
       // Handle network errors
       if (!response.ok) {
@@ -94,13 +100,26 @@ class ApiService {
       const data = await response.json();
       return data;
     } catch (error) {
+      // Retry with fallback base URL if network error and base is localhost
+      if (error.name === 'TypeError' && String(error.message).includes('fetch') && this.baseURL.includes('localhost')) {
+        try {
+          const fallbackUrl = `${this.fallbackBaseURL}${endpoint}`;
+          const response = await fetch(fallbackUrl, config);
+          if (!response.ok) {
+            const data = await response.json().catch(() => ({}));
+            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          return data;
+        } catch (e2) {
+          console.error('API request fallback error:', e2);
+        }
+      }
+
       console.error('API request error:', error);
-      
-      // Handle network errors
-      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      if (error.name === 'TypeError' && String(error.message).includes('fetch')) {
         throw new Error('Unable to connect to server. Please check your connection.');
       }
-      
       throw error;
     }
   }
@@ -205,6 +224,64 @@ class ApiService {
 
   async getAdminSecurityEvents(hours = 24) {
     return this.get(`/admin/security?hours=${hours}`);
+  }
+
+  // Invoices API
+  async listInvoices({ page = 1, limit = 20, type = '', search = '' } = {}) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (type) params.set('type', type);
+    if (search) params.set('search', search);
+    return this.get(`/invoices?${params.toString()}`);
+  }
+
+  async getInvoice(id) {
+    return this.get(`/invoices/${id}`);
+  }
+
+  async createInvoice(invoice) {
+    return this.post('/invoices', invoice);
+  }
+
+  async updateInvoice(id, invoice) {
+    return this.put(`/invoices/${id}`, invoice);
+  }
+
+  async deleteInvoice(id) {
+    return this.delete(`/invoices/${id}`);
+  }
+
+  async downloadInvoicePdf(id, fileName) {
+    const url = `${this.baseURL}/invoices/${id}/pdf`;
+    const token = this.getToken();
+    const fetchOpts = {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    };
+    try {
+      let response = await fetch(url, fetchOpts);
+      if (!response.ok) throw new Error('Failed to download invoice PDF');
+      const blob = await response.blob();
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `${fileName || `invoice-${id}`}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      if (this.baseURL.includes('localhost')) {
+        const fallbackUrl = `${this.fallbackBaseURL}/invoices/${id}/pdf`;
+        const response = await fetch(fallbackUrl, fetchOpts);
+        if (!response.ok) throw new Error('Failed to download invoice PDF');
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `${fileName || `invoice-${id}`}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return;
+      }
+      throw err;
+    }
   }
 
   // Places API

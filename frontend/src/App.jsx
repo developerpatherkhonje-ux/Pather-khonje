@@ -19,6 +19,7 @@ import WhatsAppFloat from './components/WhatsAppFloat';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppRouter from './components/AppRouter';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
 
 function App() {
@@ -67,6 +68,7 @@ function App() {
           </AnimatePresence>
         </div>
       </Router>
+      <Toaster position="top-right" />
     </AuthProvider>
   );
 }
