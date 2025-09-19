@@ -10,7 +10,7 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
   const [form, setForm] = useState({
     type: 'hotel',
     customer: { name: '', phone: '', email: '', address: '' },
-    hotelDetails: { hotelName: '', place: '', address: '', checkIn: '', checkOut: '', nights: 0, days: 0, roomType: '', rooms: 1, pricePerNight: 0, adults: 1, children: 0 },
+    hotelDetails: { hotelName: '', place: '', address: '', additionalBenefits: '', checkIn: '', checkOut: '', nights: 0, days: 0, roomType: '', rooms: 1, pricePerNight: 0, adults: 1, children: 0 },
     subtotal: 0,
     discount: 0,
     tax: 0,
@@ -41,12 +41,18 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
   };
 
   const update = (path, value) => {
+    if (path === 'hotelDetails.additionalBenefits') {
+      console.log('Updating additionalBenefits:', value);
+    }
     setForm(prev => {
       const next = { ...prev };
       const parts = path.split('.');
       let obj = next;
       for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
       obj[parts[parts.length - 1]] = value;
+      if (path === 'hotelDetails.additionalBenefits') {
+        console.log('Updated next.hotelDetails.additionalBenefits:', next.hotelDetails.additionalBenefits);
+      }
       // derive nights/days from dates when available
       if (path === 'hotelDetails.checkIn' || path === 'hotelDetails.checkOut') {
         const ci = new Date(next.hotelDetails.checkIn);
@@ -102,21 +108,73 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
 
   const downloadPdf = async () => {
     const fileName = form.invoiceNumber || `HTL${String(Date.now()).slice(-6)}`;
+    
+    // Debug form state immediately
+    console.log('=== PDF GENERATION DEBUG ===');
+    console.log('Current form state:', form);
+    console.log('Current form.hotelDetails:', form.hotelDetails);
+    console.log('Current form.hotelDetails.additionalBenefits:', form.hotelDetails.additionalBenefits);
+    console.log('Current form.hotelDetails.additionalBenefits type:', typeof form.hotelDetails.additionalBenefits);
+    console.log('Current form.hotelDetails.additionalBenefits length:', form.hotelDetails.additionalBenefits?.length);
+    console.log('=== END DEBUG ===');
+    
     try {
+      // Ensure additionalBenefits is properly passed
+      console.log('BEFORE data preparation - form.hotelDetails.additionalBenefits:', form.hotelDetails.additionalBenefits);
+      console.log('BEFORE data preparation - typeof:', typeof form.hotelDetails.additionalBenefits);
+      console.log('BEFORE data preparation - length:', form.hotelDetails.additionalBenefits?.length);
+      
+      // TEMPORARY TEST: Force a value to see if PDF generation works
+      const additionalBenefitsValue = form.hotelDetails.additionalBenefits || '';
+      const testValue = additionalBenefitsValue || 'TEST VALUE FROM FORM';
+      console.log('Test value being used:', testValue);
+      
+      const hotelDetailsWithBenefits = {
+        ...form.hotelDetails,
+        additionalBenefits: testValue
+      };
+      
+      console.log('AFTER data preparation - hotelDetailsWithBenefits.additionalBenefits:', hotelDetailsWithBenefits.additionalBenefits);
+      console.log('AFTER data preparation - typeof:', typeof hotelDetailsWithBenefits.additionalBenefits);
+      console.log('AFTER data preparation - length:', hotelDetailsWithBenefits.additionalBenefits?.length);
+      
       const data = {
         invoiceNumber: fileName,
         date: Date.now(),
         customer: form.customer,
-        hotelDetails: form.hotelDetails,
+        hotelDetails: hotelDetailsWithBenefits,
         subtotal: form.subtotal,
         discount: form.discount,
         tax: form.tax,
         total: form.total,
         advancePaid: form.advancePaid,
       };
+      console.log('PDF Data being sent:', data);
+      console.log('Hotel Details:', data.hotelDetails);
+      console.log('Additional Benefits:', data.hotelDetails.additionalBenefits);
+      console.log('Form state:', form);
+      console.log('Form hotelDetails:', form.hotelDetails);
+      console.log('Form additionalBenefits:', form.hotelDetails.additionalBenefits);
+      console.log('HotelDetails keys:', Object.keys(data.hotelDetails));
+      console.log('HotelDetails values:', Object.values(data.hotelDetails));
+      
+      // Verify additionalBenefits is not undefined
+      if (data.hotelDetails.additionalBenefits === undefined) {
+        console.error('ERROR: additionalBenefits is undefined in data being sent to PDF');
+        console.log('Form additionalBenefits value:', form.hotelDetails.additionalBenefits);
+        console.log('Form additionalBenefits type:', typeof form.hotelDetails.additionalBenefits);
+      } else if (data.hotelDetails.additionalBenefits === '') {
+        console.warn('WARNING: additionalBenefits is empty string');
+        console.log('Form additionalBenefits value:', form.hotelDetails.additionalBenefits);
+        console.log('Form additionalBenefits type:', typeof form.hotelDetails.additionalBenefits);
+      } else {
+        console.log('SUCCESS: additionalBenefits is defined:', data.hotelDetails.additionalBenefits);
+      }
       await generateInvoicePdf(data, fileName);
       toast.success(`${fileName} downloaded`);
     } catch (err) {
+      console.error('PDF generation failed:', err);
+      console.log('Falling back to html2canvas method');
       // Ultimate fallback: capture page
       try {
         const target = document.body;
@@ -186,6 +244,7 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
             <input className="w-full px-4 py-3 border rounded-lg" placeholder="Hotel Name" value={form.hotelDetails.hotelName} onChange={e => update('hotelDetails.hotelName', e.target.value)} />
             <input className="w-full px-4 py-3 border rounded-lg" placeholder="Place/Location" value={form.hotelDetails.place} onChange={e => update('hotelDetails.place', e.target.value)} />
             <textarea className="w-full px-4 py-3 border rounded-lg" placeholder="Hotel Address" value={form.hotelDetails.address} onChange={e => update('hotelDetails.address', e.target.value)} />
+            <textarea className="w-full px-4 py-3 border rounded-lg" placeholder="Additional Benefits (Food, Amenities)" value={form.hotelDetails.additionalBenefits} onChange={e => update('hotelDetails.additionalBenefits', e.target.value)} />
           </div>
         </div>
       </div>

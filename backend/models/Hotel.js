@@ -20,10 +20,27 @@ const hotelSchema = new mongoose.Schema({
     minlength: [5, 'Description must be at least 5 characters'],
     maxlength: [2000, 'Description cannot exceed 2000 characters']
   },
-  images: [{
+  image: {
     type: String,
     trim: true,
-    default: undefined
+    default: ''
+  },
+  images: [{
+    public_id: {
+      type: String,
+      required: true
+    },
+    url: {
+      type: String,
+      required: true
+    },
+    width: Number,
+    height: Number,
+    format: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
   }],
   address: {
     type: String,
@@ -146,7 +163,8 @@ hotelSchema.methods.getPublicProfile = function() {
     name: this.name,
     placeId: this.placeId,
     description: this.description,
-    images: this.images,
+    image: this.image,
+    images: this.images || [],
     address: this.address,
     rating: this.rating,
     reviews: this.reviews,

@@ -10,6 +10,7 @@ const {
 } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const AuditLog = require('../models/AuditLog');
+const { uploadMultiple, uploadToCloudinary, deleteImage } = require('../utils/cloudinary');
 
 const router = express.Router();
 
@@ -393,6 +394,196 @@ router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => 
     res.status(500).json({
       success: false,
       message: 'Failed to get place statistics'
+    });
+  }
+});
+
+// @route   POST /api/places/:id/images
+// @desc    Upload images for a place (admin only)
+// @access  Admin only
+router.post('/:id/images', authenticateToken, requireAdmin, uploadMultiple, async (req, res) => {
+  try {
+    const placeId = req.params.id;
+    const adminId = req.user._id;
+    
+    // Check if place exists
+    const place = await Place.findById(placeId);
+    if (!place) {
+      return res.status(404).json({
+        success: false,
+        message: 'Place not found'
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No images provided'
+      });
+    }
+
+    const uploadedImages = [];
+    const errors = [];
+
+    // Process each uploaded file
+    for (const file of req.files) {
+      try {
+        // Upload to Cloudinary only
+        const result = await uploadToCloudinary(file.path, 'pather-khonje/places');
+        
+        uploadedImages.push({
+          public_id: result.public_id,
+          url: result.secure_url,
+          width: result.width,
+          height: result.height,
+          format: result.format,
+          uploadedAt: new Date()
+        });
+
+        // Clean up temporary file
+        const fs = require('fs');
+        fs.unlinkSync(file.path);
+      } catch (error) {
+        console.error('Error uploading file to Cloudinary:', file.originalname, error.message);
+        errors.push({ file: file.originalname, error: error.message });
+        
+        // Clean up temporary file
+        try {
+          const fs = require('fs');
+          fs.unlinkSync(file.path);
+        } catch (unlinkError) {
+          console.error('Error cleaning up file:', unlinkError);
+        }
+      }
+    }
+
+    if (uploadedImages.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to upload any images',
+        errors
+      });
+    }
+
+    // Add images to place
+    place.images = [...(place.images || []), ...uploadedImages];
+    await place.save();
+
+    // Log admin action
+    await AuditLog.logEvent({
+      action: 'UPDATE',
+      resource: 'PLACE',
+      userId: adminId,
+      targetPlaceId: placeId,
+      details: { 
+        action: 'upload_images',
+        uploadedImages: uploadedImages.length,
+        errors: errors.length > 0 ? errors : undefined
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: true
+    });
+
+    logger.info('Place images uploaded', { 
+      placeId, 
+      uploadedBy: adminId, 
+      uploadedCount: uploadedImages.length,
+      errors: errors.length
+    });
+
+    res.json({
+      success: true,
+      message: `${uploadedImages.length} image(s) uploaded successfully`,
+      data: {
+        uploadedImages,
+        errors: errors.length > 0 ? errors : undefined
+      }
+    });
+
+  } catch (error) {
+    logger.error('Upload place images error', { error: error.message, userId: req.user._id });
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload images'
+    });
+  }
+});
+
+// @route   DELETE /api/places/:id/images/:imageId
+// @desc    Delete a specific image from a place (admin only)
+// @access  Admin only
+router.delete('/:id/images/:imageId', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const placeId = req.params.id;
+    const imageId = req.params.imageId;
+    const adminId = req.user._id;
+    
+    // Check if place exists
+    const place = await Place.findById(placeId);
+    if (!place) {
+      return res.status(404).json({
+        success: false,
+        message: 'Place not found'
+      });
+    }
+
+    // Find the image to delete
+    const imageIndex = place.images.findIndex(img => img.public_id === imageId);
+    if (imageIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Image not found'
+      });
+    }
+
+    const imageToDelete = place.images[imageIndex];
+
+    // Delete from Cloudinary
+    try {
+      await deleteImage(imageId);
+    } catch (cloudinaryError) {
+      console.error('Error deleting from Cloudinary:', cloudinaryError);
+      // Continue with database deletion even if Cloudinary fails
+    }
+
+    // Remove from place
+    place.images.splice(imageIndex, 1);
+    await place.save();
+
+    // Log admin action
+    await AuditLog.logEvent({
+      action: 'UPDATE',
+      resource: 'PLACE',
+      userId: adminId,
+      targetPlaceId: placeId,
+      details: { 
+        action: 'delete_image',
+        deletedImageId: imageId
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: true
+    });
+
+    logger.info('Place image deleted', { 
+      placeId, 
+      deletedBy: adminId, 
+      imageId 
+    });
+
+    res.json({
+      success: true,
+      message: 'Image deleted successfully'
+    });
+
+  } catch (error) {
+    logger.error('Delete place image error', { error: error.message, userId: req.user._id });
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete image'
     });
   }
 });

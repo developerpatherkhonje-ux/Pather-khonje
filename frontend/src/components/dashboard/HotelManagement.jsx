@@ -65,6 +65,43 @@ function HotelManagement() {
     setSelectedFiles(files.slice(0, 5));
   };
 
+  const handleUploadImages = async (hotelId) => {
+    if (selectedFiles.length === 0) {
+      alert('Please select images to upload');
+      return;
+    }
+    
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      selectedFiles.forEach(file => {
+        formData.append('images', file);
+      });
+      
+      console.log('Uploading images to hotel:', hotelId);
+      const uploadResult = await apiService.uploadMultipleHotelImages(hotelId, formData);
+      console.log('Image upload result:', uploadResult);
+      
+      if (uploadResult.success && uploadResult.data.uploadedImages) {
+        // Update the hotel in the list
+        setHotels(hotels.map(h => 
+          h.id === hotelId 
+            ? { ...h, images: [...(h.images || []), ...uploadResult.data.uploadedImages] }
+            : h
+        ));
+        alert(`${uploadResult.data.uploadedImages.length} image(s) uploaded successfully!`);
+        setSelectedFiles([]);
+      } else {
+        alert('Failed to upload images: ' + (uploadResult.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      alert('Error uploading images: ' + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const fetchHotels = async () => {
     try {
       const hotelsRes = await apiService.getHotels(1, 50);
@@ -78,32 +115,53 @@ function HotelManagement() {
     if (!formData.name || !formData.placeId || !formData.address || !formData.priceRange) return;
     try {
       setUploading(true);
-      let imageUrls = [];
+      
+      // Step 1: If images were selected, upload them to Cloudinary first
+      let uploaded = { success: false, data: { files: [] } };
       if (selectedFiles.length > 0) {
-        const r = await apiService.uploadHotelImages(selectedFiles);
-        imageUrls = (r.data?.files || []).map(f => f.relativeUrl || f.url);
+        try {
+          uploaded = await apiService.uploadHotelImages(selectedFiles);
+          console.log('Pre-create Cloudinary upload result:', uploaded);
+        } catch (uploadFirstErr) {
+          console.error('Pre-create image upload error:', uploadFirstErr);
+          // Continue without images; backend allows creating without images
+        }
       }
 
+      // Step 2: Build payload including Cloudinary images (if any)
+      const cloudinaryFiles = uploaded?.data?.files || [];
       const payload = {
         name: formData.name,
         placeId: formData.placeId,
-        description: formData.address || 'NA',
-        images: imageUrls,
+        description: 'A beautiful hotel offering excellent accommodation and services',
+        image: cloudinaryFiles[0]?.url || undefined,
+        images: cloudinaryFiles, // Persist Cloudinary objects directly
         address: formData.address,
         rating: formData.rating,
         amenities: formData.amenities,
         priceRange: formData.priceRange,
         roomTypes: []
       };
+      
+      console.log('Sending hotel creation payload:', payload);
+      
       const res = await apiService.createHotel(payload);
       if (res.success) {
-        setHotels([res.data.hotel, ...hotels]);
+        // If we uploaded images pre-create, the backend already persisted them.
+        // Merge the returned hotel with any local image info for immediate UI reflect.
+        const created = {
+          ...res.data.hotel,
+          image: res.data.hotel.image || cloudinaryFiles[0]?.url || '',
+          images: res.data.hotel.images && res.data.hotel.images.length > 0 ? res.data.hotel.images : cloudinaryFiles
+        };
+        setHotels([created, ...hotels]);
         resetForm();
         // Sync from backend to persist across navigations
         fetchHotels();
       }
     } catch (e) {
       console.error('Add hotel error:', e);
+      alert('Error creating hotel: ' + e.message);
     } finally {
       setUploading(false);
     }
@@ -354,7 +412,11 @@ function HotelManagement() {
               <div className="relative p-2 lg:p-0">
                 <div className="rounded-lg overflow-hidden">
                   <img
-                    src={apiService.toAbsoluteUrl((hotel.images && hotel.images[0]) || '') || '/hotels/goa-hotel.png'}
+                    src={
+                      hotel.images && hotel.images.length > 0 
+                        ? (hotel.images[0].url || hotel.images[0].secure_url || hotel.images[0])
+                        : '/hotels/goa-hotel.png'
+                    }
                     alt={hotel.name}
                     className="aspect-square w-full h-full object-cover"
                   />
@@ -365,6 +427,23 @@ function HotelManagement() {
                     className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors"
                   >
                     <Edit className="h-3 w-3 text-gray-600" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/*';
+                      input.multiple = true;
+                      input.onchange = (e) => {
+                        const files = Array.from(e.target.files || []);
+                        setSelectedFiles(files.slice(0, 5));
+                        handleUploadImages(hotel.id || hotel._id);
+                      };
+                      input.click();
+                    }}
+                    className="bg-white/90 backdrop-blur-sm p-1.5 rounded-full hover:bg-white transition-colors"
+                  >
+                    <Upload className="h-3 w-3 text-blue-600" />
                   </button>
                   <button
                     onClick={() => handleDeleteHotel(hotel.id || hotel._id)}

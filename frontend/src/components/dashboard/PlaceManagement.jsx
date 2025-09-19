@@ -19,6 +19,8 @@ function PlaceManagement() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   useEffect(() => {
     fetchPlaces();
@@ -92,6 +94,75 @@ function PlaceManagement() {
       return null;
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleMultipleImageSelect = (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length > 0) {
+      // Validate file types
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      const validFiles = files.filter(file => allowedTypes.includes(file.type));
+      
+      if (validFiles.length !== files.length) {
+        setError('Some files are not valid image types. Only JPEG, PNG, GIF, and WebP are allowed.');
+        return;
+      }
+      
+      if (validFiles.length > 10) {
+        setError('Maximum 10 images can be uploaded at once.');
+        return;
+      }
+      
+      setSelectedImages(validFiles);
+      setError(null);
+    }
+  };
+
+  const uploadMultipleImages = async (placeId) => {
+    if (!selectedImages.length) return;
+    
+    try {
+      setUploadingImages(true);
+      setError(null);
+      
+      const formData = new FormData();
+      selectedImages.forEach(file => {
+        formData.append('images', file);
+      });
+      
+      const response = await apiService.uploadMultipleImages(placeId, formData);
+      if (response.success) {
+        setSelectedImages([]);
+        fetchPlaces(); // Refresh places to show new images
+        return true;
+      } else {
+        setError(response.message || 'Failed to upload images');
+        return false;
+      }
+    } catch (err) {
+      console.error('Error uploading images:', err);
+      setError(err.message || 'Failed to upload images');
+      return false;
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  const deleteImage = async (placeId, imageId) => {
+    try {
+      const response = await apiService.deletePlaceImage(placeId, imageId);
+      if (response.success) {
+        fetchPlaces(); // Refresh places
+        return true;
+      } else {
+        setError(response.message || 'Failed to delete image');
+        return false;
+      }
+    } catch (err) {
+      console.error('Error deleting image:', err);
+      setError(err.message || 'Failed to delete image');
+      return false;
     }
   };
 
@@ -427,7 +498,11 @@ function PlaceManagement() {
           >
             <div className="relative h-48 sm:h-60">
               <img
-                src={place.image}
+                src={
+                  place.image && place.image.url 
+                    ? place.image.url 
+                    : place.image || '/hotels/goa-hotel.png'
+                }
                 alt={place.name}
                 loading='lazy'
                 className="w-full h-full object-cover"
@@ -447,6 +522,66 @@ function PlaceManagement() {
                 </button>
               </div>
             </div>
+
+            {/* Image Gallery Section */}
+            {place.images && place.images.length > 0 && (
+              <div className="px-6 py-4 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="text-sm font-medium text-gray-700">Gallery Images</h4>
+                  <span className="text-xs text-gray-500">{place.images.length} images</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {place.images.slice(0, 6).map((image, imgIndex) => (
+                    <div key={imgIndex} className="relative group">
+                      <img
+                        src={image.url || image.secure_url || image}
+                        alt={`${place.name} gallery ${imgIndex + 1}`}
+                        className="w-full h-16 object-cover rounded-lg"
+                      />
+                      <button
+                        onClick={() => deleteImage(place.id, image.public_id)}
+                        className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {place.images.length > 6 && (
+                    <div className="flex items-center justify-center bg-gray-100 rounded-lg text-xs text-gray-500">
+                      +{place.images.length - 6} more
+                    </div>
+                  )}
+                </div>
+                
+                {/* Add More Images Button */}
+                <div className="mt-3">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleMultipleImageSelect}
+                    className="hidden"
+                    id={`add-images-${place.id}`}
+                  />
+                  <label
+                    htmlFor={`add-images-${place.id}`}
+                    className="inline-flex items-center px-3 py-1 text-xs bg-sky-100 text-sky-700 rounded-full hover:bg-sky-200 transition-colors cursor-pointer"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Add Images
+                  </label>
+                  {selectedImages.length > 0 && (
+                    <button
+                      onClick={() => uploadMultipleImages(place.id)}
+                      disabled={uploadingImages}
+                      className="ml-2 inline-flex items-center px-3 py-1 text-xs bg-green-100 text-green-700 rounded-full hover:bg-green-200 transition-colors disabled:opacity-50"
+                    >
+                      {uploadingImages ? 'Uploading...' : `Upload ${selectedImages.length} Images`}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="p-6">
               <div className="flex items-center justify-between mb-2">

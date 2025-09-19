@@ -52,6 +52,25 @@ const tourTerms = [
 
 export async function generateInvoicePdf(invoice, fileName = 'invoice') {
     try {
+        console.log('PDF Generation - Invoice data received:', invoice);
+        console.log('PDF Generation - Hotel Details:', invoice.hotelDetails);
+        console.log('PDF Generation - Additional Benefits:', invoice.hotelDetails?.additionalBenefits);
+        console.log('PDF Generation - Additional Benefits type:', typeof invoice.hotelDetails?.additionalBenefits);
+        console.log('PDF Generation - Additional Benefits length:', invoice.hotelDetails?.additionalBenefits?.length);
+        console.log('PDF Generation - Additional Benefits trimmed:', invoice.hotelDetails?.additionalBenefits?.trim());
+        console.log('PDF Generation - Additional Benefits check result:', invoice.hotelDetails?.additionalBenefits && invoice.hotelDetails?.additionalBenefits?.trim() !== '');
+        console.log('PDF Generation - Full hotelDetails keys:', Object.keys(invoice.hotelDetails || {}));
+        console.log('PDF Generation - Full hotelDetails values:', Object.values(invoice.hotelDetails || {}));
+        
+        // Ensure additionalBenefits exists
+        if (!invoice.hotelDetails?.additionalBenefits) {
+            console.warn('WARNING: additionalBenefits is missing, using empty string');
+            invoice.hotelDetails = {
+                ...invoice.hotelDetails,
+                additionalBenefits: ''
+            };
+        }
+        
         // Create a temporary container for the invoice
         const invoiceContainer = document.createElement('div');
         invoiceContainer.style.position = 'absolute';
@@ -250,15 +269,21 @@ const generateServiceDetails = (invoice) => {
                     </tbody>
                 </table>
                 
-                <!-- Hotel Address -->
-                ${invoice.hotelDetails.address ? `
-                    <div style="margin-top: 15px; padding: 10px; background: #f8fafc; border-radius: 5px; border-left: 4px solid #2563eb;">
+                <!-- Hotel Address and Additional Benefits -->
+                <div style="margin-top: 15px; display: flex; gap: 15px;">
+                    <div style="flex: 1; padding: 10px; background: #f8fafc; border-radius: 5px; border-left: 4px solid #2563eb;">
                         <strong style="color: #374151; font-size: 14px;">Hotel Address:</strong><br>
                         <div style="font-size: 13px; color: #666; margin-top: 5px; line-height: 1.4;">
-                            ${invoice.hotelDetails.address}
+                            ${invoice.hotelDetails.address || 'Not provided'}
                         </div>
                     </div>
-                ` : ''}
+                    <div style="flex: 1; padding: 10px; background: #f8fafc; border-radius: 5px; border-left: 4px solid #2563eb;">
+                        <strong style="color: #374151; font-size: 14px;">Additional Benefits:</strong><br>
+                        <div style="font-size: 13px; color: #666; margin-top: 5px; line-height: 1.4;">
+                            ${invoice.hotelDetails.additionalBenefits || 'Not provided'}
+                        </div>
+                    </div>
+                </div>
             </div>
         `;
     } else if (invoice.type === 'tour' && invoice.tourDetails) {

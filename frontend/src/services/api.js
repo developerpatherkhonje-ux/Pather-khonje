@@ -313,6 +313,51 @@ class ApiService {
     return this.get('/places/admin/stats');
   }
 
+  // Image upload methods
+  async uploadImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    return this.request('/upload/upload-single', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${this.getToken()}`
+        // Don't set Content-Type, let browser set it with boundary
+      }
+    });
+  }
+
+  async uploadMultipleImages(placeId, formData) {
+    return this.request(`/places/${placeId}/images`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${this.getToken()}`
+        // Don't set Content-Type, let browser set it with boundary
+      }
+    });
+  }
+
+  async uploadMultipleHotelImages(hotelId, formData) {
+    return this.request(`/hotels/${hotelId}/images`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'Authorization': `Bearer ${this.getToken()}`
+        // Don't set Content-Type, let browser set it with boundary
+      }
+    });
+  }
+
+  async deletePlaceImage(placeId, imageId) {
+    return this.delete(`/places/${placeId}/images/${imageId}`);
+  }
+
+  async deleteHotelImage(hotelId, imageId) {
+    return this.delete(`/hotels/${hotelId}/images/${imageId}`);
+  }
+
   // Hotels API
   async getHotels(page = 1, limit = 10) {
     return this.get(`/hotels?page=${page}&limit=${limit}`, { includeAuth: false });

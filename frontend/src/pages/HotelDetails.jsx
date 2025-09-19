@@ -142,7 +142,11 @@ function HotelDetails() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            src={hotel.images[currentImageIndex]}
+            src={
+              hotel.images[currentImageIndex] && hotel.images[currentImageIndex].url
+                ? hotel.images[currentImageIndex].url
+                : hotel.images[currentImageIndex] || '/hotels/goa-hotel.png'
+            }
             alt={hotel.name}
             className="w-full h-full object-cover"
           />

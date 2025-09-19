@@ -21,6 +21,23 @@ const placeSchema = new mongoose.Schema({
     required: [true, 'Place image is required'],
     trim: true
   },
+  images: [{
+    public_id: {
+      type: String,
+      required: true
+    },
+    url: {
+      type: String,
+      required: true
+    },
+    width: Number,
+    height: Number,
+    format: String,
+    uploadedAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   rating: {
     type: Number,
     default: 4.5,
@@ -110,6 +127,7 @@ placeSchema.methods.getPublicProfile = function() {
     name: this.name,
     description: this.description,
     image: this.image,
+    images: this.images || [],
     rating: this.rating,
     hotelsCount: this.hotelsCount,
     isActive: this.isActive,

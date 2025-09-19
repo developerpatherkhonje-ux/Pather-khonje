@@ -20,6 +20,7 @@
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.7.0",
     "compression": "^1.7.4",
     "connect-mongo": "^5.0.0",
     "cors": "^2.8.5",
@@ -32,13 +33,14 @@
     "helmet": "^7.0.0",
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.20.0",
     "mongoose": "^7.5.0",
     "morgan": "^1.10.0",
     "multer": "^2.0.2",
+    "pdfkit": "^0.14.0",
     "winston": "^3.10.0",
     "winston-daily-rotate-file": "^4.7.1",
-    "xss": "^1.0.14",
-    "pdfkit": "^0.14.0"
+    "xss": "^1.0.14"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

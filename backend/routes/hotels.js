@@ -10,6 +10,8 @@ const {
 } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const AuditLog = require('../models/AuditLog');
+const { uploadMultiple, uploadToCloudinary, deleteImage, isCloudinaryConfigured } = require('../utils/cloudinary');
+const ImageService = require('../services/imageService');
 
 const router = express.Router();
 
@@ -29,6 +31,16 @@ const hotelValidation = [
     .trim()
     .isLength({ min: 3, max: 2000 })
     .withMessage('Description must be between 3 and 2000 characters'),
+  body('image')
+    .optional()
+    .custom((value) => {
+      return typeof value === 'string' && (
+        value.startsWith('http://') ||
+        value.startsWith('https://') ||
+        value.startsWith('/uploads/')
+      );
+    })
+    .withMessage('Image must be a valid URL or uploaded path'),
   body('images')
     .optional()
     .isArray()
@@ -36,14 +48,23 @@ const hotelValidation = [
   body('images.*')
     .optional({ nullable: true })
     .custom((value) => {
-      return typeof value === 'string' && (
-        value.startsWith('http://') ||
-        value.startsWith('https://') ||
-        value.startsWith('/uploads/') ||
-        value.startsWith('/api/upload/gridfs/')
-      );
+      // Allow empty arrays
+      if (value === null || value === undefined) return true;
+      
+      // Allow both string URLs and Cloudinary objects
+      if (typeof value === 'string') {
+        return value.startsWith('http://') ||
+               value.startsWith('https://') ||
+               value.startsWith('/uploads/') ||
+               value.startsWith('/api/upload/gridfs/');
+      }
+      // Allow Cloudinary objects
+      if (typeof value === 'object' && value !== null) {
+        return value.url && value.public_id;
+      }
+      return false;
     })
-    .withMessage('Each image must be a valid URL or uploaded path'),
+    .withMessage('Each image must be a valid URL, uploaded path, or Cloudinary object'),
   body('address')
     .trim()
     .isLength({ min: 3, max: 500 })
@@ -70,12 +91,14 @@ const hotelValidation = [
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('Validation errors:', errors.array());
     return res.status(400).json({
       success: false,
       message: 'Validation failed',
       errors: errors.array().map(err => ({
         field: err.path,
-        message: err.msg
+        message: err.msg,
+        value: err.value
       }))
     });
   }
@@ -201,6 +224,19 @@ router.post('/', authenticateToken, requireAdmin, hotelValidation, handleValidat
     const { name, placeId, description, images, address, rating, amenities, priceRange, roomTypes } = req.body;
     const adminId = req.user._id;
     
+    console.log('Hotel creation request:', {
+      name,
+      placeId,
+      description,
+      images,
+      address,
+      rating,
+      amenities,
+      priceRange,
+      roomTypes,
+      adminId
+    });
+    
     // Check if place exists
     const place = await Place.findById(placeId);
     if (!place || !place.isActive) {
@@ -222,21 +258,23 @@ router.post('/', authenticateToken, requireAdmin, hotelValidation, handleValidat
       });
     }
     
-    // Normalize images (accept objects or strings)
-    const normalizedImages = (Array.isArray(images) ? images : [])
-      .map((img) => {
-        if (typeof img === 'string') return img;
-        if (img && typeof img === 'object') return img.relativeUrl || img.url || '';
-        return '';
-      })
-      .filter(Boolean);
+    // Normalize images into Cloudinary object structure
+    const normalizedImageObjects = ImageService
+      .normalizeImages(images)
+      .filter(img => img && img.url && img.public_id); // ensure Cloudinary objects only
+
+    // Determine primary image URL (prefer explicit image field when provided). Allow empty during creation.
+    const primaryImageUrl = (typeof req.body.image === 'string' && req.body.image.trim())
+      ? req.body.image.trim()
+      : ImageService.getPrimaryImageUrl(normalizedImageObjects);
 
     // Create new hotel
     const hotel = new Hotel({
       name,
       placeId,
-      description: (description && String(description).trim().length > 0) ? description : 'Hotel',
-      images: normalizedImages,
+      description: (description && String(description).trim().length > 0) ? description : 'A beautiful hotel offering excellent accommodation and services',
+      image: primaryImageUrl || '',
+      images: normalizedImageObjects,
       address,
       rating: rating || 4.0,
       amenities: amenities || [],
@@ -490,6 +528,168 @@ router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => 
     res.status(500).json({
       success: false,
       message: 'Failed to get hotel statistics'
+    });
+  }
+});
+
+// @route   POST /api/hotels/:id/images
+// @desc    Upload images for a hotel (admin only)
+// @access  Admin only
+router.post('/:id/images', authenticateToken, requireAdmin, (req, res, next) => {
+  uploadMultiple(req, res, (err) => {
+    if (err) {
+      console.error('Multer error:', err);
+      return res.status(400).json({ success: false, message: 'File upload error: ' + err.message });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const hotelId = req.params.id;
+    const adminId = req.user._id;
+    
+    console.log('Hotel image upload request:', {
+      hotelId,
+      adminId,
+      filesCount: req.files ? req.files.length : 0,
+      files: req.files ? req.files.map(f => ({ name: f.originalname, size: f.size, mimetype: f.mimetype })) : []
+    });
+    
+    // Check if hotel exists
+    const hotel = await Hotel.findById(hotelId);
+    if (!hotel) {
+      console.log('Hotel not found:', hotelId);
+      return res.status(404).json({
+        success: false,
+        message: 'Hotel not found'
+      });
+    }
+
+    if (!req.files || req.files.length === 0) {
+      console.log('No files provided in request');
+      return res.status(400).json({
+        success: false,
+        message: 'No images provided'
+      });
+    }
+
+    // Process files via reusable service
+    const { uploadedImages, errors } = await ImageService.processMultipleImages(req.files, 'pather-khonje/hotels');
+
+    if (uploadedImages.length === 0) {
+      console.log('No images were uploaded successfully');
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to upload any images',
+        errors
+      });
+    }
+
+    console.log('Successfully uploaded images:', uploadedImages.length);
+    console.log('Uploaded images:', uploadedImages.map(img => ({ public_id: img.public_id, url: img.url })));
+
+    // Add images to hotel and set primary image if missing
+    hotel.images = [...(hotel.images || []), ...uploadedImages];
+    if (!hotel.image && hotel.images.length > 0) {
+      hotel.image = hotel.images[0].url;
+    }
+    await hotel.save();
+    console.log('Hotel updated with new images. Total images:', hotel.images.length);
+
+    res.json({
+      success: true,
+      message: `${uploadedImages.length} image(s) uploaded successfully`,
+      data: {
+        uploadedImages,
+        errors: errors.length > 0 ? errors : undefined
+      }
+    });
+
+  } catch (error) {
+    console.error('Upload hotel images error:', error.message);
+    console.error('Full error:', error);
+    logger.error('Upload hotel images error', { error: error.message, userId: req.user._id });
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload images: ' + error.message
+    });
+  }
+});
+
+// @route   DELETE /api/hotels/:id/images/:imageId
+// @desc    Delete a specific image from a hotel (admin only)
+// @access  Admin only
+router.delete('/:id/images/:imageId', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const hotelId = req.params.id;
+    const imageId = req.params.imageId;
+    const adminId = req.user._id;
+    
+    // Check if hotel exists
+    const hotel = await Hotel.findById(hotelId);
+    if (!hotel) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hotel not found'
+      });
+    }
+
+    // Find the image to delete
+    const imageIndex = hotel.images.findIndex(img => img.public_id === imageId);
+    if (imageIndex === -1) {
+      return res.status(404).json({
+        success: false,
+        message: 'Image not found'
+      });
+    }
+
+    const imageToDelete = hotel.images[imageIndex];
+
+    // Delete from Cloudinary
+    try {
+      await deleteImage(imageId);
+    } catch (cloudinaryError) {
+      console.error('Error deleting from Cloudinary:', cloudinaryError);
+      // Continue with database deletion even if Cloudinary fails
+    }
+
+    // Remove from hotel
+    hotel.images.splice(imageIndex, 1);
+    await hotel.save();
+
+    // Log admin action
+    await AuditLog.logEvent({
+      action: 'UPDATE',
+      resource: 'HOTEL',
+      userId: adminId,
+      targetHotelId: hotelId,
+      details: { 
+        action: 'delete_image',
+        deletedImageId: imageId
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: true
+    });
+
+    logger.info('Hotel image deleted', { 
+      hotelId, 
+      deletedBy: adminId, 
+      imageId 
+    });
+
+    res.json({
+      success: true,
+      message: 'Image deleted successfully'
+    });
+
+  } catch (error) {
+    logger.error('Delete hotel image error', { error: error.message, userId: req.user._id });
+    
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete image'
     });
   }
 });

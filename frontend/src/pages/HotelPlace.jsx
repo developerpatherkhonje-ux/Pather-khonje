@@ -4,10 +4,71 @@ import { motion } from 'framer-motion';
 import { Star, MapPin, Wifi, Car, Coffee, Dumbbell, Users } from 'lucide-react';
 import apiService from '../services/api';
 
+function formatRupeeRange(range) {
+  if (!range || typeof range !== 'string') return range;
+  const parts = range.split('-').map(p => p.trim()).filter(Boolean);
+  if (parts.length === 2) {
+    const left = parts[0].startsWith('₹') ? parts[0] : `₹ ${parts[0]}`;
+    const right = parts[1].startsWith('₹') ? parts[1] : `₹ ${parts[1]}`;
+    return `${left} - ${right}`;
+  }
+  // Single value fallback
+  return range.startsWith('₹') ? range : `₹ ${range}`;
+}
+
+// Simple image carousel for hotel card
+function HotelImageCarousel({ images = [], alt }) {
+  const [index, setIndex] = useState(0);
+  const total = images.length;
+
+  if (!images || total === 0) {
+    return (
+      <div className="h-72 md:h-80 rounded-lg overflow-hidden bg-gray-100">
+        <img src="/hotels/goa-hotel.png" alt={alt} className="w-full h-full object-cover" />
+      </div>
+    );
+  }
+
+  const goPrev = () => setIndex((prev) => (prev - 1 + total) % total);
+  const goNext = () => setIndex((prev) => (prev + 1) % total);
+
+  return (
+    <div className="relative h-72 md:h-80 rounded-lg overflow-hidden bg-gray-100">
+      <img
+        src={images[index]}
+        alt={alt}
+        className="w-full h-full object-cover transition-transform duration-300"
+      />
+
+      {total > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={goPrev}
+            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-1 shadow"
+            aria-label="Previous image"
+          >
+            <img src="/hotels/arrow-left.png" alt="Prev" className="h-6 w-6" />
+          </button>
+          <button
+            type="button"
+            onClick={goNext}
+            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-1 shadow"
+            aria-label="Next image"
+          >
+            <img src="/hotels/arrow-right.png" alt="Next" className="h-6 w-6" />
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 function HotelPlace() {
   const { placeId } = useParams();
   const [hotels, setHotels] = useState([]);
   const [placeName, setPlaceName] = useState('');
+  const [placeImage, setPlaceImage] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -24,6 +85,16 @@ function HotelPlace() {
       if (response.success) {
         setHotels(response.data.hotels || []);
         setPlaceName(response.data.place?.name || '');
+
+        // Derive primary image for the place to use in hero background
+        const place = response.data.place || {};
+        const primaryImage =
+          place.image && typeof place.image === 'string' && place.image.trim()
+            ? apiService.toAbsoluteUrl(place.image)
+            : (place.images && place.images.length > 0
+                ? apiService.toAbsoluteUrl(place.images[0].url || place.images[0].secure_url || place.images[0])
+                : '');
+        setPlaceImage(primaryImage || '');
       }
     } catch (err) {
       console.error('Error fetching place hotels:', err);
@@ -84,28 +155,38 @@ function HotelPlace() {
 
   return (
     <div className="pt-20 min-h-screen bg-gray-50">
-      {/* Header */}
-      <section className="py-12 gradient-bg text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <nav className="text-sm mb-4 opacity-80">
+      {/* Header full-bleed background (edge-to-edge) */}
+      <section className="relative text-white overflow-hidden min-h-[25vh] md:min-h-[30vh]">
+        {/* Background image filling the area */}
+        {placeImage && (
+          <img
+            src={placeImage}
+            alt={placeName}
+            loading="lazy"
+            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+          />
+        )}
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black/40"></div>
+
+        {/* Content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 flex flex-col justify-center h-full">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <nav className="text-sm mb-4 opacity-90">
               <Link to="/hotels" className="hover:underline">Hotels</Link>
               <span className="mx-2">›</span>
               <span>{placeName}</span>
             </nav>
-            <div className="flex justify-center items-center space-x-4 mb-4">
-              <h1 className="text-4xl md:text-5xl font-bold">
+            <div className="text-center mb-3">
+              <h1 className="text-4xl md:text-5xl font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                 Our Associate Hotels in {placeName}
               </h1>
             </div>
-            <p className="text-xl opacity-90">
+            <p className="text-lg md:text-xl opacity-95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] text-center max-w-3xl mx-auto">
               Discover premium accommodations in this beautiful destination
             </p>
             {error && (
-              <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg max-w-md mx-auto">
+              <div className="mt-4 p-3 bg-red-500/30 border border-red-500/40 rounded-lg max-w-md mx-auto">
                 <p className="text-red-100 text-sm">{error}</p>
               </div>
             )}
@@ -126,28 +207,12 @@ function HotelPlace() {
                 className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
               >
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-                  {/* Hotel Images */}
+                  {/* Hotel Images with carousel */}
                   <div className="space-y-4">
-                    <div className="aspect-video rounded-lg overflow-hidden">
-                      <img
-                        src={apiService.toAbsoluteUrl(hotel.images[0])}
-                        alt={hotel.name}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                      />
-                    </div>
-                    {hotel.images.length > 1 && (
-                      <div className="grid grid-cols-2 gap-2">
-                        {hotel.images.slice(1, 3).map((image, imgIndex) => (
-                          <div key={imgIndex} className="aspect-video rounded-lg overflow-hidden">
-                            <img
-                              src={apiService.toAbsoluteUrl(image)}
-                              alt={`${hotel.name} ${imgIndex + 2}`}
-                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <HotelImageCarousel
+                      images={(hotel.images || []).slice(0, 5).map((img) => (img.url || img.secure_url || img))}
+                      alt={hotel.name}
+                    />
                   </div>
 
                   {/* Hotel Details */}
@@ -164,7 +229,7 @@ function HotelPlace() {
                         <MapPin className="h-4 w-4 mr-1" />
                         <span>{hotel.address}</span>
                       </div>
-                      <p className="text-2xl font-bold text-sky-600 mb-4">{hotel.priceRange} ₹</p>
+                      <p className="text-2xl font-bold text-sky-600 mb-4">{formatRupeeRange(hotel.priceRange)}</p>
                     </div>
 
                     {/* Amenities */}

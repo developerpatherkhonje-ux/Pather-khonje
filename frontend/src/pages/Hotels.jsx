@@ -96,7 +96,11 @@ function Hotels() {
                     <div className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover-3d group">
                       <div className="relative h-64 overflow-hidden">
                         <img
-                          src={place.image}
+                          src={
+                            place.image && place.image.url 
+                              ? place.image.url 
+                              : place.image || '/hotels/goa-hotel.png'
+                          }
                           alt={place.name}
                           loading='lazy'
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
