@@ -45,9 +45,12 @@ const invoiceRoutes = require('./routes/invoiceRoutes');
 
 const app = express();
 
+// Trust proxy for Render deployment (fixes rate limiting issue)
+app.set('trust proxy', 1);
+
 // Create necessary directories
 const createDirectories = () => {
-  const dirs = [config.PATHS.logs];
+  const dirs = [config.PATHS.logs, 'uploads', 'uploads/hotels', 'uploads/places', 'uploads/packages'];
   dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });

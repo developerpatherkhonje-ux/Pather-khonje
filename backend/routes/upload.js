@@ -1,5 +1,6 @@
 const express = require('express');
-const { uploadSingle, uploadMultiple, uploadToCloudinary } = require('../utils/cloudinary');
+const { uploadSingle, uploadMultiple, handleUploadError } = require('../middleware/upload');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const AuditLog = require('../models/AuditLog');
@@ -352,36 +353,68 @@ router.post('/hotels/images', requireAdmin, uploadMultiple, async (req, res) => 
 // @route   POST /api/upload/packages/image
 // @desc    Upload single package image (admin only)
 // @access  Admin only
-router.post('/packages/image', requireAdmin, (req, res) => {
-  uploadSingle(req, res, async (err) => {
-    if (err) {
-      return handleUploadError(err, req, res, () => {});
-    }
-
+router.post('/packages/image', requireAdmin, uploadSingle, async (req, res) => {
+  try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No image file provided' });
-    }
-
-    try {
-      const relativeUrl = `/uploads/packages/${req.file.filename}`;
-      const imageUrl = `${req.protocol}://${req.get('host')}${relativeUrl}`;
-
-      await AuditLog.logEvent({
-        action: 'UPLOAD',
-        resource: 'IMAGE',
-        userId: req.user._id,
-        details: { filename: req.file.filename, imageUrl, relativeUrl },
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent'),
-        success: true
+      return res.status(400).json({
+        success: false,
+        message: 'No image file provided'
       });
-
-      return res.json({ success: true, message: 'Package image uploaded successfully', data: { url: imageUrl, relativeUrl } });
-    } catch (error) {
-      logger.error('Package image upload error', { error: error.message, userId: req.user._id });
-      return res.status(500).json({ success: false, message: 'Failed to process uploaded image' });
     }
-  });
+
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(req.file.path, 'pather-khonje/packages');
+    
+    // Clean up temporary file
+    const fs = require('fs');
+    fs.unlinkSync(req.file.path);
+
+    await AuditLog.logEvent({
+      action: 'UPLOAD',
+      resource: 'IMAGE',
+      userId: req.user._id,
+      details: {
+        public_id: result.public_id,
+        url: result.secure_url,
+        originalName: req.file.originalname,
+        size: req.file.size
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: true
+    });
+
+    return res.json({
+      success: true,
+      message: 'Package image uploaded successfully',
+      data: {
+        public_id: result.public_id,
+        url: result.secure_url,
+        width: result.width,
+        height: result.height,
+        format: result.format,
+        originalName: req.file.originalname,
+        size: req.file.size
+      }
+    });
+  } catch (error) {
+    logger.error('Package image upload error', { error: error.message, userId: req.user._id });
+    
+    // Clean up temporary file if it exists
+    if (req.file && req.file.path) {
+      try {
+        const fs = require('fs');
+        fs.unlinkSync(req.file.path);
+      } catch (unlinkError) {
+        console.error('Error cleaning up file:', unlinkError);
+      }
+    }
+    
+    return res.status(500).json({ 
+      success: false, 
+      message: 'Failed to upload package image to Cloudinary' 
+    });
+  }
 });
 // ===== GridFS-based storage (MongoDB) =====
 
@@ -482,5 +515,8 @@ router.get('/gridfs/:id', async (req, res) => {
     return res.status(500).json({ success: false, message: 'Server error retrieving file' });
   }
 });
+
+// Error handling middleware for upload routes
+router.use(handleUploadError);
 
 module.exports = router;
