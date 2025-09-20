@@ -8,8 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "start": "vite",
-    "postinstall": "npx update-browserslist-db@latest"
+    "start": "vite"
   },
   "dependencies": {
     "axios": "^1.6.0",

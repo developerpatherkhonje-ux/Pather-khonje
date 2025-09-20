@@ -11,7 +11,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    minify: 'esbuild', // Changed from 'terser' to 'esbuild'
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -22,6 +22,11 @@ export default defineConfig({
     },
     // Increase chunk size warning limit
     chunkSizeWarningLimit: 1000,
+    // Force esbuild for better Vercel compatibility
+    target: 'esnext',
+    modulePreload: {
+      polyfill: false
+    }
   },
   server: {
     port: 5173,
@@ -34,5 +39,9 @@ export default defineConfig({
   // Define environment variables
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production')
+  },
+  // Ensure compatibility with Vercel
+  esbuild: {
+    target: 'esnext'
   }
 });
