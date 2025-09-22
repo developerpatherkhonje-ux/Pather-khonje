@@ -3,6 +3,11 @@
   "outputDirectory": "dist",
   "installCommand": "npm ci",
   "framework": "vite",
+  "env": {
+    "ROLLUP_SKIP_NODEJS_NATIVE": "1",
+    "NPM_CONFIG_OPTIONAL": "false",
+    "npm_config_optional": "false"
+  },
   "rewrites": [
     {
       "source": "/(.*)",
