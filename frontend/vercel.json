@@ -3,6 +3,9 @@
   "outputDirectory": "dist",
   "installCommand": "npm install",
   "framework": "vite",
+  "env": {
+    "ROLLUP_SKIP_NODEJS_NATIVE": "1"
+  },
   "rewrites": [
     {
       "source": "/(.*)",
