@@ -495,11 +495,17 @@ const startServer = async () => {
     // Connect to database first
     await connectDB();
     
-    // Create database indexes
-    await createIndexes();
-    
-    // Create default admin user
-    await createDefaultAdmin();
+    // Only run DB-dependent setup if connected
+    const isDbConnected = mongoose.connection.readyState === 1;
+    if (isDbConnected) {
+      // Create database indexes
+      await createIndexes();
+      
+      // Create default admin user
+      await createDefaultAdmin();
+    } else {
+      logger.warn('Skipping index and admin setup: MongoDB not connected');
+    }
     
     // Start the server
     const PORT = config.PORT;
