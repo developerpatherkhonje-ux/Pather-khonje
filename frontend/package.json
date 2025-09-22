@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "cross-env ROLLUP_SKIP_NODEJS_NATIVE=1 vite build",
+    "build": "cross-env ROLLUP_SKIP_NODEJS_NATIVE=1 ROLLUP_USE_NODEJS=1 vite build",
     "build:vercel": "cross-env ROLLUP_SKIP_NODEJS_NATIVE=1 vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -40,7 +40,7 @@
     "eslint-plugin-react-refresh": "^0.4.11",
     "globals": "^15.9.0",
     "postcss": "^8.4.35",
-    "rollup": "npm:@rollup/wasm-node@^4.24.0",
+    "rollup": "^4.24.0",
     "tailwindcss": "^3.4.1",
     "terser": "^5.24.0",
     "vite": "^7.1.6"
