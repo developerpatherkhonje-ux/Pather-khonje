@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "cross-env ROLLUP_SKIP_NODEJS_NATIVE=1 vite build",
+    "build:vercel": "ROLLUP_SKIP_NODEJS_NATIVE=1 vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "vite"
