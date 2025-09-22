@@ -16,6 +16,8 @@ backend/dist/
 .env.production
 .env.development
 *.env
+!env.example
+!backend/env.example
 
 # Logs
 logs/
@@ -116,7 +118,6 @@ frontend/uploads/
 *_TROUBLESHOOTING.md
 *_CONNECTION.md
 env.production
-env.example
 
 # Database files
 *.db
