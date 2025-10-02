@@ -531,6 +531,66 @@ class ApiService {
       headers: { 'Content-Type': undefined }
     });
   }
+
+  // Payment Vouchers API
+  async listPaymentVouchers({ page = 1, limit = 20, category = '', search = '', startDate = '', endDate = '' } = {}) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (category) params.set('category', category);
+    if (search) params.set('search', search);
+    if (startDate) params.set('startDate', startDate);
+    if (endDate) params.set('endDate', endDate);
+    return this.get(`/payment-vouchers?${params.toString()}`);
+  }
+
+  async getPaymentVoucher(id) {
+    return this.get(`/payment-vouchers/${id}`);
+  }
+
+  async createPaymentVoucher(voucher) {
+    return this.post('/payment-vouchers', voucher);
+  }
+
+  async updatePaymentVoucher(id, voucher) {
+    return this.put(`/payment-vouchers/${id}`, voucher);
+  }
+
+  async deletePaymentVoucher(id) {
+    return this.delete(`/payment-vouchers/${id}`);
+  }
+
+  async downloadPaymentVoucherPdf(id, fileName) {
+    const url = `${this.baseURL}/payment-vouchers/${id}/pdf`;
+    const token = this.getToken();
+    const fetchOpts = {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    };
+    try {
+      let response = await fetch(url, fetchOpts);
+      if (!response.ok) throw new Error('Failed to download voucher PDF');
+      const blob = await response.blob();
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(blob);
+      link.download = `${fileName || `voucher-${id}`}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      if (this.baseURL.includes('localhost')) {
+        const fallbackUrl = `${this.fallbackBaseURL}/payment-vouchers/${id}/pdf`;
+        const response = await fetch(fallbackUrl, fetchOpts);
+        if (!response.ok) throw new Error('Failed to download voucher PDF');
+        const blob = await response.blob();
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `${fileName || `voucher-${id}`}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        return;
+      }
+      throw err;
+    }
+  }
 }
 
 // Create and export singleton instance

@@ -23,6 +23,7 @@ import InvoiceManagement from '../components/dashboard/InvoiceManagement';
 import HotelInvoicePage from '../pages/admin/HotelInvoicePage';
 import TourInvoicePage from '../pages/admin/TourInvoicePage';
 import PaymentVouchers from '../components/dashboard/PaymentVouchers';
+import PaymentVoucherPage from './admin/PaymentVoucherPage';
 import Analytics from '../components/dashboard/Analytics';
 import UserProfile from '../components/dashboard/UserProfile';
 
@@ -153,6 +154,8 @@ function Dashboard() {
               <Route path="/invoices/hotel" element={<HotelInvoicePage />} />
               <Route path="/invoices/tour" element={<TourInvoicePage />} />
               <Route path="/vouchers" element={<PaymentVouchers />} />
+              <Route path="/vouchers/Payment" element={<PaymentVoucherPage />} />
+              <Route path="/vouchers/Payment/:id" element={<PaymentVoucherPage />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/profile" element={<UserProfile />} />
             </Routes>

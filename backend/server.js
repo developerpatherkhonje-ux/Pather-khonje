@@ -42,6 +42,7 @@ const hotelsRoutes = require('./routes/hotels');
 const uploadRoutes = require('./routes/upload');
 const packageRoutes = require('./routes/packages');
 const invoiceRoutes = require('./routes/invoiceRoutes');
+const paymentVoucherRoutes = require('./routes/paymentVoucherRoutes');
 
 const app = express();
 
@@ -337,6 +338,7 @@ app.use('/api/hotels', hotelsRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/invoices', invoiceRoutes);
+app.use('/api/payment-vouchers', paymentVoucherRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

@@ -174,7 +174,11 @@ exports.downloadInvoicePdf = async (req, res, next) => {
     doc.pipe(res);
 
     // Header
-    doc.image('frontend/public/logo/Pather Khonje Logo.png', 40, 30, { width: 50 }).moveDown();
+    try {
+      doc.image('../frontend/public/logo/Pather Khonje Logo.png', 40, 30, { width: 50 }).moveDown();
+    } catch (logoError) {
+      console.warn('Logo could not be loaded for PDF:', logoError);
+    }
     doc.fontSize(20).fillColor('#0ea5e9').text('Pather Khonje', 100, 35);
     doc.fillColor('#6b7280').fontSize(10).text('A tour that never seen before.', 100, 58);
     doc.moveDown();

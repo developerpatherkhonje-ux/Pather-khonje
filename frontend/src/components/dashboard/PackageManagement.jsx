@@ -69,7 +69,11 @@ function PackageManagement() {
       try {
         const res = await apiService.createPackage(payload);
         if (res.success) {
-          setPackages([res.data.package, ...packages]);
+          const newPkg = res.data.package;
+          const existingKeySet = new Set(packages.map(p => String(p.id || p._id)));
+          const key = String(newPkg.id || newPkg._id);
+          const next = existingKeySet.has(key) ? packages : [newPkg, ...packages];
+          setPackages(next);
           resetForm();
         }
       } catch (e) {
@@ -112,7 +116,7 @@ function PackageManagement() {
       }
       const res = await apiService.updatePackage(editingPackage.id || editingPackage._id, updatePayload);
       if (res.success) {
-        setPackages(packages.map(pkg => (pkg.id === (editingPackage.id || editingPackage._id) ? res.data.package : pkg)));
+        setPackages(packages.map(pkg => ((pkg.id || pkg._id) === (editingPackage.id || editingPackage._id) ? res.data.package : pkg)));
         resetForm();
       }
     }
@@ -411,7 +415,7 @@ function PackageManagement() {
 
               <div className="text-sm text-gray-500">
                 <p>Best Time: {pkg.bestTime}</p>
-                <p>Added: {pkg.createdAt}</p>
+                <p>Added: {pkg.createdAt ? new Date(pkg.createdAt).toISOString().slice(0, 10) : ''}</p>
               </div>
             </div>
           </motion.div>

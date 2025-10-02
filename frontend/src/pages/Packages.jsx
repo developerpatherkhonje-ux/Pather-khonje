@@ -24,7 +24,16 @@ const Packages = () => {
     const load = async () => {
       try {
         const res = await apiService.listPackages();
-        if (res.success) setPackages(res.data.packages || []);
+        if (res.success) {
+          const list = Array.isArray(res.data.packages) ? res.data.packages : [];
+          // Deduplicate by id/_id to avoid double entries
+          const byId = new Map();
+          list.forEach((p) => {
+            const key = String(p.id || p._id || '');
+            if (key && !byId.has(key)) byId.set(key, p);
+          });
+          setPackages(Array.from(byId.values()));
+        }
       } finally {
         setLoading(false);
       }
@@ -111,7 +120,7 @@ const Packages = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {filteredPackages.map((pkg, index) => (
                 <motion.div
-                  key={pkg.id}
+                  key={pkg.id || pkg._id}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}

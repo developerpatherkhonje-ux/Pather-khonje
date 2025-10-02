@@ -29,20 +29,17 @@ function App() {
         <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
           <AnimatePresence mode="wait">
             <Routes>
-              {/* Default route - redirects based on authentication status */}
+              
               <Route path="/" element={<AppRouter />} />
               
-              {/* Admin authentication route only */}
               <Route path="/auth" element={<AuthPage />} />
               
-              {/* Protected dashboard route - Admin only */}
               <Route path="/dashboard/*" element={
                 <ProtectedRoute requireAdmin={true}>
                   <Dashboard />
                 </ProtectedRoute>
               } />
               
-              {/* Public website routes - accessible without authentication */}
               <Route path="/website/*" element={
                 <>
                   <Navbar />

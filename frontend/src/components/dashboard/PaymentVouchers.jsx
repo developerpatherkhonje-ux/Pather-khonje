@@ -1,440 +1,386 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Package, Star, Clock, Users } from 'lucide-react';
+import { Plus, Search, Receipt, Download, Eye, Calendar, IndianRupee, TrendingDown, Edit, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import apiService from '../../services/api';
+import toast from 'react-hot-toast';
+import { generatePaymentVoucherPdf } from '../../utils/payPdf';
 
-function PackageManagement() {
-  const [packages, setPackages] = useState([
-    {
-      id: '1',
-      name: 'Himalayan Adventure',
-      image: '/hpackages/himalaya.jpg',
-      description: 'Experience the thrill of the Himalayas with trekking, camping, and breathtaking mountain views.',
-      duration: '7 Days 6 Nights',
-      price: 25000,
-      rating: 4.9,
-      highlights: ['Trekking', 'Mountain Views', 'Camping', 'Adventure Sports'],
-      category: 'adventure',
-      bestTime: 'March to June, September to November',
-      groupSize: '6-12 participants',
-      createdAt: '2024-01-15'
-    },
-    {
-      id: '2',
-      name: 'Royal Rajasthan',
-      image: '/hpackages/rajasthan.jpeg',
-      description: 'Discover the royal heritage of Rajasthan with majestic palaces, forts, and cultural experiences.',
-      duration: '10 Days 9 Nights',
-      price: 35000,
-      rating: 4.8,
-      highlights: ['Palaces', 'Forts', 'Cultural Shows', 'Heritage Hotels'],
-      category: 'heritage',
-      bestTime: 'October to March',
-      groupSize: '8-15 participants',
-      createdAt: '2024-01-12'
-    }
-  ]);
-
-  const categories = ['adventure', 'heritage', 'beach', 'mountain', 'spiritual', 'cultural'];
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingPackage, setEditingPackage] = useState(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    image: '',
-    description: '',
-    duration: '',
-    price: 0,
-    rating: 0,
-    highlights: ['', '', '', ''],
-    category: '',
-    bestTime: '',
-    groupSize: ''
+const PaymentVouchers = () => {
+  const navigate = useNavigate();
+  const [vouchers, setVouchers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState({
+    totalExpenses: 0,
+    totalAdvance: 0,
+    totalDue: 0,
+    monthlyExpenses: 0
   });
 
-  const filteredPackages = packages.filter(pkg =>
-    pkg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pkg.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    pkg.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
 
-  const handleAddPackage = () => {
-    if (formData.name && formData.image && formData.description && formData.duration && formData.price && formData.category) {
-      const newPackage = {
-        id: Date.now().toString(),
-        name: formData.name,
-        image: formData.image,
-        description: formData.description,
-        duration: formData.duration,
-        price: formData.price,
-        rating: formData.rating || 4.5,
-        highlights: formData.highlights.filter(h => h.trim() !== ''),
-        category: formData.category,
-        bestTime: formData.bestTime,
-        groupSize: formData.groupSize,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setPackages([...packages, newPackage]);
-      resetForm();
-    }
-  };
+  const categories = [
+    { value: 'hotel', label: 'Hotel', color: 'bg-blue-100 text-blue-800' },
+    { value: 'transport', label: 'Transport', color: 'bg-green-100 text-green-800' },
+    { value: 'food', label: 'Food', color: 'bg-orange-100 text-orange-800' },
+    { value: 'guide', label: 'Guide', color: 'bg-purple-100 text-purple-800' },
+    { value: 'other', label: 'Other', color: 'bg-gray-100 text-gray-800' }
+  ];
 
-  const handleEditPackage = (pkg) => {
-    setEditingPackage(pkg);
-    setFormData({
-      name: pkg.name,
-      image: pkg.image,
-      description: pkg.description,
-      duration: pkg.duration,
-      price: pkg.price,
-      rating: pkg.rating,
-      highlights: [...pkg.highlights, ...Array(4 - pkg.highlights.length).fill('')],
-      category: pkg.category,
-      bestTime: pkg.bestTime,
-      groupSize: pkg.groupSize
+  // Function to calculate analytics from vouchers
+  const calculateAnalytics = (vouchersList) => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const analytics = vouchersList.reduce((acc, voucher) => {
+      const voucherDate = new Date(voucher.date);
+      const isCurrentMonth = voucherDate.getMonth() === currentMonth && voucherDate.getFullYear() === currentYear;
+      
+      acc.totalExpenses += voucher.total || 0;
+      acc.totalAdvance += voucher.advance || 0;
+      acc.totalDue += voucher.due || 0;
+      
+      if (isCurrentMonth) {
+        acc.monthlyExpenses += voucher.total || 0;
+      }
+      
+      return acc;
+    }, {
+      totalExpenses: 0,
+      totalAdvance: 0,
+      totalDue: 0,
+      monthlyExpenses: 0
     });
-    setShowAddForm(true);
+
+    return {
+      ...analytics,
+      totalVouchers: vouchersList.length
+    };
   };
 
-  const handleUpdatePackage = () => {
-    if (editingPackage && formData.name && formData.image && formData.description && formData.duration && formData.price && formData.category) {
-      setPackages(packages.map(pkg =>
-        pkg.id === editingPackage.id
-          ? {
-              ...pkg,
-              ...formData,
-              highlights: formData.highlights.filter(h => h.trim() !== '')
-            }
-          : pkg
-      ));
-      resetForm();
+  const paymentMethods = [
+    { value: 'cash', label: 'Cash' },
+    { value: 'bank', label: 'Bank Transfer / NEFT' },
+    { value: 'upi', label: 'UPI' }
+  ];
+
+  // Load vouchers from backend
+  useEffect(() => {
+    const loadVouchers = async () => {
+      try {
+        setLoading(true);
+        const res = await apiService.listPaymentVouchers({
+          category: filterCategory === 'all' ? '' : filterCategory,
+          search: searchTerm
+        });
+        if (res.success) {
+          const vouchersList = res.data.items || [];
+          setVouchers(vouchersList);
+          // Calculate analytics from the loaded vouchers
+          const calculatedSummary = calculateAnalytics(vouchersList);
+          setSummary(calculatedSummary);
+        }
+      } catch (error) {
+        console.error('Error loading vouchers:', error);
+        toast.error('Failed to load payment vouchers');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadVouchers();
+  }, [filterCategory, searchTerm]);
+
+  const filteredVouchers = vouchers;
+
+  const getCategoryColor = (category) => {
+    const cat = categories.find(c => c.value === category);
+    return cat ? cat.color : 'bg-gray-100 text-gray-800';
+  };
+
+  const handleEditVoucher = (voucher) => {
+    navigate(`/dashboard/vouchers/Payment/${voucher.id}`);
+  };
+
+  const handleDeleteVoucher = async (id) => {
+    if (window.confirm('Are you sure you want to delete this payment voucher?')) {
+      try {
+        const res = await apiService.deletePaymentVoucher(id);
+        if (res.success) {
+          const updatedVouchers = vouchers.filter(v => v.id !== id);
+          setVouchers(updatedVouchers);
+          // Recalculate analytics after deletion
+          const updatedSummary = calculateAnalytics(updatedVouchers);
+          setSummary(updatedSummary);
+          toast.success('Payment voucher deleted successfully');
+        }
+      } catch (error) {
+        console.error('Error deleting voucher:', error);
+        toast.error('Failed to delete payment voucher');
+      }
     }
   };
 
-  const handleDeletePackage = (id) => {
-    if (window.confirm('Are you sure you want to delete this package?')) {
-      setPackages(packages.filter(pkg => pkg.id !== id));
+  const handleDownloadVoucher = async (voucher) => {
+    try {
+      // Use frontend PDF generator instead of backend
+      await generatePaymentVoucherPdf(voucher, voucher.voucherNumber);
+      toast.success('Voucher PDF downloaded');
+    } catch (error) {
+      console.error('Error downloading voucher:', error);
+      toast.error('Failed to download voucher PDF');
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      image: '',
-      description: '',
-      duration: '',
-      price: 0,
-      rating: 0,
-      highlights: ['', '', '', ''],
-      category: '',
-      bestTime: '',
-      groupSize: ''
-    });
-    setShowAddForm(false);
-    setEditingPackage(null);
+  const handleViewVoucher = (voucher) => {
+    // Navigate to voucher details page or show in modal
+    console.log('View voucher:', voucher);
   };
+
+  // Function to refresh vouchers and analytics
+  const refreshVouchers = async () => {
+    try {
+      setLoading(true);
+      const res = await apiService.listPaymentVouchers({
+        category: filterCategory === 'all' ? '' : filterCategory,
+        search: searchTerm
+      });
+      if (res.success) {
+        const vouchersList = res.data.items || [];
+        setVouchers(vouchersList);
+        const calculatedSummary = calculateAnalytics(vouchersList);
+        setSummary(calculatedSummary);
+      }
+    } catch (error) {
+      console.error('Error refreshing vouchers:', error);
+      toast.error('Failed to refresh payment vouchers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Refresh vouchers when component mounts (useful when returning from create/edit)
+  useEffect(() => {
+    const handleFocus = () => {
+      refreshVouchers();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [filterCategory, searchTerm]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Package Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Payment Vouchers</h1>
         <button
-          onClick={() => setShowAddForm(true)}
-          className="bg-sky-600 text-white px-4 py-2 rounded-lg hover:bg-sky-700 transition-colors flex items-center space-x-2"
+          onClick={() => navigate('/dashboard/vouchers/Payment')}
+          className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2"
         >
           <Plus className="h-5 w-5" />
-          <span>Add New Package</span>
+          <span>Create Voucher</span>
         </button>
       </div>
 
-      {/* Search */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-red-100">
+              <TrendingDown className="h-6 w-6 text-red-600" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">₹{summary.totalExpenses.toLocaleString()}</h3>
+          <p className="text-gray-600">Total Expenses</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-orange-100">
+              <IndianRupee className="h-6 w-6 text-orange-600" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">₹{summary.monthlyExpenses.toLocaleString()}</h3>
+          <p className="text-gray-600">This Month</p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 rounded-lg bg-blue-100">
+              <Receipt className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+          <h3 className="text-2xl font-bold text-gray-900 mb-1">{vouchers.length}</h3>
+          <p className="text-gray-600">Total Vouchers</p>
+        </motion.div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-2xl p-6 shadow-lg">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
         <input
           type="text"
-          placeholder="Search packages by name, category, or description..."
+              placeholder="Search vouchers..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
         />
       </div>
 
-      {/* Add/Edit Form Modal */}
-      {showAddForm && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
           >
-            <h2 className="text-xl font-bold text-gray-900 mb-4">
-              {editingPackage ? 'Edit Package' : 'Add New Package'}
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Package Name *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                  placeholder="Enter package name"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                >
-                  <option value="">Select category</option>
+            <option value="all">All Categories</option>
                   {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
+              <option key={cat.value} value={cat.value}>{cat.label}</option>
                   ))}
                 </select>
-              </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Image URL *</label>
-                <input
-                  type="url"
-                  value={formData.image}
-                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                  placeholder="Enter image URL"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                  placeholder="Enter package description"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Duration *</label>
-                <input
-                  type="text"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                  placeholder="e.g., 7 Days 6 Nights"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price (per person) *</label>
-                <input
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                  placeholder="Enter price in rupees"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Rating</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  step="0.1"
-                  value={formData.rating}
-                  onChange={(e) => setFormData({ ...formData, rating: parseFloat(e.target.value) })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                  placeholder="Enter rating (1-5)"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Group Size</label>
-                <input
-                  type="text"
-                  value={formData.groupSize}
-                  onChange={(e) => setFormData({ ...formData, groupSize: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                  placeholder="e.g., 6-12 participants"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Best Time to Visit</label>
-                <input
-                  type="text"
-                  value={formData.bestTime}
-                  onChange={(e) => setFormData({ ...formData, bestTime: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                  placeholder="e.g., March to June, September to November"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Highlights</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {formData.highlights.map((highlight, index) => (
-                    <input
-                      key={index}
-                      type="text"
-                      value={highlight}
-                      onChange={(e) => {
-                        const newHighlights = [...formData.highlights];
-                        newHighlights[index] = e.target.value;
-                        setFormData({ ...formData, highlights: newHighlights });
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
-                      placeholder={`Highlight ${index + 1}`}
-                    />
-                  ))}
+          <div className="text-sm text-gray-600 flex items-center">
+            Total: {filteredVouchers.length} vouchers
                 </div>
               </div>
             </div>
 
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={editingPackage ? handleUpdatePackage : handleAddPackage}
-                className="flex-1 bg-sky-600 text-white py-2 px-4 rounded-lg hover:bg-sky-700 transition-colors"
-              >
-                {editingPackage ? 'Update Package' : 'Add Package'}
-              </button>
-              <button
-                onClick={resetForm}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
 
-      {/* Packages Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredPackages.map((pkg, index) => (
-          <motion.div
-            key={pkg.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
-          >
-            <div className="relative h-48">
-              <img
-                src={pkg.image}
-                alt={pkg.name}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-4 right-4 flex space-x-2">
-                <button
-                  onClick={() => handleEditPackage(pkg)}
-                  className="bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors"
+      {/* Vouchers Table */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Voucher
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Payee
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Category
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Payment Method
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredVouchers.map((voucher) => (
+                <motion.tr
+                  key={voucher.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="hover:bg-gray-50 transition-colors"
                 >
-                  <Edit className="h-4 w-4 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => handleDeletePackage(pkg.id)}
-                  className="bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors"
-                >
-                  <Trash2 className="h-4 w-4 text-red-600" />
-                </button>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{voucher.voucherNumber}</div>
+                      <div className="text-sm text-gray-500">{voucher.description || 'No description'}</div>
               </div>
-              <div className="absolute top-4 left-4">
-                <span className="bg-sky-600 text-white text-sm font-medium px-3 py-1 rounded-full">
-                  {pkg.category.charAt(0).toUpperCase() + pkg.category.slice(1)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{voucher.payeeName}</div>
+                    <div className="text-sm text-gray-500">By: {voucher.createdBy?.name || 'Unknown'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getCategoryColor(voucher.category)}`}>
+                      {categories.find(c => c.value === voucher.category)?.label}
                 </span>
-              </div>
-              <div className="absolute bottom-4 left-4 right-4">
-                <div className="bg-white/90 backdrop-blur-sm rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="font-medium">{pkg.rating}</span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-red-600">-₹{voucher.total.toLocaleString()}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900 capitalize">{voucher.paymentMethod}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <div className="flex items-center">
+                      <Calendar className="h-4 w-4 mr-1" />
+                      {voucher.createdAt}
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-sky-600">₹{pkg.price.toLocaleString()}</p>
-                      <p className="text-xs text-gray-600">per person</p>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEditVoucher(voucher)}
+                        className="text-sky-600 hover:text-sky-900 transition-colors"
+                        title="Edit Voucher"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDownloadVoucher(voucher)}
+                        className="text-green-600 hover:text-green-900 transition-colors"
+                        title="Download PDF"
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteVoucher(voucher.id)}
+                        className="text-red-600 hover:text-red-900 transition-colors"
+                        title="Delete Voucher"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
-                  </div>
-                </div>
-              </div>
+                  </td>
+                </motion.tr>)
+              )}
+            </tbody>
+          </table>
             </div>
-
-            <div className="p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.name}</h3>
-              <p className="text-gray-600 mb-4 line-clamp-2">{pkg.description}</p>
-              
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center text-gray-500">
-                  <Clock className="h-4 w-4 mr-1" />
-                  <span className="text-sm">{pkg.duration}</span>
-                </div>
-                <div className="flex items-center text-gray-500">
-                  <Users className="h-4 w-4 mr-1" />
-                  <span className="text-sm">{pkg.groupSize}</span>
-                </div>
-              </div>
-
-              <div className="mb-4">
-                <div className="flex flex-wrap gap-1">
-                  {pkg.highlights.slice(0, 3).map((highlight) => (
-                    <span
-                      key={highlight}
-                      className="bg-sky-100 text-sky-700 text-xs px-2 py-1 rounded"
-                    >
-                      {highlight}
-                    </span>
-                  ))}
-                  {pkg.highlights.length > 3 && (
-                    <span className="text-xs text-gray-500 px-2 py-1">
-                      +{pkg.highlights.length - 3} more
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="text-sm text-gray-500">
-                <p>Best Time: {pkg.bestTime}</p>
-                <p>Added: {pkg.createdAt}</p>
-              </div>
-            </div>
-          </motion.div>
-        ))}
       </div>
 
-      {/* No Packages Message */}
-      {filteredPackages.length === 0 && (
+      {/* No Vouchers Message */}
+      {filteredVouchers.length === 0 && (
         <div className="text-center py-12">
-          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No Packages Found</h3>
+          <Receipt className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No Payment Vouchers Found</h3>
           <p className="text-gray-600 mb-4">
-            {searchTerm ? 'No packages match your search criteria.' : 'Start by adding your first tour package.'}
+            {searchTerm || filterCategory !== 'all' 
+              ? 'No vouchers match your search criteria.' 
+              : 'Start by creating your first payment voucher.'}
           </p>
-          {!searchTerm && (
+          {!searchTerm && filterCategory === 'all' && (
             <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-sky-600 text-white px-6 py-3 rounded-lg hover:bg-sky-700 transition-colors"
+              onClick={() => navigate('/dashboard/vouchers/Payment')}
+              className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors"
             >
-              Add Your First Package
+              Create Your First Voucher
             </button>
           )}
         </div>
       )}
     </div>
   );
-}
+};
 
-export default PackageManagement;
+export default PaymentVouchers;

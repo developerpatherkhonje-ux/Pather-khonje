@@ -152,9 +152,11 @@ const userSchema = new mongoose.Schema({
   toJSON: {
     transform: function(doc, ret) {
       delete ret.password;
-      delete ret.security.twoFactorSecret;
-      delete ret.security.apiKey;
-      delete ret.security.passwordHistory;
+      if (ret.security) {
+        delete ret.security.twoFactorSecret;
+        delete ret.security.apiKey;
+        delete ret.security.passwordHistory;
+      }
       return ret;
     }
   }
