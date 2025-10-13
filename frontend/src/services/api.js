@@ -56,7 +56,6 @@ class ApiService {
   // Generic request method
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    // Start with default headers incl. Authorization
     const baseHeaders = this.getHeaders(options.includeAuth !== false);
     const config = {
       ...options,
@@ -71,11 +70,6 @@ class ApiService {
       delete config.headers['Content-Type'];
     }
 
-    // Remove Content-Type header for file uploads to let browser set boundary
-    if (options.headers && Object.prototype.hasOwnProperty.call(options.headers, 'Content-Type') && options.headers['Content-Type'] === undefined) {
-      delete config.headers['Content-Type'];
-    }
-
     const doFetch = async (fullUrl) => {
       return fetch(fullUrl, config);
     };
@@ -83,7 +77,6 @@ class ApiService {
     try {
       let response = await doFetch(url);
       
-      // Handle network errors
       if (!response.ok) {
         // Handle token expiration
         if (response.status === 401) {
@@ -99,6 +92,7 @@ class ApiService {
         }
         
         const data = await response.json().catch(() => ({}));
+        console.error('API Error Response:', { status: response.status, data });
         const error = new Error(data.message || `HTTP error! status: ${response.status}`);
         error.response = { data, status: response.status };
         throw error;
@@ -107,24 +101,6 @@ class ApiService {
       const data = await response.json();
       return data;
     } catch (error) {
-      // Retry with fallback base URL if network error and base is localhost
-      if (error.name === 'TypeError' && String(error.message).includes('fetch') && this.baseURL.includes('localhost')) {
-        try {
-          const fallbackUrl = `${this.fallbackBaseURL}${endpoint}`;
-          const response = await fetch(fallbackUrl, config);
-          if (!response.ok) {
-            const data = await response.json().catch(() => ({}));
-            const error = new Error(data.message || `HTTP error! status: ${response.status}`);
-            error.response = { data, status: response.status };
-            throw error;
-          }
-          const data = await response.json();
-          return data;
-        } catch (e2) {
-          console.error('API request fallback error:', e2);
-        }
-      }
-
       console.error('API request error:', error);
       if (error.name === 'TypeError' && String(error.message).includes('fetch')) {
         throw new Error('Unable to connect to server. Please check your connection.');
@@ -143,8 +119,8 @@ class ApiService {
 
   // POST request
   async post(endpoint, data, options = {}) {
-    // Check if data is FormData - don't JSON.stringify it
     const body = data instanceof FormData ? data : JSON.stringify(data);
+    console.log('POST request:', { endpoint, isFormData: data instanceof FormData, body });
     return this.request(endpoint, {
       method: 'POST',
       body,
@@ -154,7 +130,6 @@ class ApiService {
 
   // PUT request
   async put(endpoint, data, options = {}) {
-    // Check if data is FormData - don't JSON.stringify it
     const body = data instanceof FormData ? data : JSON.stringify(data);
     return this.request(endpoint, {
       method: 'PUT',
@@ -605,20 +580,29 @@ class ApiService {
     }
   }
 
-  // Gallery API
+  // Gallery API - Simplified
   async getGalleryImages(category = 'all', page = 1, limit = 50) {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString()
-    });
-    if (category && category !== 'all') {
-      params.set('category', category);
-    }
+    const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+    if (category && category !== 'all') params.set('category', category);
     return this.get(`/gallery?${params.toString()}`, { includeAuth: false });
   }
-
-  async getGalleryImageById(id) {
-    return this.get(`/gallery/${id}`, { includeAuth: false });
+  async getAdminGalleries({ page = 1, limit = 20, category = 'all', search = '' } = {}) {
+    const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
+    if (category && category !== 'all') params.set('category', category);
+    if (search) params.set('search', search);
+    return this.get(`/gallery/admin?${params.toString()}`);
+  }
+  async createGallery(galleryData) {
+    return this.post('/gallery', galleryData);
+  }
+  async updateGallery(id, galleryData) {
+    return this.put(`/gallery/${id}`, galleryData);
+  }
+  async deleteGallery(id) {
+    return this.delete(`/gallery/${id}`);
+  }
+  async toggleGalleryStatus(id) {
+    return this.put(`/gallery/${id}/toggle`);
   }
 }
 

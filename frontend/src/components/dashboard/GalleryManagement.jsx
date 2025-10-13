@@ -54,12 +54,15 @@ function GalleryManagement() {
 
   useEffect(() => {
     fetchGalleries();
-  }, []);
+  }, [filterCategory, searchTerm]);
 
   const fetchGalleries = async () => {
     try {
       setLoading(true);
-      const response = await apiService.get('/gallery/admin');
+      const response = await apiService.getAdminGalleries({
+        category: filterCategory,
+        search: searchTerm
+      });
       if (response.success) {
         setGalleries(response.data.galleries);
       } else {
@@ -73,12 +76,8 @@ function GalleryManagement() {
     }
   };
 
-  const filteredGalleries = galleries.filter(gallery => {
-    const matchesSearch = gallery.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         gallery.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || gallery.category === filterCategory;
-    return matchesSearch && matchesCategory;
-  });
+  // Remove client-side filtering since we're now filtering on the server
+  const filteredGalleries = galleries;
 
   const handleAddGallery = () => {
     setFormData({
@@ -115,6 +114,8 @@ function GalleryManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Validation
     if (!formData.title || !formData.description || !formData.category) {
       setError('Please fill in all required fields');
       return;
@@ -129,55 +130,61 @@ function GalleryManagement() {
       setUploading(true);
       setError(null);
 
+      // Prepare form data
       const submitData = new FormData();
       submitData.append('title', formData.title);
       submitData.append('description', formData.description);
       submitData.append('category', formData.category);
-
+      
+      // Always append image for new items, conditionally for updates
       if (formData.image) {
         submitData.append('image', formData.image);
       }
 
-      let response;
-      if (showEditModal) {
-        response = await apiService.put(`/gallery/${editingGallery._id}`, submitData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
-      } else {
-        response = await apiService.post('/gallery', submitData, {
-          headers: { 'Content-Type': 'multipart/form-data' }
-        });
+      // Debug logging
+      console.log('FormData contents:');
+      for (let [key, value] of submitData.entries()) {
+        console.log(key, value);
       }
+
+      // API call
+      const response = showEditModal 
+        ? await apiService.updateGallery(editingGallery._id, submitData)
+        : await apiService.createGallery(submitData);
 
       if (response.success) {
         await fetchGalleries();
-        setShowAddModal(false);
-        setShowEditModal(false);
-        setFormData({
-          title: '',
-          description: '',
-          category: 'destinations',
-          image: null
-        });
-        setImagePreview(null);
+        resetForm();
       } else {
         setError(response.message || 'Failed to save gallery item');
       }
     } catch (err) {
       console.error('Error saving gallery:', err);
-      setError('Failed to save gallery item');
+      // More detailed error message
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to save gallery item';
+      setError(errorMessage);
     } finally {
       setUploading(false);
     }
   };
 
+  const resetForm = () => {
+    setShowAddModal(false);
+    setShowEditModal(false);
+    setFormData({
+      title: '',
+      description: '',
+      category: 'destinations',
+      image: null
+    });
+    setImagePreview(null);
+  };
+
   const handleDeleteGallery = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this gallery item?')) {
-      return;
-    }
+    if (!window.confirm('Are you sure you want to delete this gallery item?')) return;
 
     try {
-      const response = await apiService.delete(`/gallery/${id}`);
+      const response = await apiService.deleteGallery(id);
       if (response.success) {
         await fetchGalleries();
       } else {
@@ -189,9 +196,9 @@ function GalleryManagement() {
     }
   };
 
-  const handleToggleStatus = async (id, currentStatus) => {
+  const handleToggleStatus = async (id) => {
     try {
-      const response = await apiService.put(`/gallery/${id}/toggle`);
+      const response = await apiService.toggleGalleryStatus(id);
       if (response.success) {
         await fetchGalleries();
       } else {
@@ -200,31 +207,6 @@ function GalleryManagement() {
     } catch (err) {
       console.error('Error toggling gallery status:', err);
       setError('Failed to update gallery status');
-    }
-  };
-
-  const handleImageUpdate = async (id, file) => {
-    if (!file) return;
-
-    try {
-      setUploading(true);
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await apiService.put(`/gallery/${id}/image`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-
-      if (response.success) {
-        await fetchGalleries();
-      } else {
-        setError('Failed to update image');
-      }
-    } catch (err) {
-      console.error('Error updating image:', err);
-      setError('Failed to update image');
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -433,7 +415,7 @@ function GalleryManagement() {
                 {/* Action Buttons */}
                 <div className="absolute bottom-2 right-2 flex space-x-1">
                   <button
-                    onClick={() => handleToggleStatus(gallery._id, gallery.isActive)}
+                    onClick={() => handleToggleStatus(gallery._id)}
                     className={`p-1.5 rounded-full backdrop-blur-sm transition-colors ${
                       gallery.isActive 
                         ? 'bg-red-500/80 text-white hover:bg-red-600/80' 
@@ -482,10 +464,7 @@ function GalleryManagement() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4"
-            onClick={() => {
-              setShowAddModal(false);
-              setShowEditModal(false);
-            }}
+            onClick={resetForm}
           >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -499,10 +478,7 @@ function GalleryManagement() {
                   {showAddModal ? 'Add Gallery Item' : 'Edit Gallery Item'}
                 </h2>
                 <button
-                  onClick={() => {
-                    setShowAddModal(false);
-                    setShowEditModal(false);
-                  }}
+                  onClick={resetForm}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-6 w-6" />
@@ -593,10 +569,7 @@ function GalleryManagement() {
                 <div className="flex justify-end space-x-4">
                   <button
                     type="button"
-                    onClick={() => {
-                      setShowAddModal(false);
-                      setShowEditModal(false);
-                    }}
+                    onClick={resetForm}
                     className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
                   >
                     Cancel

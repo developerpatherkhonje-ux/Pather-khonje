@@ -77,9 +77,14 @@ const PaymentVouchers = () => {
         });
         if (res.success) {
           const vouchersList = res.data.items || [];
-          setVouchers(vouchersList);
+          const sortedVouchers = vouchersList.sort((a, b) => {
+            const aNumber = a.voucherNumber || '';
+            const bNumber = b.voucherNumber || '';
+            return aNumber.localeCompare(bNumber, undefined, { numeric: true });
+          });
+          setVouchers(sortedVouchers);
           // Calculate analytics from the loaded vouchers
-          const calculatedSummary = calculateAnalytics(vouchersList);
+          const calculatedSummary = calculateAnalytics(sortedVouchers);
           setSummary(calculatedSummary);
         }
       } catch (error) {
@@ -148,8 +153,13 @@ const PaymentVouchers = () => {
       });
       if (res.success) {
         const vouchersList = res.data.items || [];
-        setVouchers(vouchersList);
-        const calculatedSummary = calculateAnalytics(vouchersList);
+        const sortedVouchers = vouchersList.sort((a, b) => {
+          const aNumber = a.voucherNumber || '';
+          const bNumber = b.voucherNumber || '';
+          return aNumber.localeCompare(bNumber, undefined, { numeric: true });
+        });
+        setVouchers(sortedVouchers);
+        const calculatedSummary = calculateAnalytics(sortedVouchers);
         setSummary(calculatedSummary);
       }
     } catch (error) {
