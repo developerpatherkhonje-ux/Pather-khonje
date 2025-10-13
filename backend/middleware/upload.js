@@ -6,7 +6,8 @@ const fs = require('fs');
 const uploadDirs = {
   places: path.join(__dirname, '..', 'uploads', 'places'),
   hotels: path.join(__dirname, '..', 'uploads', 'hotels'),
-  packages: path.join(__dirname, '..', 'uploads', 'packages')
+  packages: path.join(__dirname, '..', 'uploads', 'packages'),
+  gallery: path.join(__dirname, '..', 'uploads', 'gallery')
 };
 
 Object.values(uploadDirs).forEach(dir => {
@@ -24,6 +25,8 @@ const storage = multer.diskStorage({
       uploadPath = uploadDirs.hotels;
     } else if (req.route.path.includes('packages')) {
       uploadPath = uploadDirs.packages;
+    } else if (req.route.path.includes('gallery')) {
+      uploadPath = uploadDirs.gallery;
     }
     
     cb(null, uploadPath);

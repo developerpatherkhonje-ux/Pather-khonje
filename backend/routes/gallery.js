@@ -229,9 +229,19 @@ router.post('/', authenticateToken, requireAdmin, uploadSingle, async (req, res)
       fs.unlinkSync(req.file.path);
     }
 
+    // More specific error messages
+    let errorMessage = 'Failed to create gallery item';
+    if (error.name === 'ValidationError') {
+      errorMessage = 'Validation error: ' + Object.values(error.errors).map(e => e.message).join(', ');
+    } else if (error.name === 'MongoError' || error.name === 'MongooseError') {
+      errorMessage = 'Database error: Unable to save gallery item';
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+
     res.status(500).json({
       success: false,
-      message: 'Failed to create gallery item'
+      message: errorMessage
     });
   }
 });
