@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { formatDate } from './dateUtils';
 
 // Helper function to load image as base64
 const loadImageAsBase64 = (imagePath) => {
@@ -52,19 +53,8 @@ const tourTerms = [
 
 export async function generateInvoicePdf(invoice, fileName = 'invoice') {
     try {
-        console.log('PDF Generation - Invoice data received:', invoice);
-        console.log('PDF Generation - Hotel Details:', invoice.hotelDetails);
-        console.log('PDF Generation - Additional Benefits:', invoice.hotelDetails?.additionalBenefits);
-        console.log('PDF Generation - Additional Benefits type:', typeof invoice.hotelDetails?.additionalBenefits);
-        console.log('PDF Generation - Additional Benefits length:', invoice.hotelDetails?.additionalBenefits?.length);
-        console.log('PDF Generation - Additional Benefits trimmed:', invoice.hotelDetails?.additionalBenefits?.trim());
-        console.log('PDF Generation - Additional Benefits check result:', invoice.hotelDetails?.additionalBenefits && invoice.hotelDetails?.additionalBenefits?.trim() !== '');
-        console.log('PDF Generation - Full hotelDetails keys:', Object.keys(invoice.hotelDetails || {}));
-        console.log('PDF Generation - Full hotelDetails values:', Object.values(invoice.hotelDetails || {}));
-        
         // Ensure additionalBenefits exists
         if (!invoice.hotelDetails?.additionalBenefits) {
-            console.warn('WARNING: additionalBenefits is missing, using empty string');
             invoice.hotelDetails = {
                 ...invoice.hotelDetails,
                 additionalBenefits: ''
@@ -125,7 +115,7 @@ export async function generateInvoicePdf(invoice, fileName = 'invoice') {
                             <p style="margin: 5px 0; font-size: 14px; color: #666;">Invoice #${invoice.invoiceNumber || 'N/A'}</p>
                         </div>
                         <div style="text-align: right;">
-                            <p style="margin: 5px 0; font-size: 14px; color: #666;">Date: ${invoice.date ? new Date(invoice.date).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+                            <p style="margin: 5px 0; font-size: 14px; color: #666;">Date: ${formatDate(invoice.date || new Date())}</p>
                         </div>
                     </div>
 
@@ -231,6 +221,7 @@ const generateServiceDetails = (invoice) => {
                             <th style="border: 1px solid #93c5fd; padding: 8px; text-align: left; color: #1e40af;">Place</th>
                             <th style="border: 1px solid #93c5fd; padding: 8px; text-align: left; color: #1e40af;">CheckIn</th>
                             <th style="border: 1px solid #93c5fd; padding: 8px; text-align: left; color: #1e40af;">CheckOut</th>
+                            <th style="border: 1px solid #93c5fd; padding: 8px; text-align: left; color: #1e40af;">Days</th>
                             <th style="border: 1px solid #93c5fd; padding: 8px; text-align: left; color: #1e40af;">Nights</th>
                         </tr>
                     </thead>
@@ -238,8 +229,9 @@ const generateServiceDetails = (invoice) => {
                         <tr>
                             <td style="border: 1px solid #93c5fd; padding: 8px;">${invoice.hotelDetails.hotelName || 'N/A'}</td>
                             <td style="border: 1px solid #93c5fd; padding: 8px;">${invoice.hotelDetails.place || invoice.hotelDetails.location || 'N/A'}</td>
-                            <td style="border: 1px solid #93c5fd; padding: 8px;">${invoice.hotelDetails.checkIn ? new Date(invoice.hotelDetails.checkIn).toLocaleDateString() : 'N/A'}</td>
-                            <td style="border: 1px solid #93c5fd; padding: 8px;">${invoice.hotelDetails.checkOut ? new Date(invoice.hotelDetails.checkOut).toLocaleDateString() : 'N/A'}</td>
+                            <td style="border: 1px solid #93c5fd; padding: 8px;">${formatDate(invoice.hotelDetails.checkIn) || 'N/A'}</td>
+                            <td style="border: 1px solid #93c5fd; padding: 8px;">${formatDate(invoice.hotelDetails.checkOut) || 'N/A'}</td>
+                            <td style="border: 1px solid #93c5fd; padding: 8px;">${invoice.hotelDetails.days || 0}</td>
                             <td style="border: 1px solid #93c5fd; padding: 8px;">${invoice.hotelDetails.nights || 0}</td>
                         </tr>
                     </tbody>
@@ -306,8 +298,8 @@ const generateServiceDetails = (invoice) => {
                     <tbody>
                         <tr>
                             <td style="border: 1px solid #86efac; padding: 8px;">${invoice.tourDetails.packageName || 'N/A'}</td>
-                            <td style="border: 1px solid #86efac; padding: 8px;">${invoice.tourDetails.startDate ? new Date(invoice.tourDetails.startDate).toLocaleDateString() : 'N/A'}</td>
-                            <td style="border: 1px solid #86efac; padding: 8px;">${invoice.tourDetails.endDate ? new Date(invoice.tourDetails.endDate).toLocaleDateString() : 'N/A'}</td>
+                            <td style="border: 1px solid #86efac; padding: 8px;">${formatDate(invoice.tourDetails.startDate) || 'N/A'}</td>
+                            <td style="border: 1px solid #86efac; padding: 8px;">${formatDate(invoice.tourDetails.endDate) || 'N/A'}</td>
                             <td style="border: 1px solid #86efac; padding: 8px;">${invoice.tourDetails.days || 0}</td>
                             <td style="border: 1px solid #86efac; padding: 8px;">${invoice.tourDetails.pax || 'N/A'}</td>
                         </tr>

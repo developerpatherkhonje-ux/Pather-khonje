@@ -397,9 +397,9 @@ function PackageManagement() {
 
               <div className="mb-4">
                 <div className="flex flex-wrap gap-1">
-                  {pkg.highlights.slice(0, 3).map((highlight) => (
+                  {pkg.highlights.slice(0, 3).map((highlight, highlightIndex) => (
                     <span
-                      key={highlight}
+                      key={`${pkg.id || pkg._id}-highlight-${highlightIndex}`}
                       className="bg-sky-100 text-sky-700 text-xs px-2 py-1 rounded"
                     >
                       {highlight}

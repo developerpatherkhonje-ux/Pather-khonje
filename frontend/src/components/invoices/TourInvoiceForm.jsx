@@ -5,7 +5,7 @@ import { generateInvoicePdf } from '../../utils/pdf';
 import { generateTourInvoicePdf } from '../../utils/pdfTour';
 import api from '../../services/api';
 
-const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, onCancel, initial, inlineButtons = true, onStateChange }, ref) {
+const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, onCancel, initial, inlineButtons = true, onStateChange, formId = 'tour-invoice-form' }, ref) {
   const [form, setForm] = useState({
     type: 'tour',
     invoiceNumber: '',
@@ -42,14 +42,78 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
   });
   const [loading, setLoading] = useState(false);
   const [savedId, setSavedId] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
   
   React.useEffect(() => {
-    if (initial) setForm(prev => ({ ...prev, ...initial }));
+    if (initial) {
+      // Safely merge initial data ensuring no undefined values
+      const safeInitial = {
+        type: initial.type || 'tour',
+        invoiceNumber: initial.invoiceNumber || '',
+        customer: {
+          name: initial.customer?.name || '',
+          phone: initial.customer?.phone || '',
+          email: initial.customer?.email || '',
+          address: initial.customer?.address || ''
+        },
+        tourDetails: {
+          packageName: initial.tourDetails?.packageName || '',
+          startDate: initial.tourDetails?.startDate ? 
+            (typeof initial.tourDetails.startDate === 'string' && initial.tourDetails.startDate.includes('T') ? 
+              initial.tourDetails.startDate.split('T')[0] : 
+              (typeof initial.tourDetails.startDate === 'string' ? 
+                initial.tourDetails.startDate : 
+                new Date(initial.tourDetails.startDate).toISOString().split('T')[0])) : '',
+          endDate: initial.tourDetails?.endDate ? 
+            (typeof initial.tourDetails.endDate === 'string' && initial.tourDetails.endDate.includes('T') ? 
+              initial.tourDetails.endDate.split('T')[0] : 
+              (typeof initial.tourDetails.endDate === 'string' ? 
+                initial.tourDetails.endDate : 
+                new Date(initial.tourDetails.endDate).toISOString().split('T')[0])) : '',
+          totalDays: initial.tourDetails?.totalDays || initial.tourDetails?.days || '',
+          totalNights: initial.tourDetails?.totalNights || '',
+          adults: initial.tourDetails?.adults || '',
+          children: initial.tourDetails?.children || '',
+          adultPrice: initial.tourDetails?.adultPrice || '',
+          childPrice: initial.tourDetails?.childPrice || '',
+          pax: initial.tourDetails?.pax || '',
+          inclusions: initial.tourDetails?.inclusions || '',
+          exclusions: initial.tourDetails?.exclusions || ''
+        },
+        transportDetails: {
+          modeOfTransport: initial.transportDetails?.modeOfTransport || '',
+          fooding: initial.transportDetails?.fooding || '',
+          pickupPoint: initial.transportDetails?.pickupPoint || '',
+          dropPoint: initial.transportDetails?.dropPoint || '',
+          includedTransportDetails: initial.transportDetails?.includedTransportDetails || ''
+        },
+        hotels: (initial.tourDetails?.hotels || initial.hotels || []).map(hotel => ({
+          ...hotel,
+          checkIn: hotel.checkIn ? 
+            (typeof hotel.checkIn === 'string' && hotel.checkIn.includes('T') ? 
+              hotel.checkIn.split('T')[0] : 
+              new Date(hotel.checkIn).toISOString().split('T')[0]) : '',
+          checkOut: hotel.checkOut ? 
+            (typeof hotel.checkOut === 'string' && hotel.checkOut.includes('T') ? 
+              hotel.checkOut.split('T')[0] : 
+              new Date(hotel.checkOut).toISOString().split('T')[0]) : ''
+        })),
+        subtotal: Number(initial.subtotal || 0),
+        discount: Number(initial.discount || 0),
+        tax: Number(initial.tax || 0),
+        gstPercent: Number(initial.gstPercent || 0),
+        total: Number(initial.total || 0),
+        advancePaid: Number(initial.advancePaid || 0),
+        paymentMethod: initial.paymentMethod || 'Cash'
+      };
+      
+      setForm(safeInitial);
+    }
   }, [initial]);
 
   React.useEffect(() => {
-    onStateChange && onStateChange({ loading, savedId });
-  }, [loading, savedId, onStateChange]);
+    onStateChange && onStateChange({ loading, savedId, isSaved });
+  }, [loading, savedId, isSaved, onStateChange]);
 
   const update = (path, value) => {
     setForm(prev => {
@@ -57,7 +121,16 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
       const parts = path.split('.');
       let obj = next;
       for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
-      obj[parts[parts.length - 1]] = value;
+      // Prevent negative numbers for numeric fields
+      let safeValue = value;
+      if (typeof value === 'string' && !isNaN(value) && value !== '') {
+        const numValue = parseFloat(value);
+        if (numValue < 0) {
+          safeValue = '0';
+        }
+      }
+      
+      obj[parts[parts.length - 1]] = safeValue;
       
       // Auto-calculate subtotal based on adults/children and their prices
       if (path.includes('adults') || path.includes('children') || path.includes('adultPrice') || path.includes('childPrice')) {
@@ -130,35 +203,46 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
     
     setLoading(true);
     try {
-      // Transform the form data to match backend schema
+      let res;
+      let updatedInvoice;
+      
+      // Prepare data with hotels in the correct structure
       const dataToSend = {
         ...form,
         tourDetails: {
           ...form.tourDetails,
-          hotels: form.hotels  // Move hotels into tourDetails
-        }
+          hotels: form.hotels  // Move hotels into tourDetails for backend
+        },
+        invoiceNumber: initial && initial._id ? form.invoiceNumber : undefined,
+        _id: initial && initial._id ? initial._id : undefined
       };
-      // Remove the root-level hotels array
-      delete dataToSend.hotels;
       
-      // Don't send invoiceNumber when creating a new invoice
-      if (!savedId) {
-        delete dataToSend.invoiceNumber;
-      }
+      // Debug: Log the data being sent
+      console.log('TourInvoiceForm - Sending data to backend:', JSON.stringify(dataToSend, null, 2));
+      console.log('TourInvoiceForm - Hotels array:', form.hotels);
+      console.log('TourInvoiceForm - TourDetails hotels:', dataToSend.tourDetails.hotels);
       
-      console.log('TourInvoiceForm - Sending data to backend:', dataToSend);
-      const res = await api.createInvoice(dataToSend);
-      const created = res.data || res;
-      setSavedId(created?._id);
-      
-      // Update form with the generated invoice number from backend
-      if (created?.invoiceNumber) {
-        setForm(prev => ({ ...prev, invoiceNumber: created.invoiceNumber }));
-        toast.success(`${created.invoiceNumber} saved`);
+      // Check if this is an edit operation (has initial data with _id)
+      if (initial && initial._id) {
+        // Update existing invoice
+        res = await api.updateInvoice(initial._id, dataToSend);
+        updatedInvoice = res.data || res;
+        setSavedId(initial._id);
+        toast.success(`${updatedInvoice.invoiceNumber || 'Invoice'} updated successfully`);
       } else {
-        toast.success('Invoice saved');
+        // Create new invoice
+        res = await api.createInvoice(dataToSend);
+        updatedInvoice = res.data || res;
+        setSavedId(updatedInvoice?._id);
+        if (updatedInvoice?.invoiceNumber) {
+          toast.success(`${updatedInvoice.invoiceNumber} saved`);
+        } else {
+          toast.success('Invoice saved');
+        }
       }
-      onCreated && onCreated(created);
+      
+      setIsSaved(true);
+      onCreated && onCreated(updatedInvoice);
     } catch (err) {
       toast.error(err.message || 'Failed to save invoice');
     } finally { 
@@ -175,7 +259,7 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
     const fileName = form.invoiceNumber || `TRP${String(Date.now()).slice(-6)}`;
     try {
       const data = {
-        invoiceNumber: form.invoiceNumber || fileName,
+        invoiceNumber: fileName,
         date: Date.now(),
         customer: form.customer,
         tourDetails: {
@@ -191,6 +275,12 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
         total: form.total,
         advancePaid: form.advancePaid,
       };
+      
+      // Debug: Log the data being sent to PDF
+      console.log('TourInvoiceForm - PDF data:', JSON.stringify(data, null, 2));
+      console.log('TourInvoiceForm - PDF hotels:', data.hotels);
+      console.log('TourInvoiceForm - PDF tourDetails.hotels:', data.tourDetails.hotels);
+      
       await generateTourInvoicePdf(data, fileName);
       toast.success(`${fileName} downloaded`);
     } catch (err) {
@@ -239,19 +329,25 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
   }), [loading, savedId, saveInvoice]);
 
   return (
-    <form onSubmit={submit} className="space-y-5">
+    <form id={formId} onSubmit={submit} className="space-y-5">
       {/* Header with action buttons */}
       {inlineButtons && (
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-sm text-sky-600">Invoice #{form.invoiceNumber || '—'}</div>
+            <div className="text-sm text-sky-600">Invoice #{savedId ? savedId.slice(-6).toUpperCase() : '—'}</div>
           </div>
           <div className="flex gap-3">
-            <button type="submit" disabled={loading} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-              <Save className="h-4 w-4" /> {loading ? 'Saving...' : 'Save Invoice'}
-            </button>
-            <button type="button" disabled={!savedId} onClick={downloadPdf} className="bg-sky-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-              <Download className="h-4 w-4" /> Download PDF
+            <button 
+              type="submit" 
+              disabled={loading || isSaved} 
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-500 ${
+                isSaved 
+                  ? 'bg-red-500 text-white cursor-not-allowed' 
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
+            >
+              <Save className="h-4 w-4" /> 
+              {loading ? 'Saving...' : isSaved ? 'Saved ✓' : (initial && initial._id ? 'Update Invoice' : 'Save Invoice')}
             </button>
           </div>
         </div>
@@ -272,50 +368,50 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
       <div className="border rounded-xl">
         <div className="px-4 py-3 border-b font-semibold">Tour Package Details</div>
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-          <input className="px-4 py-3 border rounded-lg" placeholder="Package Name" value={form.tourDetails.packageName} onChange={e => update('tourDetails.packageName', e.target.value)} required />
-          <input className="px-4 py-3 border rounded-lg" placeholder="Pax (e.g. 2A + 1C)" value={form.tourDetails.pax} onChange={e => update('tourDetails.pax', e.target.value)} />
+          <input className="px-4 py-3 border rounded-lg" placeholder="Package Name" value={form.tourDetails.packageName || ''} onChange={e => update('tourDetails.packageName', e.target.value)} required />
+          <input className="px-4 py-3 border rounded-lg" placeholder="Pax (e.g. 2A + 1C)" value={form.tourDetails.pax || ''} onChange={e => update('tourDetails.pax', e.target.value)} />
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:col-span-2">
             <div>
               <div className="text-xs font-medium text-gray-600 mb-1">Starting Date</div>
-              <input type="date" className="w-full px-4 py-3 border rounded-lg" value={form.tourDetails.startDate} onChange={e => update('tourDetails.startDate', e.target.value)} required />
+              <input type="date" className="w-full px-4 py-3 border rounded-lg" value={form.tourDetails.startDate || ''} onChange={e => update('tourDetails.startDate', e.target.value)} required />
             </div>
             <div>
               <div className="text-xs font-medium text-gray-600 mb-1">Ending Date</div>
-              <input type="date" className="w-full px-4 py-3 border rounded-lg" value={form.tourDetails.endDate} onChange={e => update('tourDetails.endDate', e.target.value)} required />
+              <input type="date" className="w-full px-4 py-3 border rounded-lg" value={form.tourDetails.endDate || ''} onChange={e => update('tourDetails.endDate', e.target.value)} required />
             </div>
             <div>
               <div className="text-xs font-medium text-gray-600 mb-1">Total Days</div>
-              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.totalDays} onChange={e => update('tourDetails.totalDays', e.target.value)} />
+              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.totalDays || ''} onChange={e => update('tourDetails.totalDays', e.target.value)} />
             </div>
             <div>
               <div className="text-xs font-medium text-gray-600 mb-1">Total Nights</div>
-              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.totalNights} onChange={e => update('tourDetails.totalNights', e.target.value)} />
+              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.totalNights || ''} onChange={e => update('tourDetails.totalNights', e.target.value)} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:col-span-2">
             <div>
               <div className="text-xs font-medium text-gray-600 mb-1">Number of Adults</div>
-              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.adults} onChange={e => update('tourDetails.adults', e.target.value)} />
+              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.adults || ''} onChange={e => update('tourDetails.adults', e.target.value)} />
             </div>
             <div>
               <div className="text-xs font-medium text-gray-600 mb-1">Number of Children</div>
-              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.children} onChange={e => update('tourDetails.children', e.target.value)} />
+              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.children || ''} onChange={e => update('tourDetails.children', e.target.value)} />
             </div>
             <div>
               <div className="text-xs font-medium text-gray-600 mb-1">Adult Price (₹)</div>
-              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.adultPrice} onChange={e => update('tourDetails.adultPrice', e.target.value)} />
+              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.adultPrice || ''} onChange={e => update('tourDetails.adultPrice', e.target.value)} />
             </div>
             <div>
               <div className="text-xs font-medium text-gray-600 mb-1">Child Price (₹)</div>
-              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.childPrice} onChange={e => update('tourDetails.childPrice', e.target.value)} />
+              <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tourDetails.childPrice || ''} onChange={e => update('tourDetails.childPrice', e.target.value)} />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:col-span-2">
-            <textarea className="px-4 py-3 border rounded-lg" placeholder="Inclusions" value={form.tourDetails.inclusions} onChange={e => update('tourDetails.inclusions', e.target.value)} />
-            <textarea className="px-4 py-3 border rounded-lg" placeholder="Exclusions" value={form.tourDetails.exclusions} onChange={e => update('tourDetails.exclusions', e.target.value)} />
+            <textarea className="px-4 py-3 border rounded-lg" placeholder="Inclusions" value={form.tourDetails.inclusions || ''} onChange={e => update('tourDetails.inclusions', e.target.value)} />
+            <textarea className="px-4 py-3 border rounded-lg" placeholder="Exclusions" value={form.tourDetails.exclusions || ''} onChange={e => update('tourDetails.exclusions', e.target.value)} />
           </div>
         </div>
       </div>
@@ -407,7 +503,7 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
 
       {/* Transport Details */}
       <div className="border rounded-xl">
-        <div className="px-4 py-3 border-b font-semibold">Transport Details</div>
+        <div className="px-4 py-3 border-b font-semibold">Other Details</div>
         <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <input className="w-full px-4 py-3 border rounded-lg" placeholder="Mode of Transport" value={form.transportDetails.modeOfTransport} onChange={e => update('transportDetails.modeOfTransport', e.target.value)} />
@@ -433,19 +529,19 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
         <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">GST (%)</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.gstPercent} onChange={e => update('gstPercent', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.gstPercent || ''} onChange={e => update('gstPercent', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">GST Amount (₹)</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tax} onChange={e => update('tax', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.tax || ''} onChange={e => update('tax', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Discount (₹)</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.discount} onChange={e => update('discount', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.discount || ''} onChange={e => update('discount', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Advance Paid (₹)</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.advancePaid} onChange={e => update('advancePaid', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.advancePaid || ''} onChange={e => update('advancePaid', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Payment Method</div>
@@ -484,17 +580,6 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
         </div>
       </div>
 
-      {inlineButtons && (
-        <div className="flex gap-3">
-          <button type="submit" disabled={loading} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-            <Save className="h-4 w-4" /> {loading ? 'Saving...' : 'Save Invoice'}
-          </button>
-          <button type="button" disabled={!savedId} onClick={downloadPdf} className="bg-sky-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-            <Download className="h-4 w-4" /> Download PDF
-          </button>
-          <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg border">Cancel</button>
-        </div>
-      )}
     </form>
   );
 });

@@ -47,7 +47,7 @@ function PaymentVoucherPage() {
             setVoucherNumber(voucher.voucherNumber || '');
             setSavedId(voucher.id);
             setForm({
-              date: voucher.date || '',
+              date: voucher.date ? new Date(voucher.date).toISOString().split('T')[0] : '',
               payeeName: voucher.payeeName || '',
               contact: voucher.contact || '',
               address: voucher.address || '',
@@ -275,11 +275,11 @@ function PaymentVoucherPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm text-gray-600 mb-2">Advance Payment (₹)</label>
-            <input type="number" min="0" value={form.advance} onChange={e => setForm({ ...form, advance: Math.max(0, parseInt(e.target.value || '0', 10)) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="0" />
+            <input type="number" min="0" value={form.advance || ''} onChange={e => setForm({ ...form, advance: Math.max(0, parseInt(e.target.value || '0', 10)) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="0" />
           </div>
           <div>
             <label className="block text-sm text-gray-600 mb-2">Total Amount (₹) *</label>
-            <input type="number" value={form.total} onChange={e => setForm({ ...form, total: parseInt(e.target.value || '0', 10) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="0" />
+            <input type="number" min="0" value={form.total || ''} onChange={e => setForm({ ...form, total: parseInt(e.target.value || '0', 10) })} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500" placeholder="0" />
           </div>
           <div>
             <label className="block text-sm text-gray-600 mb-2">Amount Due (₹)</label>

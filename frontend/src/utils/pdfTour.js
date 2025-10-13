@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { formatDate } from './dateUtils';
 
 // Helper function to load image as base64
 const loadImageAsBase64 = (imagePath) => {
@@ -47,6 +48,7 @@ export async function generateTourInvoicePdf(invoice, fileName = 'tour_invoice')
         console.log('Tour PDF - Transport Details fooding:', invoice.transportDetails?.fooding);
         console.log('Tour PDF - Transport Details pickupPoint:', invoice.transportDetails?.pickupPoint);
         console.log('Tour PDF - Transport Details dropPoint:', invoice.transportDetails?.dropPoint);
+        console.log('Tour PDF - Transport Details includedTransportDetails:', invoice.transportDetails?.includedTransportDetails);
         console.log('Tour PDF - Hotels data:', invoice.hotels);
         console.log('Tour PDF - Hotels length:', invoice.hotels?.length || 0);
         
@@ -102,7 +104,7 @@ export async function generateTourInvoicePdf(invoice, fileName = 'tour_invoice')
                             <p style="margin: 5px 0; font-size: 14px; color: #666;">Invoice #${invoice.invoiceNumber || 'N/A'}</p>
                         </div>
                         <div style="text-align: right;">
-                            <p style="margin: 5px 0; font-size: 14px; color: #666;">Date: ${invoice.date ? new Date(invoice.date).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+                            <p style="margin: 5px 0; font-size: 14px; color: #666;">Date: ${formatDate(invoice.date || new Date())}</p>
                         </div>
                     </div>
 
@@ -215,8 +217,8 @@ const generateTourPackageDetails = (invoice) => {
                     <tbody>
                         <tr>
                             <td style="border: 1px solid #86efac; padding: 8px;">${invoice.tourDetails.packageName || 'N/A'}</td>
-                            <td style="border: 1px solid #86efac; padding: 8px;">${invoice.tourDetails.startDate ? new Date(invoice.tourDetails.startDate).toLocaleDateString() : 'N/A'}</td>
-                            <td style="border: 1px solid #86efac; padding: 8px;">${invoice.tourDetails.endDate ? new Date(invoice.tourDetails.endDate).toLocaleDateString() : 'N/A'}</td>
+                            <td style="border: 1px solid #86efac; padding: 8px;">${formatDate(invoice.tourDetails.startDate) || 'N/A'}</td>
+                            <td style="border: 1px solid #86efac; padding: 8px;">${formatDate(invoice.tourDetails.endDate) || 'N/A'}</td>
                             <td style="border: 1px solid #86efac; padding: 8px;">${(() => {
                                 const days = invoice.tourDetails.totalDays || invoice.tourDetails.days || 0;
                                 if (days === 0 && invoice.tourDetails.startDate && invoice.tourDetails.endDate) {
@@ -288,8 +290,8 @@ const generateHotelDetails = (invoice) => {
                             <tr>
                                 <td style="border: 1px solid #86efac; padding: 8px;">${hotel.hotelName || hotel.name || 'N/A'}</td>
                                 <td style="border: 1px solid #86efac; padding: 8px;">${hotel.place || 'N/A'}</td>
-                                <td style="border: 1px solid #86efac; padding: 8px;">${hotel.checkIn ? new Date(hotel.checkIn).toLocaleDateString() : 'N/A'}</td>
-                                <td style="border: 1px solid #86efac; padding: 8px;">${hotel.checkOut ? new Date(hotel.checkOut).toLocaleDateString() : 'N/A'}</td>
+                                <td style="border: 1px solid #86efac; padding: 8px;">${formatDate(hotel.checkIn) || 'N/A'}</td>
+                                <td style="border: 1px solid #86efac; padding: 8px;">${formatDate(hotel.checkOut) || 'N/A'}</td>
                                 <td style="border: 1px solid #86efac; padding: 8px;">${hotel.roomType || 'N/A'}</td>
                             </tr>
                         `).join('')}
@@ -316,7 +318,7 @@ const generateTransportDetails = (invoice) => {
         return `
             <!-- Transport Details -->
             <div style="background: linear-gradient(to right, #f0fdf4, #f0f9ff); padding: 20px; border-radius: 8px; margin-bottom: 30px; border: 1px solid #bbf7d0;">
-                <h3 style="color: #374151; font-size: 18px; margin: 0 0 15px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Transport Details</h3>
+                <h3 style="color: #374151; font-size: 18px; margin: 0 0 15px 0; border-bottom: 1px solid #e5e7eb; padding-bottom: 5px;">Other Details</h3>
                 
                 <!-- Transport Details Table -->
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
@@ -353,6 +355,23 @@ const generateTransportDetails = (invoice) => {
                         </tr>
                     </tbody>
                 </table>
+                
+                 <!-- Included Transport Details Row -->
+                 ${(() => {
+                     const includedDetails = invoice.transportDetails?.includedTransportDetails || invoice.tourDetails?.includedTransportDetails || '';
+                     console.log('PDF - Included Transport Details:', includedDetails);
+                     if (includedDetails && includedDetails.trim() !== '') {
+                         return `
+                             <div style="margin-top: 15px; width: 100%; overflow: hidden;">
+                                 <div style="display: flex; align-items: flex-start; gap: 10px; width: 100%;">
+                                     <div style="font-weight: 600; color: #166534; min-width: 180px; flex-shrink: 0;">Included Transport Details:</div>
+                                     <div style="color: #374151; flex: 1; max-width: calc(100% - 200px); word-wrap: break-word; overflow-wrap: break-word; white-space: normal; line-height: 1.4;">${includedDetails}</div>
+                                 </div>
+                             </div>
+                         `;
+                     }
+                     return '';
+                 })()}
             </div>
         `;
     }

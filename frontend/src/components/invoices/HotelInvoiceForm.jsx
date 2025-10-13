@@ -19,10 +19,51 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
     paymentMethod: 'Cash'
   });
   React.useEffect(() => {
-    if (initial) setForm(prev => ({ ...prev, ...initial }));
+    if (initial) {
+      // Safely merge initial data ensuring no undefined values
+      const safeInitial = {
+        type: initial.type || 'hotel',
+        customer: {
+          name: initial.customer?.name || '',
+          phone: initial.customer?.phone || '',
+          email: initial.customer?.email || '',
+          address: initial.customer?.address || ''
+        },
+        hotelDetails: {
+          hotelName: initial.hotelDetails?.hotelName || '',
+          place: initial.hotelDetails?.place || '',
+          address: initial.hotelDetails?.address || '',
+          additionalBenefits: initial.hotelDetails?.additionalBenefits || '',
+          checkIn: initial.hotelDetails?.checkIn ? 
+            (typeof initial.hotelDetails.checkIn === 'string' && initial.hotelDetails.checkIn.includes('T') ? 
+              initial.hotelDetails.checkIn.split('T')[0] : 
+              new Date(initial.hotelDetails.checkIn).toISOString().split('T')[0]) : '',
+          checkOut: initial.hotelDetails?.checkOut ? 
+            (typeof initial.hotelDetails.checkOut === 'string' && initial.hotelDetails.checkOut.includes('T') ? 
+              initial.hotelDetails.checkOut.split('T')[0] : 
+              new Date(initial.hotelDetails.checkOut).toISOString().split('T')[0]) : '',
+          nights: Number(initial.hotelDetails?.nights || 0),
+          days: Number(initial.hotelDetails?.days || 0),
+          roomType: initial.hotelDetails?.roomType || '',
+          rooms: Number(initial.hotelDetails?.rooms || 1),
+          pricePerNight: Number(initial.hotelDetails?.pricePerNight || 0),
+          adults: Number(initial.hotelDetails?.adults || 1),
+          children: Number(initial.hotelDetails?.children || 0)
+        },
+        subtotal: Number(initial.subtotal || 0),
+        discount: Number(initial.discount || 0),
+        tax: Number(initial.tax || 0),
+        total: Number(initial.total || 0),
+        advancePaid: Number(initial.advancePaid || 0),
+        paymentMethod: initial.paymentMethod || 'Cash'
+        };
+      
+      setForm(safeInitial);
+    }
   }, [initial]);
   const [loading, setLoading] = useState(false);
   const [savedId, setSavedId] = useState(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   const addDays = (dateStr, days) => {
     const d = new Date(dateStr);
@@ -41,22 +82,37 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
   };
 
   const update = (path, value) => {
-    if (path === 'hotelDetails.additionalBenefits') {
-      console.log('Updating additionalBenefits:', value);
-    }
     setForm(prev => {
       const next = { ...prev };
       const parts = path.split('.');
       let obj = next;
       for (let i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
-      obj[parts[parts.length - 1]] = value;
-      if (path === 'hotelDetails.additionalBenefits') {
-        console.log('Updated next.hotelDetails.additionalBenefits:', next.hotelDetails.additionalBenefits);
+      
+      // Ensure value is never undefined - use empty string for strings, 0 for numbers
+      let safeValue = value;
+      if (value === undefined || value === null) {
+        // Determine the type based on the field name or current value
+        const currentValue = obj[parts[parts.length - 1]];
+        if (typeof currentValue === 'number') {
+          safeValue = 0;
+        } else {
+          safeValue = '';
+        }
       }
+      
+      // Prevent negative numbers for numeric fields
+      if (typeof safeValue === 'string' && !isNaN(safeValue) && safeValue !== '') {
+        const numValue = parseFloat(safeValue);
+        if (numValue < 0) {
+          safeValue = '0';
+        }
+      }
+      
+      obj[parts[parts.length - 1]] = safeValue;
       // derive nights/days from dates when available
       if (path === 'hotelDetails.checkIn' || path === 'hotelDetails.checkOut') {
-        const ci = new Date(next.hotelDetails.checkIn);
-        const co = new Date(next.hotelDetails.checkOut);
+        const ci = new Date(next.hotelDetails.checkIn || '');
+        const co = new Date(next.hotelDetails.checkOut || '');
         if (!isNaN(ci) && !isNaN(co)) {
           const ms = Math.max(0, co - ci);
           const nightsCalc = Math.floor(ms / (1000 * 60 * 60 * 24));
@@ -88,19 +144,40 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
 
   const submit = async (e) => {
     e.preventDefault();
+    
     setLoading(true);
     try {
-      // Don't send invoiceNumber when creating a new invoice
-      const dataToSend = savedId ? form : { ...form, invoiceNumber: undefined };
-      const res = await api.createInvoice(dataToSend);
-      const created = res.data || res;
-      setSavedId(created?._id);
-      if (created?.invoiceNumber) {
-        toast.success(`${created.invoiceNumber} saved`);
+      let res;
+      let updatedInvoice;
+      
+      // Check if this is an edit operation (has initial data with _id)
+      if (initial && initial._id) {
+        // Update existing invoice
+        const dataToSend = { ...form, _id: initial._id };
+        res = await api.updateInvoice(initial._id, dataToSend);
+        updatedInvoice = res.data || res;
+        setSavedId(initial._id);
+        toast.success(`${updatedInvoice.invoiceNumber || 'Invoice'} updated successfully`);
       } else {
-        toast.success('Invoice saved');
+        // Create new invoice
+        const dataToSend = { ...form, invoiceNumber: undefined };
+        res = await api.createInvoice(dataToSend);
+        updatedInvoice = res.data || res;
+        setSavedId(updatedInvoice?._id);
+        if (updatedInvoice?.invoiceNumber) {
+          toast.success(`${updatedInvoice.invoiceNumber} saved`);
+        } else {
+          toast.success('Invoice saved');
+        }
       }
-      onCreated && onCreated(created);
+      
+      setIsSaved(true);
+      onCreated && onCreated(updatedInvoice);
+      
+      // Reset saved state after a short delay to allow re-saving
+      setTimeout(() => {
+        setIsSaved(false);
+      }, 2000);
     } catch (err) {
       toast.error(err.message || 'Failed to save invoice');
     } finally { setLoading(false); }
@@ -108,73 +185,22 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
 
   const downloadPdf = async () => {
     const fileName = form.invoiceNumber || `HTL${String(Date.now()).slice(-6)}`;
-    
-    // Debug form state immediately
-    console.log('=== PDF GENERATION DEBUG ===');
-    console.log('Current form state:', form);
-    console.log('Current form.hotelDetails:', form.hotelDetails);
-    console.log('Current form.hotelDetails.additionalBenefits:', form.hotelDetails.additionalBenefits);
-    console.log('Current form.hotelDetails.additionalBenefits type:', typeof form.hotelDetails.additionalBenefits);
-    console.log('Current form.hotelDetails.additionalBenefits length:', form.hotelDetails.additionalBenefits?.length);
-    console.log('=== END DEBUG ===');
-    
     try {
-      // Ensure additionalBenefits is properly passed
-      console.log('BEFORE data preparation - form.hotelDetails.additionalBenefits:', form.hotelDetails.additionalBenefits);
-      console.log('BEFORE data preparation - typeof:', typeof form.hotelDetails.additionalBenefits);
-      console.log('BEFORE data preparation - length:', form.hotelDetails.additionalBenefits?.length);
-      
-      // TEMPORARY TEST: Force a value to see if PDF generation works
-      const additionalBenefitsValue = form.hotelDetails.additionalBenefits || '';
-      const testValue = additionalBenefitsValue || 'TEST VALUE FROM FORM';
-      console.log('Test value being used:', testValue);
-      
-      const hotelDetailsWithBenefits = {
-        ...form.hotelDetails,
-        additionalBenefits: testValue
-      };
-      
-      console.log('AFTER data preparation - hotelDetailsWithBenefits.additionalBenefits:', hotelDetailsWithBenefits.additionalBenefits);
-      console.log('AFTER data preparation - typeof:', typeof hotelDetailsWithBenefits.additionalBenefits);
-      console.log('AFTER data preparation - length:', hotelDetailsWithBenefits.additionalBenefits?.length);
-      
       const data = {
         invoiceNumber: fileName,
         date: Date.now(),
         customer: form.customer,
-        hotelDetails: hotelDetailsWithBenefits,
+        hotelDetails: form.hotelDetails,
         subtotal: form.subtotal,
         discount: form.discount,
         tax: form.tax,
         total: form.total,
         advancePaid: form.advancePaid,
       };
-      console.log('PDF Data being sent:', data);
-      console.log('Hotel Details:', data.hotelDetails);
-      console.log('Additional Benefits:', data.hotelDetails.additionalBenefits);
-      console.log('Form state:', form);
-      console.log('Form hotelDetails:', form.hotelDetails);
-      console.log('Form additionalBenefits:', form.hotelDetails.additionalBenefits);
-      console.log('HotelDetails keys:', Object.keys(data.hotelDetails));
-      console.log('HotelDetails values:', Object.values(data.hotelDetails));
-      
-      // Verify additionalBenefits is not undefined
-      if (data.hotelDetails.additionalBenefits === undefined) {
-        console.error('ERROR: additionalBenefits is undefined in data being sent to PDF');
-        console.log('Form additionalBenefits value:', form.hotelDetails.additionalBenefits);
-        console.log('Form additionalBenefits type:', typeof form.hotelDetails.additionalBenefits);
-      } else if (data.hotelDetails.additionalBenefits === '') {
-        console.warn('WARNING: additionalBenefits is empty string');
-        console.log('Form additionalBenefits value:', form.hotelDetails.additionalBenefits);
-        console.log('Form additionalBenefits type:', typeof form.hotelDetails.additionalBenefits);
-      } else {
-        console.log('SUCCESS: additionalBenefits is defined:', data.hotelDetails.additionalBenefits);
-      }
       await generateInvoicePdf(data, fileName);
       toast.success(`${fileName} downloaded`);
     } catch (err) {
       console.error('PDF generation failed:', err);
-      console.log('Falling back to html2canvas method');
       // Ultimate fallback: capture page
       try {
         const target = document.body;
@@ -217,11 +243,17 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
             <div className="text-sm text-sky-600">Invoice #{savedId ? savedId.slice(-6).toUpperCase() : '—'}</div>
           </div>
           <div className="flex gap-3">
-            <button type="submit" disabled={loading} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-              <Save className="h-4 w-4" /> {loading ? 'Saving...' : 'Save Invoice'}
-            </button>
-            <button type="button" disabled={!savedId} onClick={downloadPdf} className="bg-sky-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
-              <Download className="h-4 w-4" /> Download PDF
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className={`px-4 py-2 rounded-lg flex items-center gap-2 transition-all duration-500 ${
+                isSaved 
+                  ? 'bg-red-500 text-white cursor-not-allowed' 
+                  : 'bg-green-600 text-white hover:bg-green-700'
+              }`}
+            >
+              <Save className="h-4 w-4" /> 
+              {loading ? 'Saving...' : isSaved ? 'Saved ✓' : (initial && initial._id ? 'Update Invoice' : 'Save Invoice')}
             </button>
           </div>
         </div>
@@ -232,10 +264,10 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
         <div className="border rounded-xl">
           <div className="px-4 py-3 border-b font-semibold">Customer Information</div>
           <div className="p-4 space-y-3">
-            <input className="w-full px-4 py-3 border rounded-lg" placeholder="Customer Name" value={form.customer.name} onChange={e => update('customer.name', e.target.value)} />
-            <textarea className="w-full px-4 py-3 border rounded-lg" placeholder="Address" value={form.customer.address} onChange={e => update('customer.address', e.target.value)} />
-            <input className="w-full px-4 py-3 border rounded-lg" placeholder="Contact Number" value={form.customer.phone} onChange={e => update('customer.phone', e.target.value)} />
-            <input className="w-full px-4 py-3 border rounded-lg" placeholder="Email" value={form.customer.email} onChange={e => update('customer.email', e.target.value)} />
+            <input className="w-full px-4 py-3 border rounded-lg" placeholder="Customer Name" value={form.customer.name || ''} onChange={e => update('customer.name', e.target.value)} />
+            <textarea className="w-full px-4 py-3 border rounded-lg" placeholder="Address" value={form.customer.address || ''} onChange={e => update('customer.address', e.target.value)} />
+            <input className="w-full px-4 py-3 border rounded-lg" placeholder="Contact Number" value={form.customer.phone || ''} onChange={e => update('customer.phone', e.target.value)} />
+            <input className="w-full px-4 py-3 border rounded-lg" placeholder="Email" value={form.customer.email || ''} onChange={e => update('customer.email', e.target.value)} />
           </div>
         </div>
         <div className="border rounded-xl">
@@ -264,11 +296,11 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Nights</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.nights} onChange={e => update('hotelDetails.nights', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.nights || ''} onChange={e => update('hotelDetails.nights', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Days</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.days} onChange={e => update('hotelDetails.days', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.days || ''} onChange={e => update('hotelDetails.days', e.target.value)} />
           </div>
         </div>
       </div>
@@ -279,28 +311,29 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
         <div className="p-4 grid grid-cols-1 md:grid-cols-5 gap-4">
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Room Type</div>
-            <select className="w-full px-4 py-3 border rounded-lg" value={form.hotelDetails.roomType} onChange={e => update('hotelDetails.roomType', e.target.value)}>
-              <option value="">Select Room Type</option>
-              <option>Standard</option>
-              <option>Deluxe</option>
-              <option>Suite</option>
-            </select>
+            <input 
+              type="text" 
+              className="w-full px-4 py-3 border rounded-lg" 
+              placeholder="Enter room type" 
+              value={form.hotelDetails.roomType} 
+              onChange={e => update('hotelDetails.roomType', e.target.value)} 
+            />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Rooms</div>
-            <input type="number" min="1" className="w-full px-4 py-3 border rounded-lg" placeholder="1" value={form.hotelDetails.rooms} onChange={e => update('hotelDetails.rooms', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.rooms || ''} onChange={e => update('hotelDetails.rooms', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Price/Night</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.pricePerNight} onChange={e => update('hotelDetails.pricePerNight', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.pricePerNight || ''} onChange={e => update('hotelDetails.pricePerNight', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Adults</div>
-            <input type="number" min="1" className="w-full px-4 py-3 border rounded-lg" placeholder="1" value={form.hotelDetails.adults} onChange={e => update('hotelDetails.adults', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.adults || ''} onChange={e => update('hotelDetails.adults', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Children</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.children} onChange={e => update('hotelDetails.children', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.hotelDetails.children || ''} onChange={e => update('hotelDetails.children', e.target.value)} />
           </div>
         </div>
       </div>
@@ -311,11 +344,11 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
         <div className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Discount (₹)</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.discount} onChange={e => update('discount', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.discount || ''} onChange={e => update('discount', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Advance Paid (₹)</div>
-            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.advancePaid} onChange={e => update('advancePaid', e.target.value)} />
+            <input type="number" min="0" className="w-full px-4 py-3 border rounded-lg" placeholder="0" value={form.advancePaid || ''} onChange={e => update('advancePaid', e.target.value)} />
           </div>
           <div>
             <div className="text-xs font-medium text-gray-600 mb-1">Payment Method</div>
@@ -354,13 +387,6 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
         </div>
       </div>
 
-      {inlineButtons && (
-        <div className="flex gap-3">
-          <button type="submit" disabled={loading} className="bg-green-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Save className="h-4 w-4" /> {loading ? 'Saving...' : 'Save Invoice'}</button>
-          <button type="button" disabled={!savedId} onClick={downloadPdf} className="bg-sky-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"><Download className="h-4 w-4" /> Download PDF</button>
-          <button type="button" onClick={onCancel} className="px-4 py-2 rounded-lg border">Cancel</button>
-        </div>
-      )}
     </form>
   );
 }

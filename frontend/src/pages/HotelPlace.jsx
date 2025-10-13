@@ -83,7 +83,11 @@ function HotelPlace() {
       
       const response = await apiService.getHotelsByPlace(placeId);
       if (response.success) {
-        setHotels(response.data.hotels || []);
+        // Sort hotels alphabetically by name
+        const sortedHotels = (response.data.hotels || []).sort((a, b) => 
+          (a.name || '').localeCompare(b.name || '', 'en', { sensitivity: 'base' })
+        );
+        setHotels(sortedHotels);
         setPlaceName(response.data.place?.name || '');
 
         // Derive primary image for the place to use in hero background

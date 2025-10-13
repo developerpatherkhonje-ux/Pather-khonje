@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, Edit, Trash2, Hotel, Star, MapPin, Wifi, Car, Coffee, Dumbbell, Upload, X } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Hotel, Star, MapPin, Wifi, Car, Coffee, Dumbbell, Upload, X, ArrowUpDown } from 'lucide-react';
 import apiService from '../../services/api';
 
 function HotelManagement() {
@@ -12,6 +12,7 @@ function HotelManagement() {
   const [formData, setFormData] = useState({
     name: '',
     placeId: '',
+    description: '',
     images: [],
     rating: 4.5,
     address: '',
@@ -22,7 +23,7 @@ function HotelManagement() {
   });
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const availableAmenities = ['Wi-Fi', 'Parking', 'Restaurant', 'Gym', 'Spa', 'Pool', 'Bar', 'Room Service', 'Laundry', 'Conference Hall'];
+  const availableAmenities = ['Wi-Fi', 'Parking', 'Restaurant', 'Gym', 'Spa', 'Pool', 'Bar', 'Room Service', 'Laundry', 'Conference Hall', 'Lift'];
 
   useEffect(() => {
     const loadInitial = async () => {
@@ -112,7 +113,7 @@ function HotelManagement() {
   };
 
   const handleAddHotel = async () => {
-    if (!formData.name || !formData.placeId || !formData.address || !formData.priceRange) return;
+    if (!formData.name || !formData.placeId || !formData.address || !formData.description || !formData.priceRange) return;
     try {
       setUploading(true);
       
@@ -131,19 +132,29 @@ function HotelManagement() {
       // Step 2: Build payload including Cloudinary images (if any)
       const cloudinaryFiles = uploaded?.data?.files || [];
       const payload = {
-        name: formData.name,
+        name: formData.name.trim(),
         placeId: formData.placeId,
-        description: 'A beautiful hotel offering excellent accommodation and services',
+        description: formData.description || 'A beautiful hotel offering excellent accommodation and services',
         image: cloudinaryFiles[0]?.url || undefined,
         images: cloudinaryFiles, // Persist Cloudinary objects directly
-        address: formData.address,
-        rating: formData.rating,
-        amenities: formData.amenities,
-        priceRange: formData.priceRange,
-        roomTypes: []
+        address: formData.address.trim(),
+        rating: formData.rating || 4.0,
+        amenities: formData.amenities || [],
+        priceRange: formData.priceRange.trim(),
+        roomTypes: formData.roomTypes || []
       };
       
       console.log('Sending hotel creation payload:', payload);
+      console.log('Payload validation check:');
+      console.log('- name length:', payload.name.length, '(min: 2, max: 200)');
+      console.log('- description length:', payload.description.length, '(min: 3, max: 2000)');
+      console.log('- address length:', payload.address.length, '(min: 3, max: 500)');
+      console.log('- priceRange length:', payload.priceRange.length, '(min: 1, max: 100)');
+      console.log('- placeId format:', payload.placeId, '(should be MongoDB ObjectId)');
+      console.log('- rating value:', payload.rating, '(min: 1, max: 5)');
+      console.log('- amenities type:', Array.isArray(payload.amenities), 'length:', payload.amenities.length);
+      console.log('- roomTypes type:', Array.isArray(payload.roomTypes), 'length:', payload.roomTypes.length);
+      console.log('- images type:', Array.isArray(payload.images), 'length:', payload.images.length);
       
       const res = await apiService.createHotel(payload);
       if (res.success) {
@@ -161,7 +172,23 @@ function HotelManagement() {
       }
     } catch (e) {
       console.error('Add hotel error:', e);
-      alert('Error creating hotel: ' + e.message);
+      console.error('Error response:', e.response);
+      console.error('Error data:', e.response?.data);
+      console.error('Error details:', e.response?.data || e.message);
+      
+      const errorMessage = e.response?.data?.message || e.message || 'Unknown error occurred';
+      const validationErrors = e.response?.data?.errors || [];
+      
+      console.log('Validation errors array:', validationErrors);
+      
+      if (validationErrors.length > 0) {
+        const errorDetails = validationErrors.map(err => `${err.field}: ${err.message}`).join(', ');
+        console.log('Validation error details:', errorDetails);
+        alert(`Validation failed: ${errorDetails}`);
+      } else {
+        console.log('No validation errors found, showing generic error');
+        alert('Error creating hotel: ' + errorMessage);
+      }
     } finally {
       setUploading(false);
     }
@@ -220,6 +247,7 @@ function HotelManagement() {
     setFormData({
       name: '',
       placeId: '',
+      description: '',
       images: [],
       rating: 4.5,
       address: '',
@@ -318,6 +346,17 @@ function HotelManagement() {
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
                   placeholder="Enter hotel address"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500"
+                  placeholder="Enter hotel description"
+                  rows="3"
                 />
               </div>
 
@@ -453,46 +492,48 @@ function HotelManagement() {
                   </button>
                 </div>
               </div>
-              <div className="space-y-3">
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-lg font-bold text-gray-900">{hotel.name}</h3>
-                    <div className="flex items-center space-x-1">
-                      <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm font-medium">{hotel.rating}</span>
-                    </div>
+              <div className="space-y-4">
+                {/* Hotel Name and Rating */}
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-gray-900">{hotel.name}</h3>
+                  <div className="flex items-center space-x-1">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-semibold text-gray-900">{hotel.rating}</span>
                   </div>
-                  <p className="text-sky-600 font-medium">{
+                </div>
+                
+                {/* Location */}
+                <div className="space-y-1">
+                  <p className="text-sky-600 font-medium text-base">{
                     hotel.placeName || (hotel.placeId && typeof hotel.placeId === 'object' && hotel.placeId.name) || ''
                   }</p>
+                  <div className="flex items-start space-x-2">
+                    <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-gray-600 text-sm leading-relaxed">{hotel.address}</p>
+                  </div>
                 </div>
-                <div className="flex items-start space-x-1">
-                  <MapPin className="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0" />
-                  <p className="text-gray-600 text-sm">{hotel.address}</p>
-                </div>
-                <div>
+                
+                {/* Price Section */}
+                <div className="space-y-1">
                   <p className="text-lg font-bold text-gray-900">{hotel.priceRange}</p>
                   <p className="text-sm text-gray-500">per night</p>
                 </div>
-                <div className="flex flex-wrap gap-1">
+                
+                {/* Amenities */}
+                <div className="flex flex-wrap gap-2">
                   {hotel.amenities.slice(0, 3).map((amenity) => (
                     <span
                       key={amenity}
-                      className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded"
+                      className="bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-full font-medium"
                     >
                       {amenity}
                     </span>
                   ))}
                   {hotel.amenities.length > 3 && (
-                    <span className="text-xs text-gray-500 px-2 py-1">
+                    <span className="text-xs text-gray-500 px-3 py-1.5">
                       +{hotel.amenities.length - 3} more
                     </span>
                   )}
-                </div>
-                <div className="text-sm text-gray-500">
-                  <p>Check-in: {hotel.checkIn}</p>
-                  <p>Check-out: {hotel.checkOut}</p>
-                  <p>Added: {hotel.createdAt}</p>
                 </div>
               </div>
             </div>

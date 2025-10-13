@@ -23,7 +23,7 @@ class ApiService {
     if (path.startsWith('http://') || path.startsWith('https://')) return path;
     if (path.startsWith('/uploads') || path.startsWith('/api/upload/gridfs')) {
       try {
-        const origin = new URL(this.baseURL).origin; // e.g., http://localhost:5000
+        const origin = new URL(this.baseURL).origin;
         return `${origin}${path}`;
       } catch {
         return path;
@@ -66,6 +66,11 @@ class ApiService {
       }
     };
 
+    // Remove Content-Type header for FormData to let browser set boundary
+    if (options.body instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     // Remove Content-Type header for file uploads to let browser set boundary
     if (options.headers && Object.prototype.hasOwnProperty.call(options.headers, 'Content-Type') && options.headers['Content-Type'] === undefined) {
       delete config.headers['Content-Type'];
@@ -94,7 +99,9 @@ class ApiService {
         }
         
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || `HTTP error! status: ${response.status}`);
+        const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+        error.response = { data, status: response.status };
+        throw error;
       }
 
       const data = await response.json();
@@ -107,7 +114,9 @@ class ApiService {
           const response = await fetch(fallbackUrl, config);
           if (!response.ok) {
             const data = await response.json().catch(() => ({}));
-            throw new Error(data.message || `HTTP error! status: ${response.status}`);
+            const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+            error.response = { data, status: response.status };
+            throw error;
           }
           const data = await response.json();
           return data;
@@ -134,18 +143,22 @@ class ApiService {
 
   // POST request
   async post(endpoint, data, options = {}) {
+    // Check if data is FormData - don't JSON.stringify it
+    const body = data instanceof FormData ? data : JSON.stringify(data);
     return this.request(endpoint, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body,
       ...options,
     });
   }
 
   // PUT request
   async put(endpoint, data, options = {}) {
+    // Check if data is FormData - don't JSON.stringify it
+    const body = data instanceof FormData ? data : JSON.stringify(data);
     return this.request(endpoint, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body,
       ...options,
     });
   }
@@ -590,6 +603,22 @@ class ApiService {
       }
       throw err;
     }
+  }
+
+  // Gallery API
+  async getGalleryImages(category = 'all', page = 1, limit = 50) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString()
+    });
+    if (category && category !== 'all') {
+      params.set('category', category);
+    }
+    return this.get(`/gallery?${params.toString()}`, { includeAuth: false });
+  }
+
+  async getGalleryImageById(id) {
+    return this.get(`/gallery/${id}`, { includeAuth: false });
   }
 }
 

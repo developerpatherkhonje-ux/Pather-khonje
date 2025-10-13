@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import hero6 from '/assets/hero7.jpg';
+import apiService from '../services/api';
 
 function Gallery() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [activeCategory, setActiveCategory] = useState('all');
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const categories = [
     { id: 'all', name: 'All' },
@@ -15,96 +19,31 @@ function Gallery() {
     { id: 'food', name: 'Cuisine' }
   ];
 
-  const images = [
-    {
-      id: 1,
-      src: '/gallery/darjeeling-hills.jpg',
-      category: 'destinations',
-      title: 'Darjeeling Hills',
-      description: 'Breathtaking mountain views and tea gardens'
-    },
-    {
-      id: 2,
-      src: '/gallery/luxury-resort.jpg',
-      category: 'hotels',
-      title: 'Luxury Resort',
-      description: 'Premium accommodations with world-class amenities'
-    },
-    {
-      id: 3,
-      src: '/gallery/adventure-sports.jpeg',
-      category: 'activities',
-      title: 'Adventure Sports',
-      description: 'Thrilling activities for adventure enthusiasts'
-    },
-    {
-      id: 4,
-      src: '/gallery/food.jpg',
-      category: 'food',
-      title: 'Local Cuisine',
-      description: 'Authentic flavors and traditional dishes'
-    },
-    {
-      id: 5,
-      src: '/gallery/beach.jpeg',
-      category: 'destinations',
-      title: 'Beach Paradise',
-      description: 'Crystal clear waters and pristine beaches'
-    },
-    {
-      id: 6,
-      src: '/gallery/boutique-hotel.jpg',
-      category: 'hotels',
-      title: 'Boutique Hotel',
-      description: 'Unique design and personalized service'
-    },
-    {
-      id: 7,
-      src: '/gallery/cultural-exp.jpeg',
-      category: 'activities',
-      title: 'Cultural Experience',
-      description: 'Immerse in local traditions and heritage'
-    },
-    {
-      id: 8,
-      src: '/gallery/street-food.jpg',
-      category: 'food',
-      title: 'Street Food',
-      description: 'Delicious local street food experiences'
-    },
-    {
-      id: 9,
-      src: '/gallery/mountain-trek.jpg',
-      category: 'destinations',
-      title: 'Mountain Trek',
-      description: 'Scenic trekking routes and nature walks'
-    },
-    {
-      id: 10,
-      src: '/gallery/city-skyline.jpg',
-      category: 'destinations',
-      title: 'City Skyline',
-      description: 'Modern cityscapes and urban adventures'
-    },
-    {
-      id: 11,
-      src: '/gallery/heritage-hotel.jpg',
-      category: 'hotels',
-      title: 'Heritage Hotel',
-      description: 'Historic properties with royal treatment'
-    },
-    {
-      id: 12,
-      src: '/gallery/wildlife-safari.jpg',
-      category: 'activities',
-      title: 'Wildlife Safari',
-      description: 'Close encounters with exotic wildlife'
-    }
-  ];
+  // Fetch gallery images from API
+  useEffect(() => {
+    const fetchGalleryImages = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await apiService.getGalleryImages(activeCategory);
+        if (response.success) {
+          setImages(response.data.galleries || []);
+        } else {
+          setError('Failed to load gallery images');
+        }
+      } catch (err) {
+        console.error('Error fetching gallery images:', err);
+        setError('Failed to load gallery images');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const filteredImages = activeCategory === 'all' 
-    ? images 
-    : images.filter(img => img.category === activeCategory);
+    fetchGalleryImages();
+  }, [activeCategory]);
+
+  // Images are already filtered by the API based on activeCategory
+  const filteredImages = images;
 
   const openLightbox = (index) => {
     setSelectedImage(index);
@@ -179,11 +118,50 @@ function Gallery() {
       {/* Image Grid */}
       <section className="pb-20 bg-white/50">
         <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-w-2xl gap-6">
-            <AnimatePresence>
-              {filteredImages.map((image, index) => (
+          {loading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-w-2xl gap-6">
+              {[...Array(8)].map((_, index) => (
+                <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
+                  <div className="aspect-square bg-gray-300"></div>
+                  <div className="p-4">
+                    <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-3 bg-gray-300 rounded w-3/4"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-12">
+              <div className="text-red-600 mb-4">
+                <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+                <h3 className="text-xl font-semibold mb-2">Failed to Load Gallery</h3>
+                <p className="text-gray-600 mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-sky-600 text-white px-6 py-3 rounded-lg hover:bg-sky-700 transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          ) : filteredImages.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 mb-4">
+                <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <h3 className="text-xl font-semibold mb-2">No Images Found</h3>
+                <p className="text-gray-600">No gallery images available for the selected category.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-w-2xl gap-6">
+              <AnimatePresence>
+                {filteredImages.map((image, index) => (
                 <motion.div
-                  key={image.id}
+                  key={image._id || image.id}
                   layout
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -194,10 +172,10 @@ function Gallery() {
                 >
                   <div className="aspect-square">
                     <img
-                      src={image.src}
+                      src={apiService.toAbsoluteUrl(image.image?.url) || '/gallery/placeholder.jpg'}
                       alt={image.title}
                       loading='lazy'
-                      className="w-full h-full object-fit transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
                   
@@ -217,8 +195,9 @@ function Gallery() {
                   </div>
                 </motion.div>
               ))}
-            </AnimatePresence>
-          </div>
+              </AnimatePresence>
+            </div>
+          )}
         </div>
       </section>
 
@@ -262,7 +241,7 @@ function Gallery() {
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.8, opacity: 0 }}
-                src={filteredImages[selectedImage].src}
+                src={apiService.toAbsoluteUrl(filteredImages[selectedImage].image?.url) || '/gallery/placeholder.jpg'}
                 alt={filteredImages[selectedImage].title}
                 loading='lazy'
                 className="max-w-full lg:min-w-[743px] max-h-full object-contain rounded-lg"

@@ -85,7 +85,7 @@ function InvoiceManagement() {
     await api.downloadInvoicePdf(invoice._id || invoice.id);
   };
 
-  const handleViewInvoice = (invoice) => {
+  const handleEditInvoice = (invoice) => {
     setCreateType(invoice.type);
     setEditData(invoice);
     setShowCreateForm(true);
@@ -311,7 +311,7 @@ function InvoiceManagement() {
             <div className="p-6">Loading...</div>
           ) : (
             <InvoiceList
-              onEdit={handleViewInvoice}
+              onEdit={handleEditInvoice}
               onDeleted={() => setReloadKey(k => k + 1)}
               onStatusUpdated={() => setReloadKey(k => k + 1)}
               items={filteredInvoices}
@@ -370,7 +370,7 @@ function InvoiceManagement() {
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 bg-gray-50 rounded-t-2xl">
               <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                {editData ? 'View' : 'Create'} {createType === 'hotel' ? 'Hotel' : 'Tour'} Invoice
+                {editData ? 'Edit' : 'Create'} {createType === 'hotel' ? 'Hotel' : 'Tour'} Invoice
               </h2>
               <button
                 onClick={() => { setShowCreateForm(false); setEditData(null); }}
@@ -390,14 +390,14 @@ function InvoiceManagement() {
                   initial={editData?.type === 'hotel' ? editData : null}
                   onCreated={() => { setShowCreateForm(false); setEditData(null); setReloadKey(k => k + 1); }}
                   onCancel={() => { setShowCreateForm(false); setEditData(null); }}
-                  inlineButtons={false}
+                  inlineButtons={true}
                 />
               ) : (
                 <TourInvoiceForm
                   initial={editData?.type === 'tour' ? editData : null}
                   onCreated={() => { setShowCreateForm(false); setEditData(null); setReloadKey(k => k + 1); }}
                   onCancel={() => { setShowCreateForm(false); setEditData(null); }}
-                  inlineButtons={false}
+                  inlineButtons={true}
                 />
               )}
             </div>

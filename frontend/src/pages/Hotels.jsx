@@ -21,7 +21,11 @@ function Hotels() {
       
       const response = await apiService.getPlaces();
       if (response.success) {
-        setPlaces(response.data.places);
+        // Sort places alphabetically by name
+        const sortedPlaces = (response.data.places || []).sort((a, b) => 
+          (a.name || '').localeCompare(b.name || '', 'en', { sensitivity: 'base' })
+        );
+        setPlaces(sortedPlaces);
       }
     } catch (err) {
       console.error('Error fetching places:', err);

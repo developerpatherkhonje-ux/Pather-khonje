@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Eye, Trash2, Edit3, Check, X } from 'lucide-react';
+import { Download, Edit, Trash2, Edit3, Check, X } from 'lucide-react';
 import api from '../../services/api';
 import { generateInvoicePdf } from '../../utils/pdf';
 import { generateTourInvoicePdf } from '../../utils/pdfTour';
+import { formatDisplayDate } from '../../utils/dateUtils';
 import toast from 'react-hot-toast';
 
 function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: externalItems }) {
@@ -261,17 +262,17 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    {new Date(inv.date).toLocaleDateString()}
+                    {formatDisplayDate(inv.date)}
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-3">
                     <button
                       onClick={() => onEdit && onEdit(inv)}
-                      className="text-gray-400 hover:text-gray-600 transition-colors"
-                      title="View Invoice"
+                      className="text-gray-400 hover:text-blue-600 transition-colors"
+                      title="Edit Invoice"
                     >
-                      <Eye className="h-5 w-5" />
+                      <Edit className="h-5 w-5" />
                     </button>
                     <button
                       onClick={() => download(inv)}

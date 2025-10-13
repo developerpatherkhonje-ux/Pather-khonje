@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, MapPin, Package, IndianRupee, Star, AlertCircle } from 'lucide-react';
+import { TrendingUp, Users, MapPin, Package, IndianRupee, Star, AlertCircle, Hotel, FileText, Receipt } from 'lucide-react';
 import apiService from '../../services/api';
+import analyticsService from '../../services/analyticsService';
+import { formatDisplayDate } from '../../utils/dateUtils';
 
 function DashboardHome() {
   const [stats, setStats] = useState([]);
@@ -12,6 +14,20 @@ function DashboardHome() {
 
   useEffect(() => {
     fetchDashboardData();
+    
+    // Set up real-time updates
+    const unsubscribe = analyticsService.addUpdateListener(() => {
+      fetchDashboardData();
+    });
+    
+    // Start automatic updates every 30 seconds
+    analyticsService.startRealTimeUpdates(30000);
+    
+    // Cleanup on unmount
+    return () => {
+      unsubscribe();
+      analyticsService.stopRealTimeUpdates();
+    };
   }, []);
 
   const fetchDashboardData = async () => {
@@ -19,9 +35,13 @@ function DashboardHome() {
       setLoading(true);
       setError(null);
 
-      // Fetch admin stats from backend
-      const statsResponse = await apiService.getAdminStats();
+      // Fetch all dashboard data in parallel
+      const [statsResponse, analyticsData] = await Promise.all([
+        apiService.getAdminStats(),
+        analyticsService.fetchAllAnalyticsData()
+      ]);
       
+      // Process admin stats
       if (statsResponse.success) {
         const backendStats = statsResponse.data.stats;
         
@@ -29,94 +49,143 @@ function DashboardHome() {
         const transformedStats = [
           {
             label: 'Total Users',
-            value: backendStats.users.total.toString(),
-            change: `+${backendStats.users.recentRegistrations}`,
+            value: String(backendStats.users?.total || 0),
+            change: `+${backendStats.users?.recentRegistrations || 0}`,
             trend: 'up',
             icon: Users,
             color: 'bg-blue-500'
           },
           {
             label: 'Active Users',
-            value: backendStats.users.activeUsers.toString(),
-            change: `${Math.round((backendStats.users.activeUsers / backendStats.users.total) * 100)}%`,
+            value: String(backendStats.users?.activeUsers || 0),
+            change: `${Math.round(((backendStats.users?.activeUsers || 0) / (backendStats.users?.total || 1)) * 100)}%`,
             trend: 'up',
             icon: Users,
             color: 'bg-green-500'
           },
           {
             label: 'Admin Users',
-            value: backendStats.users.byRole.admin.toString(),
-            change: `+${backendStats.users.byRole.manager}`,
+            value: String(backendStats.users?.byRole?.admin || 0),
+            change: `+${backendStats.users?.byRole?.manager || 0}`,
             trend: 'up',
             icon: Star,
             color: 'bg-purple-500'
           },
           {
             label: 'Security Score',
-            value: `${Math.round(backendStats.security.successRate)}%`,
-            change: `${backendStats.security.failedLogins} failed`,
-            trend: backendStats.security.failedLogins > 5 ? 'down' : 'up',
+            value: `${Math.round(backendStats.security?.successRate || 0)}%`,
+            change: `${backendStats.security?.failedLogins || 0} failed`,
+            trend: (backendStats.security?.failedLogins || 0) > 5 ? 'down' : 'up',
             icon: AlertCircle,
             color: 'bg-yellow-500'
           }
         ];
         
-        setStats(transformedStats);
+        // Debug: Log the transformed stats to identify any objects
+        console.log('Transformed stats:', transformedStats);
+        
+        // Ensure all values are strings
+        const safeStats = transformedStats.map(stat => ({
+          ...stat,
+          value: typeof stat.value === 'string' ? stat.value : String(stat.value || '0')
+        }));
+        
+        setStats(safeStats);
       }
 
-      // For now, keep mock data for bookings and tasks
-      // TODO: Replace with actual API calls when booking/task endpoints are available
-      setRecentBookings([
-        {
-          id: 'HTL001',
-          customer: 'Rajesh Kumar',
-          type: 'Hotel Booking',
-          amount: '₹25,000',
-          status: 'Confirmed',
-          date: '2025-01-15'
-        },
-        {
-          id: 'TUR002',
-          customer: 'Priya Sharma',
-          type: 'Tour Package',
-          amount: '₹45,000',
-          status: 'Pending',
-          date: '2025-01-14'
-        },
-        {
-          id: 'HTL003',
-          customer: 'Amit Singh',
-          type: 'Hotel Booking',
-          amount: '₹18,000',
-          status: 'Confirmed',
-          date: '2025-01-13'
-        }
-      ]);
+      // Process recent bookings from real invoice data
+      const recentInvoices = analyticsData.invoices?.rawInvoices || [];
+      const recentBookingsData = recentInvoices
+        .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
+        .slice(0, 5)
+        .map(invoice => {
+          // Handle customer data - it might be an object or string
+          let customerName = 'Unknown Customer';
+          if (typeof invoice.customer === 'string') {
+            customerName = invoice.customer;
+          } else if (typeof invoice.customer === 'object' && invoice.customer !== null) {
+            customerName = invoice.customer.name || invoice.customer.customerName || 'Unknown Customer';
+          } else if (invoice.customerName) {
+            customerName = invoice.customerName;
+          }
 
-      setUpcomingTasks([
-        {
-          task: 'Review pending user registrations',
+          return {
+            id: invoice.invoiceNumber || invoice.id,
+            customer: customerName,
+            type: invoice.type === 'hotel' ? 'Hotel Booking' : 'Tour Package',
+            amount: `₹${(invoice.total || invoice.amount || 0).toLocaleString()}`,
+            status: invoice.status || 'Confirmed',
+            date: formatDisplayDate(invoice.createdAt || invoice.date)
+          };
+        });
+
+      setRecentBookings(recentBookingsData);
+
+      // Generate dynamic tasks based on admin panel data
+      const dynamicTasks = [];
+      
+      // Check for pending invoices
+      const pendingInvoices = recentInvoices.filter(inv => inv.status === 'pending' || inv.status === 'Pending');
+      if (pendingInvoices.length > 0) {
+        dynamicTasks.push({
+          task: `Review ${pendingInvoices.length} pending invoice${pendingInvoices.length > 1 ? 's' : ''}`,
           priority: 'high',
           dueDate: 'Today'
-        },
-        {
-          task: 'Check security audit logs',
+        });
+      }
+
+      // Check for recent vouchers that need attention
+      const recentVouchers = analyticsData.vouchers?.rawVouchers || [];
+      const highAmountVouchers = recentVouchers.filter(v => (v.total || 0) > 50000);
+      if (highAmountVouchers.length > 0) {
+        dynamicTasks.push({
+          task: `Review ${highAmountVouchers.length} high-value payment voucher${highAmountVouchers.length > 1 ? 's' : ''}`,
           priority: 'medium',
-          dueDate: 'Tomorrow'
-        },
-        {
-          task: 'Update system configurations',
+          dueDate: 'Today'
+        });
+      }
+
+      // Check for packages without recent bookings
+      const packages = analyticsData.packages?.packages || [];
+      const inactivePackages = packages.filter(pkg => {
+        const packageInvoices = recentInvoices.filter(inv => 
+          inv.packageId === pkg.id || inv.packageName === pkg.name
+        );
+        return packageInvoices.length === 0;
+      });
+      
+      if (inactivePackages.length > 0) {
+        dynamicTasks.push({
+          task: `Review ${inactivePackages.length} inactive package${inactivePackages.length > 1 ? 's' : ''}`,
           priority: 'low',
-          dueDate: 'Jan 20'
-        }
-      ]);
+          dueDate: 'This week'
+        });
+      }
+
+      // Add default tasks if no dynamic tasks
+      if (dynamicTasks.length === 0) {
+        dynamicTasks.push(
+          {
+            task: 'Review system performance metrics',
+            priority: 'medium',
+            dueDate: 'Today'
+          },
+          {
+            task: 'Check recent user registrations',
+            priority: 'low',
+            dueDate: 'Tomorrow'
+          }
+        );
+      }
+
+      setUpcomingTasks(dynamicTasks.slice(0, 3)); // Show max 3 tasks
 
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
       
       // Fallback to default stats if API fails
-      setStats([
+      const fallbackStats = [
         {
           label: 'Total Users',
           value: '0',
@@ -148,6 +217,24 @@ function DashboardHome() {
           trend: 'up',
           icon: AlertCircle,
           color: 'bg-yellow-500'
+        }
+      ];
+      
+      // Ensure all fallback values are strings
+      const safeFallbackStats = fallbackStats.map(stat => ({
+        ...stat,
+        value: String(stat.value)
+      }));
+      
+      setStats(safeFallbackStats);
+
+      // Fallback recent bookings
+      setRecentBookings([]);
+      setUpcomingTasks([
+        {
+          task: 'System maintenance required',
+          priority: 'high',
+          dueDate: 'Today'
         }
       ]);
     } finally {
@@ -203,7 +290,12 @@ function DashboardHome() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {stats.map((stat, index) => {
+          // Debug: Log each stat to identify problematic objects
+          if (typeof stat.value === 'object') {
+            console.error('Found object in stat.value:', stat, 'at index:', index);
+          }
+          return (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
@@ -222,10 +314,15 @@ function DashboardHome() {
                 {stat.change}
               </div>
             </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-1">
+              {typeof stat.value === 'string' ? stat.value : 
+               typeof stat.value === 'object' ? JSON.stringify(stat.value) : 
+               String(stat.value || '0')}
+            </h3>
             <p className="text-gray-600">{stat.label}</p>
           </motion.div>
-        ))}
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -241,24 +338,36 @@ function DashboardHome() {
             {recentBookings.map((booking) => (
               <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{booking.customer}</h3>
-                  <p className="text-sm text-gray-600">{booking.type} • {booking.date}</p>
-                  <p className="text-xs text-gray-500">ID: {booking.id}</p>
+                  <h3 className="font-semibold text-gray-900">
+                    {typeof booking.customer === 'string' ? booking.customer : 'Unknown Customer'}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {typeof booking.type === 'string' ? booking.type : 'Booking'} • 
+                    {typeof booking.date === 'string' ? booking.date : 'Unknown Date'}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    ID: {typeof booking.id === 'string' ? booking.id : 'Unknown'}
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-gray-900">{booking.amount}</p>
+                  <p className="font-semibold text-gray-900">
+                    {typeof booking.amount === 'string' ? booking.amount : '₹0'}
+                  </p>
                   <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                    booking.status === 'Confirmed' 
+                    (typeof booking.status === 'string' && booking.status === 'Confirmed')
                       ? 'bg-green-100 text-green-800' 
                       : 'bg-yellow-100 text-yellow-800'
                   }`}>
-                    {booking.status}
+                    {typeof booking.status === 'string' ? booking.status : 'Unknown'}
                   </span>
                 </div>
               </div>
             ))}
           </div>
-          <button className="w-full mt-4 text-sky-600 hover:text-sky-700 font-medium py-2">
+          <button 
+            onClick={() => window.location.href = '/dashboard/invoices'}
+            className="w-full mt-4 text-sky-600 hover:text-sky-700 font-medium py-2"
+          >
             View All Bookings →
           </button>
         </motion.div>
@@ -291,8 +400,11 @@ function DashboardHome() {
               </div>
             ))}
           </div>
-          <button className="w-full mt-4 text-sky-600 hover:text-sky-700 font-medium py-2">
-            Add New Task +
+          <button 
+            onClick={() => window.location.href = '/dashboard/vouchers'}
+            className="w-full mt-4 text-sky-600 hover:text-sky-700 font-medium py-2"
+          >
+            Manage Tasks +
           </button>
         </motion.div>
       </div>
@@ -307,16 +419,37 @@ function DashboardHome() {
         <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { name: 'New Hotel Booking', color: 'bg-blue-500', icon: '🏨' },
-            { name: 'New Tour Package', color: 'bg-green-500', icon: '🎒' },
-            { name: 'Add New Place', color: 'bg-purple-500', icon: '📍' },
-            { name: 'Generate Report', color: 'bg-orange-500', icon: '📊' }
+            { 
+              name: 'New Hotel Booking', 
+              color: 'bg-blue-500', 
+              icon: Hotel,
+              action: () => window.location.href = '/dashboard/invoices/hotel'
+            },
+            { 
+              name: 'New Tour Package', 
+              color: 'bg-green-500', 
+              icon: Package,
+              action: () => window.location.href = '/dashboard/invoices/tour'
+            },
+            { 
+              name: 'Add New Place', 
+              color: 'bg-purple-500', 
+              icon: MapPin,
+              action: () => window.location.href = '/dashboard/places'
+            },
+            { 
+              name: 'View Analytics', 
+              color: 'bg-orange-500', 
+              icon: FileText,
+              action: () => window.location.href = '/dashboard/analytics'
+            }
           ].map((action) => (
             <button
               key={action.name}
+              onClick={action.action}
               className={`${action.color} text-white p-4 rounded-xl hover:opacity-90 transition-all duration-300 text-center`}
             >
-              <div className="text-2xl mb-2">{action.icon}</div>
+              <action.icon className="h-8 w-8 mx-auto mb-2" />
               <p className="text-sm font-medium">{action.name}</p>
             </button>
           ))}

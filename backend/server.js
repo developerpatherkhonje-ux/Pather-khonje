@@ -43,6 +43,7 @@ const uploadRoutes = require('./routes/upload');
 const packageRoutes = require('./routes/packages');
 const invoiceRoutes = require('./routes/invoiceRoutes');
 const paymentVoucherRoutes = require('./routes/paymentVoucherRoutes');
+const galleryRoutes = require('./routes/gallery');
 
 const app = express();
 
@@ -51,7 +52,7 @@ app.set('trust proxy', 1);
 
 // Create necessary directories
 const createDirectories = () => {
-  const dirs = [config.PATHS.logs, 'uploads', 'uploads/hotels', 'uploads/places', 'uploads/packages'];
+  const dirs = [config.PATHS.logs, 'uploads', 'uploads/hotels', 'uploads/places', 'uploads/packages', 'uploads/gallery'];
   dirs.forEach(dir => {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
@@ -339,6 +340,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/packages', packageRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/payment-vouchers', paymentVoucherRoutes);
+app.use('/api/gallery', galleryRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

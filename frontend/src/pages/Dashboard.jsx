@@ -12,7 +12,8 @@ import {
   LogOut,
   Menu,
   X,
-  User
+  User,
+  Image
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import DashboardHome from '../components/dashboard/DashboardHome';
@@ -26,6 +27,7 @@ import PaymentVouchers from '../components/dashboard/PaymentVouchers';
 import PaymentVoucherPage from './admin/PaymentVoucherPage';
 import Analytics from '../components/dashboard/Analytics';
 import UserProfile from '../components/dashboard/UserProfile';
+import GalleryManagement from '../components/dashboard/GalleryManagement';
 
 function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -37,6 +39,7 @@ function Dashboard() {
     { name: 'Places', path: '/dashboard/places', icon: MapPin },
     { name: 'Hotels', path: '/dashboard/hotels', icon: Hotel },
     { name: 'Packages', path: '/dashboard/packages', icon: Package },
+    { name: 'Gallery', path: '/dashboard/gallery', icon: Image },
     { name: 'Invoices', path: '/dashboard/invoices', icon: FileText },
     { name: 'Payment Vouchers', path: '/dashboard/vouchers', icon: Receipt },
     { name: 'Analytics', path: '/dashboard/analytics', icon: BarChart3 },
@@ -150,6 +153,7 @@ function Dashboard() {
               <Route path="/places" element={<PlaceManagement />} />
               <Route path="/hotels" element={<HotelManagement />} />
               <Route path="/packages" element={<PackageManagement />} />
+              <Route path="/gallery" element={<GalleryManagement />} />
               <Route path="/invoices" element={<InvoiceManagement />} />
               <Route path="/invoices/hotel" element={<HotelInvoicePage />} />
               <Route path="/invoices/tour" element={<TourInvoicePage />} />

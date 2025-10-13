@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { formatDate } from './dateUtils';
 
 // Helper function to load image as base64
 const loadImageAsBase64 = (imagePath) => {
@@ -120,7 +121,7 @@ export async function generatePaymentVoucherPdf(voucher, fileName = 'payment_vou
                             <p style="margin: 5px 0; font-size: 14px; color: #666;">Voucher #${voucher.voucherNumber || 'N/A'}</p>
                         </div>
                         <div style="text-align: right;">
-                            <p style="margin: 5px 0; font-size: 14px; color: #666;">Date: ${voucher.date ? new Date(voucher.date).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+                            <p style="margin: 5px 0; font-size: 14px; color: #666;">Date: ${formatDate(voucher.date || new Date())}</p>
                         </div>
                     </div>
 
