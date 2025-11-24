@@ -219,14 +219,14 @@ function Home() {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
-                to="/packages"
+                to="/website/packages"
                 className="group bg-white text-sky-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-100 transition-all duration-300 flex items-center space-x-2 hover:transform hover:scale-105"
               >
                 <span>Explore Packages</span>
                 <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link
-                to="/hotels"
+                to="/website/hotels"
                 className="group border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-sky-600 transition-all duration-300 flex items-center space-x-2 hover:transform hover:scale-105"
               >
                 <span>Find Hotels</span>
