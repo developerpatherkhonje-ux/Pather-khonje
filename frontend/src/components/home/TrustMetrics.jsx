@@ -61,34 +61,22 @@ const MetricItem = ({ value, label, isRating }) => {
 
 const TrustMetrics = () => {
   return (
-    <section className="bg-white py-14 border-b border-gray-100">
+    <section className="bg-white py-14 border border-gray-200/60">
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-12 gap-x-4 lg:gap-0 items-center max-w-5xl mx-auto px-4 lg:px-0">
-          <MetricItem value="2000+" label="Happy Travelers" />
-
-          <div className="relative hidden lg:block">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[1px] h-12 bg-gray-100"></div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-y-12 gap-x-4 lg:gap-24 items-center max-w-6xl mx-auto px-4 lg:px-0">
+          <div className="flex mx-auto py-4">
+            <MetricItem value="2000+" label="Happy Travelers" />
           </div>
 
-          <div className="lg:-ml-8">
-            {" "}
-            {/* Negative margin to pull visually if needed, or just standard render */}
+          <div className="flex mx-auto py-4">
             <MetricItem value="10+" label="Years Experience" />
           </div>
 
-          <div className="relative hidden lg:block">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[1px] h-12 bg-gray-100"></div>
-          </div>
-
-          <div className="lg:-ml-8">
+          <div className="flex mx-auto py-4">
             <MetricItem value="50+" label="Unique Destinations" />
           </div>
 
-          <div className="relative hidden lg:block">
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[1px] h-12 bg-gray-100"></div>
-          </div>
-
-          <div className="lg:-ml-8">
+          <div className="flex mx-auto py-4">
             <MetricItem value="4.9" label="Average Rating" isRating={true} />
           </div>
         </div>

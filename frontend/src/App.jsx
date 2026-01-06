@@ -25,12 +25,14 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppRouter from "./components/AppRouter";
 import { Toaster } from "react-hot-toast";
+import ScrollToTop from "./components/ScrollToTop";
 import "./App.css";
 
 function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
           <AnimatePresence mode="wait">
             <Routes>
