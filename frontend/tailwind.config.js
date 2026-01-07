@@ -13,6 +13,7 @@ export default {
         "horizon-blue": "#2F6FED",
         "soft-gold": "#C6A75E",
         "ice-blue": "#F3F8FC",
+        "mist-blue": "#E8F1F8",
         "slate-gray": "#6B7280",
         "near-black": "#0B0F14",
       },

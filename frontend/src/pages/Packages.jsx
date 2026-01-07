@@ -5,267 +5,271 @@ import apiService from "../services/api";
 import { Clock, MapPin, ArrowRight, Star } from "lucide-react";
 
 const Packages = () => {
-  const [loading, setLoading] = useState(true);
-  const [packages, setPackages] = useState([]);
+  const [packages] = useState([
+    {
+      id: "darjeeling-legacy",
+      name: "The Darjeeling Legacy",
+      tag: "SIGNATURE JOURNEY",
+      description:
+        "Experience the colonial charm and rolling tea gardens of Darjeeling. A timeless journey through the Queen of the Hills.",
+      duration: "5 Nights / 6 Days",
+      idealFor: "Ideal for Couples",
+      image: "/assets/pkg_darjeeling.png",
+      linkText: "Explore Journey",
+    },
+    {
+      id: "rockwaters-beaches",
+      name: "Backwaters & Beaches",
+      tag: "POPULAR",
+      description:
+        "A serene drift through the backwaters followed by coastal relaxation in God's Own Country. Unwind in bliss.",
+      duration: "6 Nights / 7 Days",
+      idealFor: "Ideal for Families",
+      image: "/assets/pkg_kerala.png",
+      linkText: "Explore Journey",
+    },
+    {
+      id: "sikkim-panorama",
+      name: "Sikkim Panorama",
+      tag: "ADVENTURE",
+      description:
+        "A comprehensive tour of Gangtok, Pelling, and North Sikkim. Designed for those who want to see it all without rushing.",
+      duration: "7 Nights / 8 Days",
+      idealFor: "Nature Lovers",
+      image: "/assets/pkg_sikkim.png",
+      linkText: "View Details",
+      isSpecial: true,
+    },
+    {
+      id: "mystical-meghalaya",
+      name: "Mystical Meghalaya",
+      tag: "HIDDEN GEM",
+      description:
+        "Explore the abode of clouds, living root bridges, and crystal clear waters with our expert local guides.",
+      duration: "5 Nights / 6 Days",
+      idealFor: "Adventure & Nature",
+      image: "/assets/pkg_meghalaya.png",
+      linkText: "View Details",
+      isSpecial: true, 
+    },
+    {
+      id: "royal-rajasthan",
+      name: "Royal Rajasthan",
+      tag: "HERITAGE",
+      description:
+        "Stay in Heritage Havelis and explore the vibrant culture of Jaipur, Jodhpur, and Udaipur.",
+      duration: "6 Nights / 7 Days",
+      idealFor: "Heritage Buffs",
+      image: "/assets/pkg_rajasthan.png",
+      linkText: "View Details",
+      isSpecial: true,
+    },
+  ]);
+
   const [activeCategory, setActiveCategory] = useState("all");
 
   const categories = [
     { id: "all", name: "All Packages" },
     { id: "mountain", name: "Hill Stations" },
-    { id: "beach", name: "Beach Stays" },
-    { id: "heritage", name: "Historical" },
-    { id: "adventure", name: "Adventure" },
-    { id: "spiritual", name: "Spiritual" },
+    { id: "family", name: "Family Trips" },
+    { id: "honeymoon", name: "Honeymoon" },
+    { id: "group", name: "Group Tours" },
+    { id: "sustainability", name: "Sustainability" },
   ];
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const res = await apiService.listPackages();
-        if (res.success) {
-          const list = Array.isArray(res.data.packages)
-            ? res.data.packages
-            : [];
-          // Deduplicate
-          const byId = new Map();
-          list.forEach((p) => {
-            const key = String(p.id || p._id || "");
-            if (key && !byId.has(key)) byId.set(key, p);
-          });
-          setPackages(Array.from(byId.values()));
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
-  }, []);
-
-  const filteredPackages =
-    activeCategory === "all"
-      ? packages
-      : packages.filter((pkg) => {
-          const cat = (pkg.category || "").toLowerCase();
-          // Simple mapping for the new category names
-          if (activeCategory === "mountain" && cat.includes("mountain"))
-            return true;
-          if (activeCategory === "beach" && cat.includes("beach")) return true;
-          if (activeCategory === "heritage" && cat.includes("heritage"))
-            return true;
-          return cat === activeCategory;
-        });
-
-  const handleWhatsAppBooking = (packageData) => {
-    const message = `Hi! I'm interested in booking the "${
-      packageData.name
-    }" package (${
-      packageData.duration
-    }) for ₹${packageData.price.toLocaleString()}.`;
-    window.open(
-      `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
-      "_blank"
-    );
+  // --- Animation Variants ---
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
   };
 
-  // Animation variants
-  const fadeIn = {
+  const itemVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.8,
+        ease: [0.22, 1, 0.36, 1], // Custom cubic-bezier for "classy" feel
+      },
+    },
+  };
+
+  const imageRevealVariants = {
+    hidden: { opacity: 0, scale: 1.1 },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 1.2,
+        ease: "easeOut",
+      },
+    },
   };
 
   return (
-    <div className="bg-white min-h-screen">
-      {/* 1. HERO SECTION (1:1 Replica) */}
+    <div className="bg-white min-h-screen font-sans">
+      {/* 1. HERO SECTION */}
       <section className="relative">
-        {/* Image Part - Top */}
-        <div className="h-[50vh] min-h-[400px] w-full relative overflow-hidden">
-          <div
+        <div className="h-[60vh] min-h-[500px] w-full relative overflow-hidden">
+          <motion.div
+            initial={{ scale: 1.1 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 2, ease: "easeOut" }}
             className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{ backgroundImage: "url('https://images.unsplash.com/photo-1548876995-629f48ad9a6c?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')" }}
-          >
-          </div>
+            style={{
+              backgroundImage:
+                "url('https://images.unsplash.com/photo-1548876995-629f48ad9a6c?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
+            }}
+          />
+          <div className="absolute inset-0 bg-black/10" />{" "}
+          {/* Subtle overlay for text contrast if needed */}
         </div>
 
-        {/* Text Part - Bottom (White background) */}
-        <div className="bg-white py-16 md:py-20 relative z-10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="max-w-3xl"
-            >
-              <h1 className="text-4xl md:text-5xl font-serif text-midnight-ocean mb-6 tracking-wide">
-                Curated Travel Packages
-              </h1>
-              <p className="text-lg text-slate-600 font-sans leading-relaxed mb-8 max-w-2xl">
-                Thoughtfully planned journeys designed for comfort, clarity, and
-                memorable experiences. Each itinerary is crafted with care,
-                ensuring you see the best without the rush.
-              </p>
-              {/* Separator Line */}
-              <div className="w-20 h-0.5 bg-slate-400 opacity-60 rounded-full"></div>
-            </motion.div>
-          </div>
+        <div className="bg-white py-20 relative z-10 -mt-20 px-4 shadow-[0_-20px_40px_rgba(255,255,255,1)]">
+          {/* Negative margin to pull text up slightly or just standard flow */}
+          {/* Actually, let's keep the standard split look but cleaner */}
+        </div>
+        <div className="bg-white pb-20 pt-10 relative z-10 px-4 -mt-24 max-w-7xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="max-w-3xl"
+          >
+            <h1 className="text-5xl md:text-6xl font-serif text-midnight-ocean mb-6 tracking-tight leading-tight">
+              Curated Travel <br /> Packages
+            </h1>
+            <p className="text-lg text-slate-600 font-sans leading-relaxed mb-8 max-w-2xl font-light">
+              Thoughtfully planned journeys designed for comfort, clarity, and
+              memorable experiences. Each itinerary is crafted with care.
+            </p>
+            <div className="w-16 h-0.5 bg-soft-gold/60 rounded-full"></div>
+          </motion.div>
         </div>
       </section>
 
       {/* 2. FILTER BAR */}
-      {/* Minimalist tab list as per design */}
-      <section className="pt-16 pb-8 bg-white sticky top-0 z-30 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)]">
+      <section className="py-6 bg-white sticky top-0 z-30 border-b border-gray-50/50 backdrop-blur-md bg-white/90 transition-all duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center gap-x-8 gap-y-4">
+          <div className="flex flex-wrap gap-x-10 gap-y-4">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`text-sm md:text-base tracking-widest uppercase transition-all duration-300 pb-1 border-b-2 ${
+                className={`text-xs tracking-[0.2em] uppercase transition-all duration-500 relative group py-2 ${
                   activeCategory === cat.id
-                    ? "text-midnight-ocean border-soft-gold font-semibold"
-                    : "text-gray-400 border-transparent hover:text-gray-600 hover:border-gray-200"
+                    ? "text-midnight-ocean font-bold"
+                    : "text-slate-400 hover:text-slate-600"
                 }`}
               >
                 {cat.name}
+                {/* Animated Underline */}
+                <span
+                  className={`absolute bottom-0 left-0 w-full h-[1px] bg-soft-gold transform origin-left transition-transform duration-300 ${
+                    activeCategory === cat.id
+                      ? "scale-x-100"
+                      : "scale-x-0 group-hover:scale-x-50"
+                  }`}
+                />
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 3. PACKAGES LIST (Editorial Grid) */}
-      <section className="py-12 md:py-20 bg-ice-blue/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center min-h-[400px]">
-              <div className="w-12 h-12 border-4 border-soft-gold border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-gray-500 font-serif tracking-wide">
-                Curating your journeys...
-              </p>
-            </div>
-          ) : filteredPackages.length === 0 ? (
-            <div className="text-center py-32">
-              <h3 className="text-3xl font-serif text-gray-800 mb-4">
-                No Journeys Found
-              </h3>
-              <p className="text-gray-500 mb-8">
-                We couldn't find any packages in this category at the moment.
-              </p>
-              <button
-                onClick={() => setActiveCategory("all")}
-                className="text-soft-gold border-b border-soft-gold pb-1 hover:text-yellow-600 transition-colors"
+      {/* 3. PACKAGES LIST */}
+      <section>
+        {packages.map((pkg, index) => (
+          <div
+            key={pkg.id}
+            className={`py-32 border-b border-gray-50 last:border-0 ${
+              pkg.isSpecial ? "bg-ice-blue/20" : "bg-white"
+            }`}
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
+                variants={containerVariants}
+                className={`flex flex-col ${
+                  pkg.isSpecial ? "lg:flex-row-reverse" : "lg:flex-row"
+                } gap-16 lg:gap-28 items-center`}
               >
-                View all packages
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-24">
-              {/* 
-                    Using a "Story" layout where cards have alternating layouts or full-width presence.
-                    We will map through them and perhaps alternate the layout for visual interest.
-                */}
-              {filteredPackages.map((pkg, index) => (
+                {/* Image Side */}
                 <motion.div
-                  key={pkg.id || pkg._id}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, margin: "-100px" }}
-                  variants={fadeIn}
-                  className="group"
+                  variants={imageRevealVariants}
+                  className="w-full lg:w-[55%] relative group cursor-pointer"
                 >
-                  {/* 
-                            For the first item, we might use a special full-width layout, 
-                            or we can just use a consistent "Split" layout for all consistent with the design image.
-                            The design image shows large horizontal cards.
-                        */}
-                  <div
-                    className={`flex flex-col ${
-                      index % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
-                    } gap-8 lg:gap-16 items-center`}
-                  >
-                    {/* Image Side */}
-                    <div className="w-full lg:w-3/5 relative overflow-hidden shadow-2xl shadow-gray-200 rounded-sm">
-                      <div className="aspect-[16/10] overflow-hidden bg-gray-200">
-                        <img
-                          src={
-                            apiService.toAbsoluteUrl(pkg.image) ||
-                            "/public/hpackages/kerala.jpg"
-                          }
-                          alt={pkg.name}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                          loading="lazy"
-                        />
-                      </div>
-                      {/* Price Tag Overlay - Optional, minimal */}
-                      <div className="absolute bottom-0 left-0 bg-white/95 backdrop-blur px-6 py-3 shadow-sm">
-                        <p className="text-xs uppercase tracking-widest text-gray-500 mb-1">
-                          Starting from
-                        </p>
-                        <p className="text-xl font-bold text-midnight-ocean font-serif">
-                          ₹{pkg.price?.toLocaleString?.() || pkg.price}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Content Side */}
-                    <div className="w-full lg:w-2/5 md:px-4">
-                      <div className="mb-4">
-                        <span className="text-soft-gold text-xs font-bold tracking-[0.2em] uppercase">
-                          {(pkg.category || "Package").toUpperCase()}
-                        </span>
-                      </div>
-                      <h2 className="text-4xl lg:text-5xl font-serif text-midnight-ocean mb-6 leading-tight group-hover:text-deep-steel-blue transition-colors">
-                        {pkg.name}
-                      </h2>
-                      <p className="text-gray-600 text-lg leading-relaxed mb-8 font-light line-clamp-3">
-                        {pkg.description}
-                      </p>
-
-                      <div className="grid grid-cols-2 gap-y-4 gap-x-8 mb-8 border-t border-b border-gray-100 py-6">
-                        <div className="flex items-center text-gray-600">
-                          <Clock className="w-5 h-5 text-soft-gold mr-3" />
-                          <span className="text-sm font-medium">
-                            {pkg.duration}
-                          </span>
-                        </div>
-                        <div className="flex items-center text-gray-600">
-                          {/* Placeholder for location or other meta */}
-                          <MapPin className="w-5 h-5 text-soft-gold mr-3" />
-                          <span className="text-sm font-medium">
-                            Multiple Destinations
-                          </span>
-                        </div>
-                        {pkg.rating && (
-                          <div className="flex items-center text-gray-600">
-                            <Star className="w-5 h-5 text-soft-gold mr-3" />
-                            <span className="text-sm font-medium">
-                              {pkg.rating} (Redefining Luxury)
-                            </span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-6">
-                        <button
-                          onClick={() => handleWhatsAppBooking(pkg)}
-                          className="bg-midnight-ocean text-white px-8 py-4 rounded-none hover:bg-deep-steel-blue transition-all duration-300 font-medium tracking-wide shadow-lg hover:shadow-xl"
-                        >
-                          Book This Journey
-                        </button>
-                        <Link
-                          to={`/website/package/${pkg.id}`}
-                          className="group/link flex items-center text-midnight-ocean font-medium tracking-wide hover:text-soft-gold transition-colors"
-                        >
-                          View Itinerary
-                          <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover/link:translate-x-1" />
-                        </Link>
-                      </div>
-                    </div>
+                  <div className="aspect-[16/10] overflow-hidden relative shadow-2xl shadow-gray-200/50">
+                    <div className="absolute inset-0 bg-midnight-ocean/0 group-hover:bg-midnight-ocean/10 transition-colors duration-700 z-10" />
+                    <img
+                      src={pkg.image}
+                      alt={pkg.name}
+                      className="w-full h-full object-cover transform transition-transform duration-[1.5s] ease-out group-hover:scale-110"
+                    />
                   </div>
                 </motion.div>
-              ))}
+
+                {/* Content Side */}
+                <div className="w-full lg:w-[45%]">
+                  <motion.div variants={itemVariants} className="mb-4">
+                    <span className="text-soft-gold text-xs font-bold tracking-[0.25em] uppercase inline-block border-b border-soft-gold/30 pb-1">
+                      {pkg.tag}
+                    </span>
+                  </motion.div>
+
+                  <motion.h2
+                    variants={itemVariants}
+                    className="text-4xl md:text-5xl font-serif text-midnight-ocean mb-6 leading-[1.1]"
+                  >
+                    {pkg.name}
+                  </motion.h2>
+
+                  <motion.p
+                    variants={itemVariants}
+                    className="text-slate-600 text-lg leading-relaxed mb-10 font-light"
+                  >
+                    {pkg.description}
+                  </motion.p>
+
+                  <motion.div
+                    variants={itemVariants}
+                    className="flex flex-wrap items-center gap-8 text-xs font-medium text-slate-500 uppercase tracking-widest mb-10"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-soft-gold/80" />
+                      <span>{pkg.duration}</span>
+                    </div>
+                    {pkg.idealFor && (
+                      <div className="flex items-center gap-2">
+                        <span className="w-1 h-1 bg-slate-300 rounded-full" />
+                        <span>{pkg.idealFor}</span>
+                      </div>
+                    )}
+                  </motion.div>
+
+                  <motion.div variants={itemVariants}>
+                    <Link
+                      to={`/website/package/${pkg.id}`}
+                      className="inline-flex items-center text-midnight-ocean font-medium text-sm tracking-widest group/link"
+                    >
+                      <span className="border-b border-gray-300 pb-1 transition-colors duration-300 group-hover/link:border-soft-gold group-hover/link:text-soft-gold">
+                        {pkg.linkText}
+                      </span>
+                      <ArrowRight className="ml-3 w-4 h-4 transition-transform duration-300 group-hover/link:translate-x-2 text-soft-gold" />
+                    </Link>
+                  </motion.div>
+                </div>
+              </motion.div>
             </div>
-          )}
-        </div>
+          </div>
+        ))}
       </section>
 
       {/* 4. CTA: PERSONALIZED */}
