@@ -1,12 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, User, LogOut, LayoutDashboard } from "lucide-react";
+import {
+  Menu,
+  X,
+  User,
+  LogOut,
+  LayoutDashboard,
+  ChevronDown,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import HotelsMegaMenu, { CURATED_STAYS, DESTINATIONS } from "./HotelsMegaMenu";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isHotelsOpen, setIsHotelsOpen] = useState(false);
+  const [mobileHotelsOpen, setMobileHotelsOpen] = useState(false);
+  const closeTimeout = React.useRef(null);
   const location = useLocation();
   const { user, logout } = useAuth();
 
@@ -19,11 +30,31 @@ function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Close menus on route change
+  useEffect(() => {
+    setIsHotelsOpen(false);
+    setMobileHotelsOpen(false);
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  const handleMouseEnter = () => {
+    if (closeTimeout.current) {
+      clearTimeout(closeTimeout.current);
+    }
+    setIsHotelsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    closeTimeout.current = setTimeout(() => {
+      setIsHotelsOpen(false);
+    }, 150);
+  };
+
   const navItems = [
     { name: "HOME", path: "/website/" },
     { name: "ABOUT US", path: "/website/about" },
     { name: "GALLERY", path: "/website/gallery" },
-    { name: "HOTELS", path: "/website/hotels" },
+    { name: "HOTELS", path: null }, 
     { name: "PACKAGES", path: "/website/packages" },
     { name: "CONTACT", path: "/website/contact" },
   ];
@@ -53,26 +84,63 @@ function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center gap-10">
-            {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`text-xs font-sans font-bold tracking-widest transition-colors duration-300 relative group py-1 ${
-                  location.pathname === item.path
-                    ? "text-midnight-ocean"
-                    : "text-slate-gray hover:text-midnight-ocean"
-                }`}
-              >
-                {item.name}
-                {/* Active State Underline */}
-                {location.pathname === item.path && (
-                  <motion.span
-                    layoutId="underline"
-                    className="absolute bottom-0 left-0 w-full h-[2px] bg-midnight-ocean"
-                  />
-                )}
-              </Link>
-            ))}
+            {navItems.map((item) => {
+              if (item.name === "HOTELS") {
+                return (
+                  <div
+                    key={item.name}
+                    className="relative h-full flex items-center"
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                  >
+                    <div
+                      className={`cursor-pointer text-xs font-sans font-bold tracking-widest transition-colors duration-300 relative group py-4 flex items-center gap-1 ${
+                        location.pathname.includes("/hotels") ||
+                        location.pathname.includes("/hotel/")
+                          ? "text-midnight-ocean"
+                          : "text-slate-gray hover:text-midnight-ocean"
+                      }`}
+                    >
+                      {item.name}
+                      <ChevronDown
+                        size={14}
+                        className={`transition-transform duration-300 ${
+                          isHotelsOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                      {/* Active State Underline */}
+                      {(location.pathname.includes("/hotels") ||
+                        location.pathname.includes("/hotel/")) && (
+                        <motion.span
+                          layoutId="underline"
+                          className="absolute bottom-2 left-0 w-full h-[2px] bg-midnight-ocean"
+                        />
+                      )}
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <Link
+                  key={item.name}
+                  to={item.path}
+                  className={`text-xs font-sans font-bold tracking-widest transition-colors duration-300 relative group py-1 ${
+                    location.pathname === item.path
+                      ? "text-midnight-ocean"
+                      : "text-slate-gray hover:text-midnight-ocean"
+                  }`}
+                >
+                  {item.name}
+                  {/* Active State Underline */}
+                  {location.pathname === item.path && (
+                    <motion.span
+                      layoutId="underline"
+                      className="absolute bottom-0 left-0 w-full h-[2px] bg-midnight-ocean"
+                    />
+                  )}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Right Action & Auth */}
@@ -136,16 +204,76 @@ function Navbar() {
             className="lg:hidden bg-white border-t border-gray-100"
           >
             <div className="flex flex-col p-6 space-y-4">
-              {navItems.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  onClick={() => setIsOpen(false)}
-                  className="text-sm font-sans font-bold text-midnight-ocean py-3 border-b border-gray-100 uppercase tracking-widest"
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {navItems.map((item) => {
+                if (item.name === "HOTELS") {
+                  return (
+                    <div key={item.name} className="border-b border-gray-100">
+                      <button
+                        onClick={() => setMobileHotelsOpen(!mobileHotelsOpen)}
+                        className="w-full flex justify-between items-center text-sm font-sans font-bold text-midnight-ocean py-3 uppercase tracking-widest"
+                      >
+                        {item.name}
+                        <ChevronDown
+                          size={16}
+                          className={`transform transition-transform duration-300 ${
+                            mobileHotelsOpen ? "rotate-180" : ""
+                          }`}
+                        />
+                      </button>
+                      <AnimatePresence>
+                        {mobileHotelsOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden bg-gray-50/50"
+                          >
+                            <div className="flex flex-col py-3 space-y-3 pl-4">
+                              {/* Curated Stays Mobile Links */}
+                              {CURATED_STAYS.map((stay) => (
+                                <Link
+                                  key={stay.id}
+                                  to={`/website/hotel/${stay.id}`}
+                                  className="text-xs font-medium text-slate-700 block py-1"
+                                  onClick={() => setIsOpen(false)}
+                                >
+                                  {stay.name}
+                                </Link>
+                              ))}
+                              {/* Destination Links */}
+                              <div className="pt-2 border-t border-gray-100 mt-2">
+                                <span className="text-[10px] uppercase tracking-widest text-gray-400 mb-2 block">
+                                  Destinations
+                                </span>
+                                {DESTINATIONS.map((dest) => (
+                                  <Link
+                                    key={dest.name}
+                                    to={dest.path}
+                                    className="text-xs font-medium text-slate-700 block py-1"
+                                    onClick={() => setIsOpen(false)}
+                                  >
+                                    {dest.name}
+                                  </Link>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                }
+                return (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    onClick={() => setIsOpen(false)}
+                    className="text-sm font-sans font-bold text-midnight-ocean py-3 border-b border-gray-100 uppercase tracking-widest"
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
 
               {user ? (
                 <div className="pt-4 space-y-3">
@@ -183,6 +311,13 @@ function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+      {/* Mega Menu Component */}
+      <HotelsMegaMenu
+        isOpen={isHotelsOpen}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClose={() => setIsHotelsOpen(false)}
+      />
     </motion.nav>
   );
 }

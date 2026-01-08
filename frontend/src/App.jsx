@@ -59,7 +59,7 @@ function App() {
                         <Route index element={<Home />} />
                         <Route path="about" element={<About />} />
                         <Route path="gallery" element={<Gallery />} />
-                        <Route path="hotels" element={<Hotels />} />
+
                         <Route
                           path="hotels/:placeId"
                           element={<HotelPlace />}

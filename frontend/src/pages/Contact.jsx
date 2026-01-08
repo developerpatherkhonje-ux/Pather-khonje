@@ -113,7 +113,12 @@ const Contact = () => {
               transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
               className="relative"
             >
-              <div className="absolute top-10 right-10 w-full h-full border-2 border-soft-gold/30 rounded-[250px_0px_0px_250px] translate-x-4 translate-y-4 -z-10"></div>
+              <motion.div
+                className="absolute w-full h-full border-4 border-soft-gold/30 rounded-[250px_0px_0px_250px] z-10"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
+              ></motion.div>
               <div className="w-full h-[600px] rounded-[250px_0px_0px_250px] overflow-hidden shadow-2xl relative">
                 <img
                   src="/assets/hero14.jpg"
@@ -128,7 +133,7 @@ const Contact = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 1, duration: 0.8 }}
-                className="absolute bottom-10 -left-10 bg-white p-6 shadow-xl max-w-xs hidden md:block border-l-4 border-soft-gold"
+                className="absolute bottom-10 -left-10 bg-white p-6 shadow-xl max-w-xs hidden md:block border-l-4 border-soft-gold z-10"
               >
                 <p className="font-serif text-lg text-midnight-ocean italic">
                   "The journey not the arrival matters."
