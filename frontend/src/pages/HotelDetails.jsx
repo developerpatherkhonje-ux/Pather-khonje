@@ -1,364 +1,446 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Star, MapPin, Wifi, Car, Coffee, Dumbbell, Users, ChevronLeft, ChevronRight, Calendar, Clock } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Star,
+  MapPin,
+  Wifi,
+  Car,
+  Utensils,
+  Calendar,
+  Clock,
+  Phone,
+  Shield,
+  Check,
+  ArrowRight,
+  Sparkles,
+} from "lucide-react";
+
+const COLORS = {
+  primary: "#0B2545",
+  secondary: "#3A5F8C",
+  background: "#FAFBFD",
+  separator: "#F1F6FB",
+  lightBlue: "#E8F0F9",
+  accent: "#C7A14A",
+};
 
 function HotelDetails() {
   const { hotelId } = useParams();
   const [hotel, setHotel] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [activeImage, setActiveImage] = useState(0);
 
   useEffect(() => {
-    // Mock data - in real app, this would come from API based on hotelId
+    // Mock data - retaining original data structure but enhancing content for design demo
     const mockHotel = {
-      id: hotelId || '1',
-      name: 'The Grand Mountain Resort',
+      id: hotelId || "1",
+      name: "The Grand Mountain Resort",
       images: [
-        'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg',
-        'https://images.pexels.com/photos/775219/pexels-photo-775219.jpeg',
-        'https://images.pexels.com/photos/2034335/pexels-photo-2034335.jpeg',
-        'https://images.pexels.com/photos/1287460/pexels-photo-1287460.jpeg',
-        'https://images.pexels.com/photos/1591447/pexels-photo-1591447.jpeg'
+        "https://images.squarespace-cdn.com/content/v1/675176954189cc3a0d973e74/1733392587955-MGMBWZB42PLMPUTDVUO6/Landscape+photography+course+card_2000px-60.jpg", // Editorial landscape
+        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", // Detail
+        "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", // Interior
       ],
       rating: 4.8,
       reviews: 142,
-      address: 'Hill Top Road, Near Mall Road, Darjeeling - 734101',
-      amenities: ['Wi-Fi', 'Parking', 'Restaurant', 'Gym', 'Spa', 'Pool', 'Room Service', 'Laundry'],
-      checkIn: '2:00 PM',
-      checkOut: '11:00 AM',
-      priceRange: '₹5,000 - ₹12,000',
-      description: 'Experience luxury amidst the serene mountains at The Grand Mountain Resort. Our hotel offers breathtaking views of the Himalayas, world-class amenities, and exceptional service. Perfect for both leisure and business travelers, we provide an unforgettable stay with comfortable rooms, fine dining, and easy access to local attractions.',
+      location: "Darjeeling, West Bengal",
+      amenities: [
+        "Free High-Speed Wifi",
+        "Private Parking",
+        "Gourmet Restaurant",
+        "Mountain View Spa",
+        "Heated Pool",
+        "24/7 Butler",
+      ],
+      checkIn: "02:00 PM",
+      checkOut: "11:00 AM",
+      priceRange: "₹5,000 – ₹12,000",
+      description:
+        "Perched amidst the clouds, The Grand Mountain Resort offers an escape into the sublime. With architecture that whispers of colonial heritage and interiors that embrace modern luxury, every corner is designed for silence, comfort, and awe. Wake up to the Kanchenjunga, dine under the stars, and let the mountain air rejuvenate your soul.",
       roomTypes: [
         {
-          type: 'Deluxe Room',
+          type: "Deluxe Valley View",
           price: 5000,
-          features: ['Mountain View', 'King Bed', 'Mini Bar', 'Wi-Fi']
+          description:
+            "A cozy sanctuary with sweeping views of the valley, featuring warm timber flooring and a private balcony.",
+          features: [
+            "King Size Bed",
+            "Private Balcony",
+            "Rain Shower",
+            "Work Desk",
+          ],
         },
         {
-          type: 'Premium Suite',
+          type: "Premium Mountain Suite",
           price: 8000,
-          features: ['Valley View', 'Separate Living Area', 'Jacuzzi', 'Balcony']
+          description:
+            "Generous living space designed for indulgence, offering panoramic mountain vistas and a separate lounge area.",
+          features: ["Panoramic View", "Separate Lounge", "Bathtub", "Minibar"],
         },
         {
-          type: 'Royal Suite',
+          type: "Royal Heritage Suite",
           price: 12000,
-          features: ['Panoramic View', '2 Bedrooms', 'Private Terrace', 'Butler Service']
-        }
-      ]
+          description:
+            "The epitome of luxury. Experience colonial grandeur with a master bedroom, dining area, and personalized butler service.",
+          features: [
+            "2 Bedrooms",
+            "Private Terrace",
+            "Dining Area",
+            "Butler Service",
+          ],
+        },
+      ],
     };
 
     setTimeout(() => {
       setHotel(mockHotel);
       setLoading(false);
-    }, 1000);
+    }, 800);
   }, [hotelId]);
 
-  const getAmenityIcon = (amenity) => {
-    switch (amenity.toLowerCase()) {
-      case 'wi-fi':
-        return <Wifi className="h-5 w-5" />;
-      case 'parking':
-        return <Car className="h-5 w-5" />;
-      case 'restaurant':
-        return <Coffee className="h-5 w-5" />;
-      case 'gym':
-        return <Dumbbell className="h-5 w-5" />;
-      default:
-        return <Users className="h-5 w-5" />;
-    }
-  };
-
-  const nextImage = () => {
-    if (hotel) {
-      setCurrentImageIndex((prev) => (prev + 1) % hotel.images.length);
-    }
-  };
-
-  const prevImage = () => {
-    if (hotel) {
-      setCurrentImageIndex((prev) => (prev - 1 + hotel.images.length) % hotel.images.length);
-    }
-  };
-
-  const handleWhatsAppBooking = (roomType) => {
+  const handleWhatsAppBooking = (roomType = null) => {
     if (!hotel) return;
-    
-    let message = `Hi! I'm interested in booking "${hotel.name}" at ${hotel.address}.`;
-    
+    let message = `Hi! I'm interested in booking "${hotel.name}" at ${hotel.location}.`;
     if (roomType) {
-      const room = hotel.roomTypes.find(r => r.type === roomType);
-      message += ` Room Type: ${roomType} (₹${room?.price.toLocaleString()}/night).`;
-    } else {
-      message += ` Price range: ${hotel.priceRange}.`;
+      message += ` I am looking at the ${roomType}.`;
     }
-    
-    message += ' Please provide availability and booking details.';
-    
-    window.open(`https://wa.me/917439857694?text=${encodeURIComponent(message)}`, '_blank');
+    message += " Please confirm availability and rates.";
+    window.open(
+      `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
+      "_blank"
+    );
   };
 
   if (loading) {
     return (
-      <div className="pt-20 min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="animate-pulse space-y-8">
-            <div className="h-64 md:h-96 bg-gray-300 rounded-2xl"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="h-8 bg-gray-300 rounded w-1/2"></div>
-                <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                <div className="h-20 bg-gray-300 rounded"></div>
-              </div>
-              <div className="space-y-4">
-                <div className="h-6 bg-gray-300 rounded"></div>
-                <div className="h-32 bg-gray-300 rounded"></div>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen bg-[#FAFBFD] flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-[#0B2545] font-serif text-2xl tracking-wide"
+        >
+          Loading...
+        </motion.div>
       </div>
     );
   }
 
-  if (!hotel) {
-    return (
-      <div className="pt-20 min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Hotel Not Found</h1>
-          <p className="text-gray-600">The hotel you're looking for doesn't exist.</p>
-        </div>
-      </div>
-    );
-  }
+  if (!hotel) return null;
 
   return (
-    <div className="pt-20 min-h-screen bg-gray-50">
-      {/* Image Gallery */}
-      <section className="relative">
-        <div className="h-64 md:h-96 relative overflow-hidden">
-          <motion.img
-            key={currentImageIndex}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            src={
-              hotel.images[currentImageIndex] && hotel.images[currentImageIndex].url
-                ? hotel.images[currentImageIndex].url
-                : hotel.images[currentImageIndex] || '/hotels/goa-hotel.png'
-            }
-            alt={hotel.name}
-            className="w-full h-full object-cover"
-          />
-          
-          {/* Navigation Buttons */}
-          <button
-            onClick={prevImage}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          <button
-            onClick={nextImage}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-colors"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </button>
-
-          {/* Image Indicators */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            {hotel.images.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentImageIndex(index)}
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                }`}
-              />
-            ))}
+    <div className="min-h-screen bg-[#FAFBFD] font-sans text-[#0B2545] pb-24">
+      {/* 1. IMAGE & TITLE SECTION */}
+      <section className="pt-28 pb-12 px-6 lg:px-12 max-w-[1400px] mx-auto">
+        {/* Gallery - Calm grid, not carousel */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="grid grid-cols-12 gap-4 h-[60vh] min-h-[500px] mb-8 rounded-xl overflow-hidden"
+        >
+          <div className="col-span-8 h-full relative cursor-pointer group">
+            <img
+              src={hotel.images[0]}
+              alt="Main"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
           </div>
-        </div>
+          <div className="col-span-4 flex flex-col gap-4 h-full">
+            <div className="h-1/2 relative overflow-hidden cursor-pointer group">
+              <img
+                src={hotel.images[1]}
+                alt="Detail 1"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+            </div>
+            <div className="h-1/2 relative overflow-hidden cursor-pointer group">
+              <img
+                src={hotel.images[2]}
+                alt="Detail 2"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Title Block */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="border-b border-[#F1F6FB] pb-8"
+        >
+          <h1 className="font-serif text-5xl md:text-6xl text-[#0B2545] mb-4 tracking-tight">
+            {hotel.name}
+          </h1>
+          <div className="flex items-center gap-6 text-sm font-medium tracking-widest uppercase">
+            <div className="flex items-center gap-2">
+              <div className="flex gap-1">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <Star
+                    key={i}
+                    size={15}
+                    className="text-[#C7A14A]"
+                    strokeWidth={1.5}
+                  />
+                ))}
+              </div>
+              <span className="text-[#3A5F8C] pt-0.5 font-semibold text-xs tracking-wider">
+                5.0 (204 REVIEWS)
+              </span>
+            </div>
+            <span className="w-[1px] h-4 bg-gray-300"></span>
+            <span className="text-[#3A5F8C] pt-0.5 font-semibold text-xs tracking-wider">
+              {hotel.location.toUpperCase()}
+            </span>
+          </div>
+        </motion.div>
       </section>
 
-      {/* Hotel Details */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Header */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{hotel.name}</h1>
-                    <div className="flex items-center space-x-4">
-                      <div className="flex items-center space-x-1">
-                        <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                        <span className="font-semibold">{hotel.rating}</span>
-                        <span className="text-gray-600">({hotel.reviews} reviews)</span>
-                      </div>
+      {/* 2. MAIN LAYOUT */}
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-16">
+        {/* LEFT COLUMN: PRIMARY CONTENT (70%) */}
+        <div className="lg:col-span-8 space-y-20">
+          {/* 4. ABOUT THIS HOTEL */}
+          <section>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h3 className="font-serif text-3xl mb-8 text-[#0B2545]">
+                The Experience
+              </h3>
+              <p className="font-inter text-lg leading-loose text-gray-600 font-light max-w-prose">
+                {hotel.description}
+              </p>
+            </motion.div>
+          </section>
+
+          {/* 5. AMENITIES */}
+          <section>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h3 className="font-serif text-3xl mb-8 text-[#0B2545]">
+                Amenities
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-8">
+                {hotel.amenities.map((amenity, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center gap-3 text-[#3A5F8C] group"
+                  >
+                    <div className="p-2 rounded-lg border border-gray-100 group-hover:border-[#3A5F8C]/30 transition-colors">
+                      <Check size={16} strokeWidth={1.5} />
                     </div>
+                    <span className="text-sm font-inter font-medium tracking-wide text-[#0B2545] group-hover:text-[#3A5F8C] transition-colors">
+                      {amenity}
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <p className="text-3xl font-bold text-sky-600">{hotel.priceRange}</p>
-                    <p className="text-gray-600">per night</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center text-gray-600 mb-6">
-                  <MapPin className="h-5 w-5 mr-2" />
-                  <span>{hotel.address}</span>
-                </div>
-              </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          </section>
 
-              {/* Description */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Hotel</h2>
-                <p className="text-gray-700 leading-relaxed">{hotel.description}</p>
-              </motion.div>
-
-              {/* Amenities */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Amenities</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {hotel.amenities.map((amenity) => (
-                    <div
-                      key={amenity}
-                      className="flex items-center space-x-3 bg-white p-4 rounded-lg shadow-sm border"
-                    >
-                      <div className="text-sky-600">
-                        {getAmenityIcon(amenity)}
+          {/* 6. ROOM TYPES (EDITORIAL BLOCKS) */}
+          <section>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+            >
+              <h3 className="font-serif text-3xl mb-10 text-[#0B2545]">
+                Accommodations
+              </h3>
+              <div className="flex flex-col border-t border-[#F1F6FB]">
+                {hotel.roomTypes.map((room, idx) => (
+                  <div
+                    key={idx}
+                    className="group py-12 border-b border-[#F1F6FB] flex flex-col md:flex-row gap-8 items-start md:items-center justify-between transition-colors hover:bg-white/50"
+                  >
+                    <div className="flex-1 space-y-4">
+                      <div className="flex justify-between items-baseline md:block">
+                        <h4 className="font-serif text-2xl text-[#0B2545] mb-2">
+                          {room.type}
+                        </h4>
+                        <span className="md:hidden font-inter font-semibold text-[#3A5F8C]">
+                          ₹{room.price.toLocaleString()}
+                        </span>
                       </div>
-                      <span className="text-gray-700 font-medium">{amenity}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Room Types */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Room Types</h2>
-                <div className="space-y-4">
-                  {hotel.roomTypes.map((room, index) => (
-                    <div key={room.type} className="bg-white rounded-lg p-6 shadow-sm border">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-xl font-semibold text-gray-900">{room.type}</h3>
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-sky-600">₹{room.price.toLocaleString()}</p>
-                          <p className="text-gray-600 text-sm">per night</p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {room.features.map((feature) => (
+                      <p className="text-sm text-gray-500 leading-relaxed max-w-md font-light">
+                        {room.description}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        {room.features.map((f) => (
                           <span
-                            key={feature}
-                            className="bg-sky-100 text-sky-700 text-sm px-3 py-1 rounded-full"
+                            key={f}
+                            className="text-[10px] uppercase tracking-widest px-3 py-1 bg-[#F1F6FB] text-[#3A5F8C] rounded-sm"
                           >
-                            {feature}
+                            {f}
                           </span>
                         ))}
                       </div>
+                    </div>
 
+                    <div className="flex flex-col items-end gap-6 min-w-[180px]">
+                      <div className="text-right hidden md:block">
+                        <div className="font-serif text-2xl text-[#3A5F8C]">
+                          ₹{room.price.toLocaleString()}
+                        </div>
+                        <div className="text-xs text-gray-400 uppercase tracking-widest mt-1">
+                          Per Night
+                        </div>
+                      </div>
                       <button
                         onClick={() => handleWhatsAppBooking(room.type)}
-                        className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-all duration-300"
+                        className="group/btn flex items-center gap-3 px-6 py-3 bg-white border border-[#0B2545] text-[#0B2545] text-xs font-bold uppercase tracking-widest hover:bg-[#0B2545] hover:text-white transition-all duration-300 w-full md:w-auto justify-center"
                       >
-                        Book This Room
+                        Book Room
+                        <ArrowRight
+                          size={14}
+                          className="group-hover/btn:translate-x-1 transition-transform"
+                        />
                       </button>
                     </div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="space-y-6">
-              {/* Quick Info */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.2 }}
-                className="bg-white rounded-2xl p-6 shadow-lg"
-              >
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Quick Info</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
-                    <Calendar className="h-5 w-5 text-sky-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Check-in</p>
-                      <p className="text-gray-600">{hotel.checkIn}</p>
-                    </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Clock className="h-5 w-5 text-sky-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Check-out</p>
-                      <p className="text-gray-600">{hotel.checkOut}</p>
-                    </div>
+                ))}
+              </div>
+            </motion.div>
+          </section>
+
+          {/* 8. CONFIDENCE STRIP */}
+          <section className="bg-[#E8F0F9]/30 p-12 rounded-xl text-center space-y-6">
+            <Shield
+              className="w-8 h-8 text-[#3A5F8C] mx-auto opacity-80"
+              strokeWidth={1.5}
+            />
+            <div className="max-w-xl mx-auto space-y-2">
+              <h4 className="font-serif text-xl text-[#0B2545]">
+                Concierge Assurance
+              </h4>
+              <p className="text-sm text-[#3A5F8C] leading-loose">
+                Every booking comes with our promise of personalized assistance.
+                We work directly with trusted hotel partners to ensure your stay
+                is seamless.
+              </p>
+            </div>
+          </section>
+        </div>
+
+        {/* RIGHT COLUMN: STICKY INFO (30%) */}
+        <div className="lg:col-span-4 relative hidden lg:block">
+          <div className="sticky top-28 space-y-8">
+            {/* BOOKING PANEL */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+              className="p-8 border border-[#F1F6FB] bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
+            >
+              <div className="mb-6">
+                <span className="text-xs uppercase tracking-widest text-[#C7A14A] font-bold mb-2 block">
+                  Starting From
+                </span>
+                <div className="font-serif text-4xl text-[#0B2545]">
+                  {hotel.priceRange.split("–")[0]}
+                  <span className="text-lg text-gray-400 font-sans font-light">
+                    {" "}
+                    / night
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 mb-8 text-xs text-[#3A5F8C]">
+                <Sparkles size={12} />
+                <span>Best rates guaranteed direct</span>
+              </div>
+
+              <button
+                onClick={() => handleWhatsAppBooking()}
+                className="w-full py-4 bg-[#0B2545] text-white text-xs font-bold uppercase tracking-[0.2em] hover:bg-[#3A5F8C] transition-colors mb-4 flex items-center justify-center gap-2 group"
+              >
+                Inquire on WhatsApp
+                <ArrowRight
+                  size={14}
+                  className="group-hover:translate-x-1 transition-transform"
+                />
+              </button>
+
+              <div className="flex justify-center gap-6 text-[10px] uppercase tracking-wider text-gray-400">
+                <span>No Booking Fees</span>
+                <span>Instant Confirmation</span>
+              </div>
+            </motion.div>
+
+            {/* INFO PANEL */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6, duration: 0.6 }}
+              className="bg-[#F1F6FB] p-8 rounded-lg space-y-6"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                    Check-in
+                  </p>
+                  <p className="font-serif text-xl text-[#0B2545]">
+                    {hotel.checkIn}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase tracking-widest text-gray-500 mb-1">
+                    Check-out
+                  </p>
+                  <p className="font-serif text-xl text-[#0B2545]">
+                    {hotel.checkOut}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-black/5">
+                <div className="flex items-start gap-4">
+                  <Phone size={18} className="text-[#3A5F8C] mt-1" />
+                  <div>
+                    <p className="text-sm font-semibold text-[#0B2545] mb-1">
+                      Need help?
+                    </p>
+                    <p className="text-xs text-[#3A5F8C] leading-relaxed">
+                      Our experts are available 24/7 to help you plan your stay.
+                      <br />
+                      <span className="font-bold border-b border-[#3A5F8C] mt-1 inline-block pb-0.5">
+                        +91 74398 57694
+                      </span>
+                    </p>
                   </div>
                 </div>
-              </motion.div>
-
-              {/* Booking Card */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.3 }}
-                className="bg-white rounded-2xl p-6 shadow-lg border-2 border-sky-100"
-              >
-                <h3 className="text-xl font-bold text-gray-900 mb-4">Book This Hotel</h3>
-                <div className="mb-6">
-                  <p className="text-3xl font-bold text-sky-600 mb-2">{hotel.priceRange}</p>
-                  <p className="text-gray-600">Best rates guaranteed</p>
-                </div>
-                
-                <button
-                  onClick={() => handleWhatsAppBooking()}
-                  className="w-full bg-green-600 text-white py-4 px-4 rounded-lg font-semibold text-lg hover:bg-green-700 transition-all duration-300 mb-4"
-                >
-                  Book on WhatsApp
-                </button>
-                
-                <div className="text-center text-sm text-gray-500">
-                  <p>No booking fees</p>
-                  <p>Instant confirmation</p>
-                </div>
-              </motion.div>
-
-              {/* Contact Info */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.4 }}
-                className="bg-sky-50 rounded-2xl p-6 border border-sky-200"
-              >
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help?</h3>
-                <div className="space-y-2 text-sm">
-                  <p className="text-gray-700">Call us for instant booking:</p>
-                  <p className="font-semibold text-sky-600">+91 7439857694</p>
-                  <p className="text-gray-700">Available 24/7</p>
-                </div>
-              </motion.div>
-            </div>
+              </div>
+            </motion.div>
           </div>
         </div>
-      </section>
+      </div>
+
+      {/* MOBILE STICKY BOTTOM (To ensure usability on small screens) */}
+      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 lg:hidden z-40 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <div>
+          <span className="text-xs text-gray-500 uppercase">Starting from</span>
+          <div className="font-serif text-xl text-[#0B2545]">
+            {hotel.priceRange.split("–")[0]}
+          </div>
+        </div>
+        <button
+          onClick={() => handleWhatsAppBooking()}
+          className="px-6 py-3 bg-[#0B2545] text-white text-xs font-bold uppercase tracking-widest"
+        >
+          Book Now
+        </button>
+      </div>
     </div>
   );
 }
