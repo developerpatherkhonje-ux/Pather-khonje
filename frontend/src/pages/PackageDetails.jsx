@@ -1,408 +1,331 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Calendar, Users, MapPin, Star, Clock, Check, X } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import {
+  Calendar,
+  Users,
+  MapPin,
+  Clock,
+  Check,
+  X,
+  MessageCircle,
+  Phone,
+  ArrowRight,
+} from "lucide-react";
 
-// Package data structure
+// Dummy Data matching the screenshot exactly
+const PACKAGE_DATA = {
+  id: "himalayan-sanctuary",
+  name: "Himalayan Sanctuary",
+  tagline: "5 DAYS / 4 NIGHTS  |  SMALL GROUP (MAX 8)  |  TOUR PACKAGE",
+  images: [
+    "https://images.unsplash.com/photo-1509316785289-025f5b846b35?q=80&w=1176&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D", // Scenic canyon/mountain image
+  ],
+  price: "₹18,500",
+  priceUnit: "per person",
+  description: [
+    "Immerse yourself in the quiet majesty of the Himalayas. This journey is designed for those who crave nature, solitude, and a deliberate pause from the hectic pace of modern life. Walk through ancient rhododendron forests, and witness the sunrise over snow-capped peaks in absolute silence.",
+    "We combine comfort with exploration, ensuring that every evening brings you back to a warm fire, a cozy mountain lodge, and a hearty meal crafted from locally-sourced organics. This is the Himalayan experience as it should be.",
+  ],
+  details: {
+    bestTime: "Oct - Mar",
+    groupSize: "Max 8 Travelers",
+    idealFor: "Leisure & Nature",
+    route: "Bagdogra -> NJP",
+  },
+  highlights: [
+    "Unrivalled views of Mt. Kanchenjunga",
+    "Sunrise hike up to stunning viewpoints",
+    "Traditional organic dining experience",
+    "Stay in heritage colonial bungalows",
+    "Visit to a working high-altitude tea estate",
+    "Monastery meditation session",
+  ],
+  itinerary: [
+    {
+      day: "01",
+      title: "Arrival into the Hills",
+      desc: "Arrive at Bagdogra/New Jalpaiguri. Scenic drive up the winding roads. Check in to your heritage stay and enjoy the evening at leisure.",
+      sub: "TRANSFER • WELCOME DINNER",
+    },
+    {
+      day: "02",
+      title: "Peace & Monasteries",
+      desc: "A gentle morning walk through pine forests to visit the oldest local monastery. Afternoon tea tasting session.",
+      sub: "TREKKING • CULTURAL TOUR",
+    },
+    {
+      day: "03",
+      title: "The High Vantage",
+      desc: "Early morning drive to witness the sunrise over the peaks. Picnic lunch by the river, followed by a visit to the local market for crafts.",
+      sub: "SIGHTSEEING • LEISURE",
+    },
+    {
+      day: "04",
+      title: "Departure",
+      desc: "After a relaxed breakfast, we transfer you back to the airport or station for your onward journey.",
+      sub: "TRANSFER • BREAKFAST",
+    },
+  ],
+  inclusions: [
+    "All boutique accommodation",
+    "Breakfast and Dinner daily",
+    "Private luxury vehicle",
+    "Expert tour guide",
+    "All entry permits",
+  ],
+  exclusions: [
+    "Airfare or train tickets",
+    "Lunch and extra snacks",
+    "Personal insurance",
+    "Travel souvenirs",
+    "Camera / Video charges",
+  ],
+};
 
 const PackageDetails = () => {
   const { packageId } = useParams();
-  const [packageData, setPackageData] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(null);
 
   useEffect(() => {
-    // Mock data - in real app, this would come from API based on packageId
-    const mockPackage = {
-      id: packageId || '1',
-      name: 'Himalayan Adventure',
-      images: [
-        'https://images.pexels.com/photos/1591447/pexels-photo-1591447.jpeg',
-        'https://images.pexels.com/photos/1570264/pexels-photo-1570264.jpeg',
-        'https://images.pexels.com/photos/1591056/pexels-photo-1591056.jpeg',
-        'https://images.pexels.com/photos/1591373/pexels-photo-1591373.jpeg'
-      ],
-      description: 'Embark on the ultimate Himalayan adventure with our carefully crafted 7-day journey through some of the most spectacular mountain landscapes in the world. This package combines thrilling trekking experiences with comfortable accommodation and authentic local culture immersion.',
-      duration: '7 Days 6 Nights',
-      price: 25000,
-      rating: 4.9,
-      highlights: ['Trekking', 'Mountain Views', 'Camping', 'Adventure Sports', 'Local Culture', 'Photography'],
-      category: 'adventure',
-      itinerary: [
-        {
-          day: 1,
-          title: 'Arrival and Base Camp Setup',
-          description: 'Arrive at the base location, meet your guide team, and set up at the base camp.',
-          activities: ['Airport pickup', 'Briefing session', 'Equipment check', 'Welcome dinner']
-        },
-        {
-          day: 2,
-          title: 'First Trek to Alpine Meadows',
-          description: 'Begin your trekking journey with a moderate hike to beautiful alpine meadows.',
-          activities: ['Morning breakfast', '6-hour trek', 'Lunch at viewpoint', 'Camp setup', 'Evening bonfire']
-        },
-        {
-          day: 3,
-          title: 'High Altitude Lake Visit',
-          description: 'Trek to pristine high-altitude lakes with stunning mountain reflections.',
-          activities: ['Early morning start', 'Lake photography', 'Picnic lunch', 'Acclimatization', 'Stargazing']
-        },
-        {
-          day: 4,
-          title: 'Peak Viewpoint Challenge',
-          description: 'Challenge yourself with a trek to the highest viewpoint of the journey.',
-          activities: ['Summit attempt', 'Panoramic views', 'Certificate ceremony', 'Celebration dinner']
-        },
-        {
-          day: 5,
-          title: 'Adventure Sports Day',
-          description: 'Experience thrilling adventure sports including rock climbing and river crossing.',
-          activities: ['Rock climbing', 'River rafting', 'Zip lining', 'Team activities', 'Skills training']
-        },
-        {
-          day: 6,
-          title: 'Cultural Immersion',
-          description: 'Visit local villages and experience authentic mountain culture and traditions.',
-          activities: ['Village visit', 'Local cuisine', 'Cultural show', 'Shopping', 'Farewell preparations']
-        },
-        {
-          day: 7,
-          title: 'Departure',
-          description: 'Final breakfast and departure with unforgettable memories.',
-          activities: ['Breakfast', 'Pack up', 'Group photos', 'Certificate distribution', 'Departure transfer']
-        }
-      ],
-      inclusions: [
-        'Accommodation in camps and guesthouses',
-        'All meals (breakfast, lunch, dinner)',
-        'Professional trek guide and support staff',
-        'All necessary permits and entry fees',
-        'Trekking equipment (tents, sleeping bags)',
-        'First aid kit and emergency support',
-        'Transportation from meeting point',
-        'Certificate of completion'
-      ],
-      exclusions: [
-        'Personal trekking gear (shoes, clothes)',
-        'Travel insurance',
-        'Alcoholic beverages',
-        'Personal expenses and shopping',
-        'Tips for guides and staff',
-        'Emergency helicopter evacuation',
-        'Meals during travel days',
-        'Camera fees at certain locations'
-      ],
-      bestTime: 'March to June, September to November',
-      groupSize: '6-12 participants'
-    };
-
+    // Simulating API fetch
     setTimeout(() => {
-      setPackageData(mockPackage);
-      setLoading(false);
-    }, 1000);
-  }, [packageId]);
+      setData(PACKAGE_DATA);
+    }, 500);
+  }, []);
 
-  const handleWhatsAppBooking = () => {
-    if (!packageData) return;
-    
-    const message = `Hi! I'm interested in booking the "${packageData.name}" package (${packageData.duration}) for ₹${packageData.price.toLocaleString()} per person. Please provide availability and booking details. 
-
-Package Details:
-- Duration: ${packageData.duration}
-- Group Size: ${packageData.groupSize}
-- Best Time: ${packageData.bestTime}
-
-Please let me know about. Available dates
-2. Group discounts
-3. Booking process
-4. Payment options`;
-    
-    window.open(`https://wa.me/917439857694?text=${encodeURIComponent(message)}`, '_blank');
-  };
-
-  if (loading) {
-    return (
-      <div className="pt-20 min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="animate-pulse space-y-8">
-            <div className="h-64 md:h-96 bg-gray-300 rounded-2xl"></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 space-y-6">
-                <div className="h-8 bg-gray-300 rounded w-1/2"></div>
-                <div className="h-20 bg-gray-300 rounded"></div>
-                <div className="h-40 bg-gray-300 rounded"></div>
-              </div>
-              <div className="space-y-4">
-                <div className="h-32 bg-gray-300 rounded"></div>
-                <div className="h-20 bg-gray-300 rounded"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!packageData) {
-    return (
-      <div className="pt-20 min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Package Not Found</h1>
-          <p className="text-gray-600">The package you're looking for doesn't exist.</p>
-        </div>
-      </div>
-    );
-  }
+  if (!data) return <div className="min-h-screen bg-white" />; // Clean loading state
 
   return (
-    <div className="pt-20 min-h-screen bg-gray-50">
-      {/* Hero Section with Image Gallery */}
-      <section className="relative">
-        <div className="h-64 md:h-96 relative overflow-hidden">
-          <motion.img
-            key={currentImageIndex}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            src={packageData.images[currentImageIndex]}
-            alt={packageData.name}
+    <div className="bg-white min-h-screen font-sans text-midnight-ocean pt-24 pb-20">
+      {/* HEADER SECTION */}
+      <div className="max-w-7xl mx-auto px-6 mb-12">
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h1 className="text-5xl md:text-6xl font-serif text-midnight-ocean mb-4">
+              {data.name}
+            </h1>
+            <p className="text-xs font-bold tracking-[0.2em] text-soft-gold uppercase mb-8">
+              {data.tagline}
+            </p>
+          </div>
+          <div className="hidden md:flex gap-4 text-xs font-bold tracking-widest text-gray-400 uppercase">
+            <Link to="/" className="hover:text-midnight-ocean">
+              Home
+            </Link>{" "}
+            /
+            <Link to="/website/packages" className="hover:text-midnight-ocean">
+              Packages
+            </Link>{" "}
+            /<span className="text-midnight-ocean">{data.name}</span>
+          </div>
+        </div>
+
+        {/* HERO IMAGE */}
+        <div className="w-full h-[500px] overflow-hidden relative mb-16">
+          <img
+            src={data.images[0]}
+            alt={data.name}
             className="w-full h-full object-cover"
           />
-          
-          {/* Navigation Dots */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
-            {packageData.images.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentImageIndex(index)}
-                className={`w-3 h-3 rounded-full transition-colors ${
-                  index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                }`}
-              />
-            ))}
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-16 items-start">
+          {/* MAIN CONTENT (LEFT) */}
+          <div className="w-full lg:w-2/3">
+            {/* THE EXPERIENCE */}
+            <div className="mb-16">
+              <h2 className="text-3xl font-serif mb-6 text-midnight-ocean">
+                The Experience
+              </h2>
+              <div className="space-y-6 text-slate-600 text-lg font-light leading-relaxed">
+                {data.description.map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
+              </div>
+            </div>
+
+            {/* KEY DETAILS GRID */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 py-10 border-t border-b border-gray-100 mb-16">
+              <div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Best Time
+                </div>
+                <div className="text-midnight-ocean font-medium">
+                  {data.details.bestTime}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Ideal For
+                </div>
+                <div className="text-midnight-ocean font-medium">
+                  {data.details.idealFor}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Group Size
+                </div>
+                <div className="text-midnight-ocean font-medium">
+                  {data.details.groupSize}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">
+                  Starts / Ends
+                </div>
+                <div className="text-midnight-ocean font-medium">
+                  {data.details.route}
+                </div>
+              </div>
+            </div>
+
+            {/* HIGHLIGHTS */}
+            <div className="mb-16">
+              <h2 className="text-3xl font-serif mb-8 text-midnight-ocean">
+                Highlights
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+                {data.highlights.map((highlight, i) => (
+                  <div key={i} className="flex items-start gap-3">
+                    <span className="w-1.5 h-1.5 bg-soft-gold rounded-full mt-2.5 flex-shrink-0" />
+                    <span className="text-slate-600 font-light">
+                      {highlight}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ITINERARY */}
+            <div className="mb-16">
+              <h2 className="text-3xl font-serif mb-10 text-midnight-ocean">
+                Itinerary
+              </h2>
+              <div className="space-y-12">
+                {data.itinerary.map((item, i) => (
+                  <div key={i} className="flex gap-8 group">
+                    <div className="text-2xl font-serif text-soft-gold/40 group-hover:text-soft-gold transition-colors font-bold pt-1 w-12 flex-shrink-0">
+                      {item.day}
+                    </div>
+                    <div className="flex-grow pb-12 border-b border-gray-50 last:border-0 last:pb-0">
+                      <h3 className="text-xl font-serif text-midnight-ocean mb-3">
+                        {item.title}
+                      </h3>
+                      <p className="text-slate-600 font-light mb-4 leading-relaxed">
+                        {item.desc}
+                      </p>
+                      <div className="text-[10px] font-bold tracking-[0.2em] text-gray-400 uppercase">
+                        {item.sub}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* WHAT'S INCLUDED */}
+            <div className="flex flex-col md:flex-row gap-12">
+              <div className="flex-1">
+                <h2 className="text-2xl font-serif mb-6 text-midnight-ocean">
+                  What's Included
+                </h2>
+                <ul className="space-y-3">
+                  {data.inclusions.map((inc, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center gap-3 text-slate-600 font-light text-sm"
+                    >
+                      <Check className="w-4 h-4 text-green-600" /> {inc}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="flex-1">
+                <h2 className="text-2xl font-serif mb-6 text-midnight-ocean">
+                  Not Included
+                </h2>
+                <ul className="space-y-3">
+                  {data.exclusions.map((exc, i) => (
+                    <li
+                      key={i}
+                      className="flex items-center gap-3 text-slate-600 font-light text-sm"
+                    >
+                      <X className="w-4 h-4 text-red-400" /> {exc}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
           </div>
 
-          {/* Package Info Overlay */}
-          <div className="absolute inset-0 bg-black/40 flex items-end">
-            <div className="text-white p-6 md:p-8">
-              <h1 className="text-3xl md:text-5xl font-bold mb-4">{packageData.name}</h1>
-              <div className="flex flex-wrap items-center gap-4 text-lg">
-                <div className="flex items-center space-x-1">
-                  <Clock className="h-5 w-5" />
-                  <span>{packageData.duration}</span>
+          {/* SIDEBAR (RIGHT) */}
+          <div className="w-full lg:w-1/3 relative">
+            <div className="sticky top-28 bg-white border border-gray-100 p-8 shadow-2xl shadow-gray-200/50">
+              <div className="text-4xl font-serif text-midnight-ocean mb-1">
+                {data.price}
+              </div>
+              <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-8">
+                {data.priceUnit}
+              </div>
+
+              {/* Date Dropdown Mockup */}
+              <div className="mb-6 relative">
+                <label className="text-xs font-bold text-midnight-ocean uppercase tracking-widest mb-2 block">
+                  Select Dates
+                </label>
+                <select className="w-full p-4 border border-gray-200 text-sm font-medium text-slate-600 focus:outline-none focus:border-midnight-ocean appearance-none bg-transparent rounded-none">
+                  <option>4th Oct - 9th Oct</option>
+                  <option>11th Oct - 16th Oct</option>
+                  <option>18th Oct - 23rd Oct</option>
+                </select>
+                <div className="absolute right-4 top-[38px] pointer-events-none">
+                  <Calendar className="w-4 h-4 text-gray-400" />
                 </div>
-                <div className="flex items-center space-x-1">
-                  <Users className="h-5 w-5" />
-                  <span>{packageData.groupSize}</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  <span>{packageData.rating}</span>
-                </div>
+              </div>
+
+              <div className="space-y-3">
+                <button className="w-full bg-midnight-ocean text-white py-4 px-6 text-xs font-bold uppercase tracking-[0.2em] hover:bg-deep-steel-blue transition-colors flex items-center justify-center gap-3">
+                  <MessageCircle className="w-4 h-4" /> Book Via WhatsApp
+                </button>
+                <button className="w-full bg-white border border-gray-200 text-midnight-ocean py-4 px-6 text-xs font-bold uppercase tracking-[0.2em] hover:bg-gray-50 transition-colors flex items-center justify-center gap-3">
+                  <Phone className="w-4 h-4" /> Request Callback
+                </button>
+              </div>
+
+              <div className="mt-8 text-[10px] text-gray-400 leading-relaxed text-center">
+                Prices are subject to availability. <br />
+                Free cancellation up to 7 days before departure.
               </div>
             </div>
           </div>
         </div>
-      </section>
+      </div>
 
-      {/* Main Content */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Content */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Description */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white rounded-2xl p-6 shadow-lg"
-              >
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">About This Package</h2>
-                <p className="text-gray-700 leading-relaxed mb-6">{packageData.description}</p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <p className="font-semibold text-gray-900 mb-1">Best Time to Visit</p>
-                    <p className="text-gray-600">{packageData.bestTime}</p>
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-900 mb-1">Group Size</p>
-                    <p className="text-gray-600">{packageData.groupSize}</p>
-                  </div>
-                </div>
+      {/* BOTTOM QUOTE */}
+      <div className="bg-ice-blue/30 py-20 text-center px-4 mb-20">
+        <p className="text-2xl md:text-3xl font-serif text-midnight-ocean italic max-w-3xl mx-auto leading-normal">
+          "We plan every detail so you can focus on the journey."
+        </p>
+        <div className="w-12 h-1 bg-soft-gold mx-auto mt-8 rounded-full" />
+      </div>
 
-                {/* Highlights */}
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Highlights</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {packageData.highlights.map((highlight) => (
-                      <span
-                        key={highlight}
-                        className="bg-sky-100 text-sky-700 px-3 py-1 rounded-full text-sm font-medium"
-                      >
-                        {highlight}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Itinerary */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-white rounded-2xl p-6 shadow-lg"
-              >
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Detailed Itinerary</h2>
-                <div className="space-y-6">
-                  {packageData.itinerary.map((day, index) => (
-                    <div key={day.day} className="border-l-4 border-sky-600 pl-6 pb-6">
-                      <div className="flex items-start space-x-4">
-                        <div className="bg-sky-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">
-                          {day.day}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-xl font-semibold text-gray-900 mb-2">{day.title}</h3>
-                          <p className="text-gray-700 mb-3">{day.description}</p>
-                          <div className="flex flex-wrap gap-2">
-                            {day.activities.map((activity, actIndex) => (
-                              <span
-                                key={actIndex}
-                                className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm"
-                              >
-                                {activity}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-
-              {/* Inclusions & Exclusions */}
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-                className="grid grid-cols-1 md:grid-cols-2 gap-6"
-              >
-                {/* Inclusions */}
-                <div className="bg-white rounded-2xl p-6 shadow-lg">
-                  <h3 className="text-xl font-bold text-green-600 mb-4 flex items-center">
-                    <Check className="h-5 w-5 mr-2" />
-                    What's Included
-                  </h3>
-                  <ul className="space-y-2">
-                    {packageData.inclusions.map((item, index) => (
-                      <li key={index} className="flex items-start space-x-2 text-gray-700">
-                        <Check className="h-4 w-4 text-green-600 mt-1 flex-shrink-0" />
-                        <span className="text-sm">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Exclusions */}
-                <div className="bg-white rounded-2xl p-6 shadow-lg">
-                  <h3 className="text-xl font-bold text-red-600 mb-4 flex items-center">
-                    <X className="h-5 w-5 mr-2" />
-                    What's Not Included
-                  </h3>
-                  <ul className="space-y-2">
-                    {packageData.exclusions.map((item, index) => (
-                      <li key={index} className="flex items-start space-x-2 text-gray-700">
-                        <X className="h-4 w-4 text-red-600 mt-1 flex-shrink-0" />
-                        <span className="text-sm">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </motion.div>
-            </div>
-
-            {/* Right Sidebar */}
-            <div className="space-y-6">
-              {/* Booking Card */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-white rounded-2xl p-6 shadow-lg sticky top-24"
-              >
-                <div className="text-center mb-6">
-                  <div className="text-4xl font-bold text-sky-600 mb-2">
-                    ₹{packageData.price.toLocaleString()}
-                  </div>
-                  <p className="text-gray-600">per person</p>
-                  <div className="flex items-center justify-center space-x-1 mt-2">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span className="font-medium">{packageData.rating}</span>
-                    <span className="text-gray-600 text-sm">(Excellent)</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4 mb-6">
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-gray-600">Duration</span>
-                    <span className="font-medium">{packageData.duration}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-gray-600">Group Size</span>
-                    <span className="font-medium">{packageData.groupSize}</span>
-                  </div>
-                  <div className="flex justify-between items-center py-2 border-b">
-                    <span className="text-gray-600">Best Time</span>
-                    <span className="font-medium text-sm">{packageData.bestTime}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleWhatsAppBooking}
-                  className="w-full bg-green-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-green-700 transition-all duration-300 mb-4"
-                >
-                  Book on WhatsApp
-                </button>
-
-                <div className="text-center text-sm text-gray-500 space-y-1">
-                  <p>✓ Best price guarantee</p>
-                  <p>✓ Instant confirmation</p>
-                  <p>✓ Free cancellation up to 7 days</p>
-                </div>
-              </motion.div>
-
-              {/* Contact Info */}
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 }}
-                className="bg-sky-50 rounded-2xl p-6 border border-sky-200"
-              >
-                <h3 className="text-lg font-bold text-gray-900 mb-4">Need Help Planning?</h3>
-                <div className="space-y-3 text-sm">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-sky-600 rounded-full"></div>
-                    <span>Free consultation with travel experts</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-sky-600 rounded-full"></div>
-                    <span>Customization available</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-sky-600 rounded-full"></div>
-                    <span>24/7 support during trip</span>
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-sky-200">
-                  <p className="font-semibold text-sky-600 mb-1">Call us now</p>
-                  <p className="text-lg font-bold text-gray-900">+91 7439857694</p>
-                </div>
-              </motion.div>
-            </div>
-          </div>
+      {/* BOTTOM CTA */}
+      <div className="text-center pb-10">
+        <h2 className="text-3xl font-serif text-midnight-ocean mb-8">
+          Ready to explore?
+        </h2>
+        <div className="flex justify-center gap-6">
+          <button className="bg-midnight-ocean text-white px-8 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-deep-steel-blue transition-colors">
+            Send An Enquiry
+          </button>
+          <button className="bg-white border border-gray-200 text-midnight-ocean px-8 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-gray-50 transition-colors flex items-center gap-2">
+            <MessageCircle className="w-4 h-4" /> Chat on WhatsApp
+          </button>
         </div>
-      </section>
+      </div>
     </div>
   );
 };

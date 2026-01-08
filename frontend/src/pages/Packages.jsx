@@ -1,89 +1,80 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import apiService from "../services/api";
-import { Clock, MapPin, ArrowRight, Star } from "lucide-react";
+import { Clock, ArrowRight, Check } from "lucide-react";
 
 const Packages = () => {
-  const [packages] = useState([
-    {
-      id: "darjeeling-legacy",
-      name: "The Darjeeling Legacy",
-      tag: "SIGNATURE JOURNEY",
-      description:
-        "Experience the colonial charm and rolling tea gardens of Darjeeling. A timeless journey through the Queen of the Hills.",
-      duration: "5 Nights / 6 Days",
-      idealFor: "Ideal for Couples",
-      image: "/assets/pkg_darjeeling.png",
-      linkText: "Explore Journey",
-    },
-    {
-      id: "rockwaters-beaches",
-      name: "Backwaters & Beaches",
-      tag: "POPULAR",
-      description:
-        "A serene drift through the backwaters followed by coastal relaxation in God's Own Country. Unwind in bliss.",
-      duration: "6 Nights / 7 Days",
-      idealFor: "Ideal for Families",
-      image: "/assets/pkg_kerala.png",
-      linkText: "Explore Journey",
-    },
-    {
-      id: "sikkim-panorama",
-      name: "Sikkim Panorama",
-      tag: "ADVENTURE",
-      description:
-        "A comprehensive tour of Gangtok, Pelling, and North Sikkim. Designed for those who want to see it all without rushing.",
-      duration: "7 Nights / 8 Days",
-      idealFor: "Nature Lovers",
-      image: "/assets/pkg_sikkim.png",
-      linkText: "View Details",
-      isSpecial: true,
-    },
-    {
-      id: "mystical-meghalaya",
-      name: "Mystical Meghalaya",
-      tag: "HIDDEN GEM",
-      description:
-        "Explore the abode of clouds, living root bridges, and crystal clear waters with our expert local guides.",
-      duration: "5 Nights / 6 Days",
-      idealFor: "Adventure & Nature",
-      image: "/assets/pkg_meghalaya.png",
-      linkText: "View Details",
-      isSpecial: true, 
-    },
-    {
-      id: "royal-rajasthan",
-      name: "Royal Rajasthan",
-      tag: "HERITAGE",
-      description:
-        "Stay in Heritage Havelis and explore the vibrant culture of Jaipur, Jodhpur, and Udaipur.",
-      duration: "6 Nights / 7 Days",
-      idealFor: "Heritage Buffs",
-      image: "/assets/pkg_rajasthan.png",
-      linkText: "View Details",
-      isSpecial: true,
-    },
-  ]);
-
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState("ALL PACKAGES");
 
   const categories = [
-    { id: "all", name: "All Packages" },
-    { id: "mountain", name: "Hill Stations" },
-    { id: "family", name: "Family Trips" },
-    { id: "honeymoon", name: "Honeymoon" },
-    { id: "group", name: "Group Tours" },
-    { id: "sustainability", name: "Sustainability" },
+    { id: "ALL PACKAGES", name: "ALL PACKAGES" },
+    { id: "HILL STATIONS", name: "HILL STATIONS" },
+    { id: "COASTAL & BEACH", name: "COASTAL & BEACH" },
+    { id: "HERITAGE TOURS", name: "HERITAGE TOURS" },
+    { id: "GROUP SPECIALS", name: "GROUP SPECIALS" },
   ];
 
-  // --- Animation Variants ---
+  const packages = [
+    {
+      id: "vizag-araku",
+      name: "Vizag Araku Escape",
+      price: "₹7,399",
+      priceUnit: "(per person)",
+      nights: "2 NIGHTS / 3 DAYS",
+      tag: "2 NIGHTS / 3 DAYS",
+      description: null, // The design doesn't show a description paragraph for this one, just itinerary
+      itinerary: [
+        { day: "Day 1", text: "Thotlakonda beach and Rushikonda beach." },
+        {
+          day: "Day 2",
+          text: "Araku Valley, Tribal Museum, Padmapuram Gardens, Coffee Museum, Borra Caves.",
+        },
+        { day: "Day 3", text: "Morning at leisure before departure transfer." },
+      ],
+      valid: "OCT - MARCH",
+      travelers: "Up to 5 Travellers",
+      inclusions: ["Base/Standard Room", "Breakfast"],
+      image: "/assets/pkg_kerala.png", // Placeholder as original image not provided, assuming Image Right
+      imagePosition: "right", // Deduced from content being on left in screenshot
+      linkText: "View Details",
+    },
+    {
+      id: "darjeeling-heritage",
+      name: "Darjeeling Heritage",
+      price: "₹8,499",
+      priceUnit: "(per person)",
+      nights: "4 NIGHTS / 5 DAYS",
+      tag: "4 NIGHTS / 5 DAYS",
+      description: null,
+      itinerary: [
+        {
+          day: "Day 1",
+          text: "Arrival at NJP/Bagdogra. Transfer to Darjeeling. Evening Mall Road walk.",
+        },
+        {
+          day: "Day 2",
+          text: "Tiger Hill sunrise, Batasia Loop, Ghoom Monastery, Himalayan Zoo.",
+        },
+        {
+          day: "Day 3",
+          text: "Mirik Lake excursion and Pashupati Market (Nepal Border) visit.",
+        },
+        { day: "Day 4", text: "Departure transfer to station/airport." },
+      ],
+      valid: "SEP - JUNE",
+      travelers: "Up to 5 Travellers",
+      inclusions: ["Super Deluxe Room", "Breakfast & Dinner"],
+      image: "/assets/pkg_darjeeling.png",
+      imagePosition: "left", // Matches screenshot
+      linkText: "View Details",
+    },
+  ];
+
+  // Animation Variants
   const containerVariants = {
     hidden: {},
     visible: {
-      transition: {
-        staggerChildren: 0.1,
-      },
+      transition: { staggerChildren: 0.1 },
     },
   };
 
@@ -92,89 +83,65 @@ const Packages = () => {
     visible: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.8,
-        ease: [0.22, 1, 0.36, 1], // Custom cubic-bezier for "classy" feel
-      },
-    },
-  };
-
-  const imageRevealVariants = {
-    hidden: { opacity: 0, scale: 1.1 },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 1.2,
-        ease: "easeOut",
-      },
+      transition: { duration: 0.6, ease: "easeOut" },
     },
   };
 
   return (
-    <div className="bg-white min-h-screen font-sans">
+    <div className="bg-gray-50 min-h-screen font-sans">
       {/* 1. HERO SECTION */}
-      <section className="relative">
-        <div className="h-[60vh] min-h-[500px] w-full relative overflow-hidden">
-          <motion.div
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 2, ease: "easeOut" }}
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1548876995-629f48ad9a6c?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')",
-            }}
-          />
-          <div className="absolute inset-0 bg-black/10" />{" "}
-          {/* Subtle overlay for text contrast if needed */}
+      <section className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1548876995-629f48ad9a6c?fm=jpg&q=60&w=3000')",
+          }}
+        >
+          <div className="absolute inset-0 bg-black/20" />
         </div>
 
-        <div className="bg-white py-20 relative z-10 -mt-20 px-4 shadow-[0_-20px_40px_rgba(255,255,255,1)]">
-          {/* Negative margin to pull text up slightly or just standard flow */}
-          {/* Actually, let's keep the standard split look but cleaner */}
-        </div>
-        <div className="bg-white pb-20 pt-10 relative z-10 px-4 -mt-24 max-w-7xl mx-auto">
+        <div className="relative z-10 h-full flex flex-col justify-center items-center text-center px-4 pt-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="max-w-3xl"
+            transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-6xl font-serif text-midnight-ocean mb-6 tracking-tight leading-tight">
-              Curated Travel <br /> Packages
+            <h1 className="text-5xl md:text-7xl font-serif text-white mb-4 shadow-sm">
+              Explore Our Packages
             </h1>
-            <p className="text-lg text-slate-600 font-sans leading-relaxed mb-8 max-w-2xl font-light">
-              Thoughtfully planned journeys designed for comfort, clarity, and
-              memorable experiences. Each itinerary is crafted with care.
+            <p className="text-lg md:text-xl text-white/90 font-light max-w-2xl mx-auto tracking-wide mb-8">
+              Handpicked journeys crafted for memories, comfort, and peace of
+              mind
             </p>
-            <div className="w-16 h-0.5 bg-soft-gold/60 rounded-full"></div>
+            {/* <div className="w-20 h-1 bg-white/60 mx-auto rounded-full" /> */}
           </motion.div>
         </div>
       </section>
 
-      {/* 2. FILTER BAR */}
-      <section className="py-6 bg-white sticky top-0 z-30 border-b border-gray-50/50 backdrop-blur-md bg-white/90 transition-all duration-300">
+      {/* 2. FILTER TABS */}
+      <section className="bg-white border-b border-gray-200 sticky top-20 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap gap-x-10 gap-y-4">
+          <div className="flex overflow-x-auto gap-8 py-6 no-scrollbar items-center justify-start md:justify-center">
             {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`text-xs tracking-[0.2em] uppercase transition-all duration-500 relative group py-2 ${
-                  activeCategory === cat.id
-                    ? "text-midnight-ocean font-bold"
-                    : "text-slate-400 hover:text-slate-600"
-                }`}
+                className={`text-xs tracking-[0.15em] whitespace-nowrap uppercase font-medium transition-colors duration-300 relative group
+                  ${
+                    activeCategory === cat.id
+                      ? "text-midnight-ocean"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
               >
                 {cat.name}
-                {/* Animated Underline */}
                 <span
-                  className={`absolute bottom-0 left-0 w-full h-[1px] bg-soft-gold transform origin-left transition-transform duration-300 ${
-                    activeCategory === cat.id
-                      ? "scale-x-100"
-                      : "scale-x-0 group-hover:scale-x-50"
-                  }`}
+                  className={`absolute -bottom-2 left-0 w-full h-0.5 bg-midnight-ocean transform origin-left transition-transform duration-300
+                    ${
+                      activeCategory === cat.id
+                        ? "scale-x-100"
+                        : "scale-x-0 group-hover:scale-x-50"
+                    }`}
                 />
               </button>
             ))}
@@ -182,118 +149,180 @@ const Packages = () => {
         </div>
       </section>
 
-      {/* 3. PACKAGES LIST */}
-      <section>
-        {packages.map((pkg, index) => (
-          <div
-            key={pkg.id}
-            className={`py-32 border-b border-gray-50 last:border-0 ${
-              pkg.isSpecial ? "bg-ice-blue/20" : "bg-white"
-            }`}
-          >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 3. PACKAGES LIST (Cards) */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto space-y-24">
+          <AnimatePresence mode="wait">
+            {packages.map((pkg) => (
               <motion.div
+                key={pkg.id}
                 initial="hidden"
                 whileInView="visible"
-                viewport={{ once: true, margin: "-10% 0px -10% 0px" }}
+                viewport={{ once: true, margin: "-100px" }}
                 variants={containerVariants}
-                className={`flex flex-col ${
-                  pkg.isSpecial ? "lg:flex-row-reverse" : "lg:flex-row"
-                } gap-16 lg:gap-28 items-center`}
+                className="bg-white p-0 md:p-12 shadow-sm border border-gray-100 flex flex-col gap-10"
               >
-                {/* Image Side */}
-                <motion.div
-                  variants={imageRevealVariants}
-                  className="w-full lg:w-[55%] relative group cursor-pointer"
+                <div
+                  className={`flex flex-col ${
+                    pkg.imagePosition === "right"
+                      ? "lg:flex-row"
+                      : "lg:flex-row-reverse"
+                  } gap-12 lg:gap-20 items-stretch min-h-[500px]`}
                 >
-                  <div className="aspect-[16/10] overflow-hidden relative shadow-2xl shadow-gray-200/50">
-                    <div className="absolute inset-0 bg-midnight-ocean/0 group-hover:bg-midnight-ocean/10 transition-colors duration-700 z-10" />
-                    <img
-                      src={pkg.image}
-                      alt={pkg.name}
-                      className="w-full h-full object-cover transform transition-transform duration-[1.5s] ease-out group-hover:scale-110"
-                    />
+                  {/* Content Side */}
+                  <div className="w-full lg:w-1/2 flex flex-col py-4">
+                    <motion.div
+                      variants={itemVariants}
+                      className="flex justify-between items-start mb-6"
+                    >
+                      <div className="space-y-2">
+                        <h2 className="text-4xl font-serif text-midnight-ocean">
+                          {pkg.name}
+                        </h2>
+                        <span className="inline-block bg-blue-50 text-midnight-ocean text-xs font-bold px-3 py-1 uppercase tracking-widest">
+                          {pkg.nights}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-3xl font-serif text-midnight-ocean">
+                          {pkg.price}
+                        </div>
+                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">
+                          {pkg.priceUnit}
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      variants={itemVariants}
+                      className="flex-grow space-y-6 mb-10 border-t border-b border-gray-100 py-8"
+                    >
+                      {pkg.itinerary.map((item, idx) => (
+                        <div key={idx} className="flex gap-6 group">
+                          <span className="text-xs font-bold text-midnight-ocean w-12 flex-shrink-0 uppercase tracking-wide pt-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                            {item.day}
+                          </span>
+                          <span className="text-slate-600 text-sm leading-relaxed font-light">
+                            {item.text}
+                          </span>
+                        </div>
+                      ))}
+                    </motion.div>
+
+                    <motion.div
+                      variants={itemVariants}
+                      className="grid grid-cols-2 gap-8 mb-10 text-xs tracking-widest uppercase text-gray-400"
+                    >
+                      <div>
+                        <div className="mb-2 font-medium text-gray-300">
+                          Valid Between
+                        </div>
+                        <div className="text-midnight-ocean font-bold">
+                          {pkg.valid}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="mb-2 font-medium text-gray-300">
+                          Group Size
+                        </div>
+                        <div className="text-midnight-ocean font-bold">
+                          {pkg.travelers}
+                        </div>
+                      </div>
+                      <div className="col-span-2">
+                        <div className="mb-2 font-medium text-gray-300">
+                          Inclusions
+                        </div>
+                        <div className="flex gap-4 text-midnight-ocean font-bold normal-case tracking-normal">
+                          {pkg.inclusions.map((inc) => (
+                            <span key={inc} className="flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-soft-gold" />{" "}
+                              {inc}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+
+                    <motion.div
+                      variants={itemVariants}
+                      className="flex items-center gap-6 mt-auto"
+                    >
+                      <button className="bg-midnight-ocean text-white px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-deep-steel-blue transition-all duration-300">
+                        Book Now
+                      </button>
+                      <Link
+                        to={`/website/package/${pkg.id}`}
+                        className="text-xs font-bold tracking-[0.2em] uppercase text-midnight-ocean flex items-center gap-2 group hover:text-soft-gold transition-colors"
+                      >
+                        {pkg.linkText}
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </Link>
+                    </motion.div>
                   </div>
-                </motion.div>
 
-                {/* Content Side */}
-                <div className="w-full lg:w-[45%]">
-                  <motion.div variants={itemVariants} className="mb-4">
-                    <span className="text-soft-gold text-xs font-bold tracking-[0.25em] uppercase inline-block border-b border-soft-gold/30 pb-1">
-                      {pkg.tag}
-                    </span>
-                  </motion.div>
-
-                  <motion.h2
-                    variants={itemVariants}
-                    className="text-4xl md:text-5xl font-serif text-midnight-ocean mb-6 leading-[1.1]"
-                  >
-                    {pkg.name}
-                  </motion.h2>
-
-                  <motion.p
-                    variants={itemVariants}
-                    className="text-slate-600 text-lg leading-relaxed mb-10 font-light"
-                  >
-                    {pkg.description}
-                  </motion.p>
-
+                  {/* Image Side */}
                   <motion.div
                     variants={itemVariants}
-                    className="flex flex-wrap items-center gap-8 text-xs font-medium text-slate-500 uppercase tracking-widest mb-10"
+                    className="w-full lg:w-1/2 relative min-h-[400px]"
                   >
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-soft-gold/80" />
-                      <span>{pkg.duration}</span>
+                    <div className="absolute inset-0 overflow-hidden shadow-2xl">
+                      <img
+                        src={pkg.image}
+                        alt={pkg.name}
+                        className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-[1.5s]"
+                      />
                     </div>
-                    {pkg.idealFor && (
-                      <div className="flex items-center gap-2">
-                        <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                        <span>{pkg.idealFor}</span>
-                      </div>
-                    )}
-                  </motion.div>
-
-                  <motion.div variants={itemVariants}>
-                    <Link
-                      to={`/website/package/${pkg.id}`}
-                      className="inline-flex items-center text-midnight-ocean font-medium text-sm tracking-widest group/link"
-                    >
-                      <span className="border-b border-gray-300 pb-1 transition-colors duration-300 group-hover/link:border-soft-gold group-hover/link:text-soft-gold">
-                        {pkg.linkText}
-                      </span>
-                      <ArrowRight className="ml-3 w-4 h-4 transition-transform duration-300 group-hover/link:translate-x-2 text-soft-gold" />
-                    </Link>
                   </motion.div>
                 </div>
               </motion.div>
-            </div>
-          </div>
-        ))}
+            ))}
+          </AnimatePresence>
+        </div>
       </section>
 
-      {/* 4. CTA: PERSONALIZED */}
-      <section className="py-24 bg-white border-t border-gray-100">
-        <div className="max-w-4xl mx-auto text-center px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-4xl md:text-5xl font-serif text-midnight-ocean mb-6">
-              Looking for something more personalised?
+      {/* 4. DESIGN YOUR OWN JOURNEY */}
+      <section className="bg-midnight-ocean py-24 text-white">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-16">
+          <div className="max-w-2xl">
+            <h2 className="text-5xl font-serif mb-6">
+              Design Your Own Journey
             </h2>
-            <p className="text-lg text-gray-600 mb-10 font-light leading-relaxed max-w-2xl mx-auto">
-              We create bespoke itineraries tailored to your unique tastes,
-              budget, and timeline. Let us craft your perfect escape.
+            <p className="text-gray-300 text-lg font-light leading-relaxed mb-10 max-w-xl">
+              Don't see exactly what you're looking for? Tell us your
+              preferences, dates, and budget, and our travel experts will curate
+              a personalized itinerary just for you.
+            </p>
+
+            <div className="space-y-3">
+              {[
+                "Flexible Dates & Duration",
+                "Handpicked Hotels & Stays",
+                "Private Transfers & Local Guides",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-3 text-sm tracking-widest uppercase text-soft-gold"
+                >
+                  <div className="w-1 h-1 bg-soft-gold rounded-full" />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-full max-w-md bg-white/5 backdrop-blur-sm border border-white/10 p-10">
+            <h3 className="text-2xl font-serif mb-2">Start Planning</h3>
+            <p className="text-gray-400 text-sm mb-8">
+              Get a free, no-obligation quote within 24 hours.
             </p>
             <Link
               to="/website/contact"
-              className="inline-block border border-midnight-ocean text-midnight-ocean px-10 py-4 hover:bg-midnight-ocean hover:text-white transition-all duration-300 uppercase tracking-widest text-sm font-semibold"
+              className="block w-full bg-white text-midnight-ocean text-center py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-gray-100 transition-colors"
             >
-              Get Custom Quote
+              Request Custom Quote
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
     </div>
