@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Clock, ArrowRight, Check } from "lucide-react";
+import apiService from "../services/api";
 
 const Packages = () => {
   const [activeCategory, setActiveCategory] = useState("ALL PACKAGES");
@@ -14,61 +15,56 @@ const Packages = () => {
     { id: "GROUP SPECIALS", name: "GROUP SPECIALS" },
   ];
 
-  const packages = [
-    {
-      id: "vizag-araku",
-      name: "Vizag Araku Escape",
-      price: "₹7,399",
-      priceUnit: "(per person)",
-      nights: "2 NIGHTS / 3 DAYS",
-      tag: "2 NIGHTS / 3 DAYS",
-      description: null, // The design doesn't show a description paragraph for this one, just itinerary
-      itinerary: [
-        { day: "Day 1", text: "Thotlakonda beach and Rushikonda beach." },
-        {
-          day: "Day 2",
-          text: "Araku Valley, Tribal Museum, Padmapuram Gardens, Coffee Museum, Borra Caves.",
-        },
-        { day: "Day 3", text: "Morning at leisure before departure transfer." },
-      ],
-      valid: "OCT - MARCH",
-      travelers: "Up to 5 Travellers",
-      inclusions: ["Base/Standard Room", "Breakfast"],
-      image: "/assets/pkg_kerala.png", // Placeholder as original image not provided, assuming Image Right
-      imagePosition: "right", // Deduced from content being on left in screenshot
-      linkText: "View Details",
-    },
-    {
-      id: "darjeeling-heritage",
-      name: "Darjeeling Heritage",
-      price: "₹8,499",
-      priceUnit: "(per person)",
-      nights: "4 NIGHTS / 5 DAYS",
-      tag: "4 NIGHTS / 5 DAYS",
-      description: null,
-      itinerary: [
-        {
-          day: "Day 1",
-          text: "Arrival at NJP/Bagdogra. Transfer to Darjeeling. Evening Mall Road walk.",
-        },
-        {
-          day: "Day 2",
-          text: "Tiger Hill sunrise, Batasia Loop, Ghoom Monastery, Himalayan Zoo.",
-        },
-        {
-          day: "Day 3",
-          text: "Mirik Lake excursion and Pashupati Market (Nepal Border) visit.",
-        },
-        { day: "Day 4", text: "Departure transfer to station/airport." },
-      ],
-      valid: "SEP - JUNE",
-      travelers: "Up to 5 Travellers",
-      inclusions: ["Super Deluxe Room", "Breakfast & Dinner"],
-      image: "/assets/pkg_darjeeling.png",
-      imagePosition: "left", // Matches screenshot
-      linkText: "View Details",
-    },
-  ];
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPackages = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.listPackages();
+        if (response.success) {
+          const mappedPackages = (response.data.packages || []).map(
+            (pkg, index) => ({
+              id: pkg.id,
+              name: pkg.name,
+              price: `₹${pkg.price?.toLocaleString()}`,
+              priceUnit: "(per person)",
+              nights: pkg.duration, // Assuming backend sends "X Nights / Y Days" or similar string
+              tag: pkg.duration,
+              description: pkg.description,
+              // Backend lacks structured itinerary. Using description as a single day overview or generic placeholder.
+              itinerary: [
+                {
+                  day: "Overview",
+                  text:
+                    pkg.description ||
+                    "Contact us for a detailed day-wise itinerary.",
+                },
+              ],
+              valid: pkg.bestTime || "All Year",
+              travelers: pkg.groupSize || "Flexible",
+              inclusions: pkg.highlights || [
+                "Accommodation",
+                "Meals",
+                "Transfers",
+              ], // Using highlights as inclusions/features
+              image: apiService.toAbsoluteUrl(pkg.image),
+              imagePosition: index % 2 === 0 ? "right" : "left",
+              linkText: "View Details",
+            })
+          );
+          setPackages(mappedPackages);
+        }
+      } catch (err) {
+        console.error("Error fetching packages:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPackages();
+  }, []);
 
   // Animation Variants
   const containerVariants = {
@@ -152,132 +148,141 @@ const Packages = () => {
       {/* 3. PACKAGES LIST (Cards) */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto space-y-24">
-          <AnimatePresence mode="wait">
-            {packages.map((pkg) => (
-              <motion.div
-                key={pkg.id}
-                initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, margin: "-100px" }}
-                variants={containerVariants}
-                className="bg-white p-0 md:p-12 shadow-sm border border-gray-100 flex flex-col gap-10"
-              >
-                <div
-                  className={`flex flex-col ${
-                    pkg.imagePosition === "right"
-                      ? "lg:flex-row"
-                      : "lg:flex-row-reverse"
-                  } gap-12 lg:gap-20 items-stretch min-h-[500px]`}
+          {loading ? (
+            <div className="flex justify-center items-center h-64 text-gray-400 tracking-widest uppercase">
+              Loading Packages...
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              {packages.map((pkg) => (
+                <motion.div
+                  key={pkg.id}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-100px" }}
+                  variants={containerVariants}
+                  className="bg-white p-0 md:p-12 shadow-sm border border-gray-100 flex flex-col gap-10"
                 >
-                  {/* Content Side */}
-                  <div className="w-full lg:w-1/2 flex flex-col py-4">
-                    <motion.div
-                      variants={itemVariants}
-                      className="flex justify-between items-start mb-6"
-                    >
-                      <div className="space-y-2">
-                        <h2 className="text-4xl font-serif text-midnight-ocean">
-                          {pkg.name}
-                        </h2>
-                        <span className="inline-block bg-blue-50 text-midnight-ocean text-xs font-bold px-3 py-1 uppercase tracking-widest">
-                          {pkg.nights}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-3xl font-serif text-midnight-ocean">
-                          {pkg.price}
-                        </div>
-                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">
-                          {pkg.priceUnit}
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    <motion.div
-                      variants={itemVariants}
-                      className="flex-grow space-y-6 mb-10 border-t border-b border-gray-100 py-8"
-                    >
-                      {pkg.itinerary.map((item, idx) => (
-                        <div key={idx} className="flex gap-6 group">
-                          <span className="text-xs font-bold text-midnight-ocean w-12 flex-shrink-0 uppercase tracking-wide pt-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                            {item.day}
-                          </span>
-                          <span className="text-slate-600 text-sm leading-relaxed font-light">
-                            {item.text}
-                          </span>
-                        </div>
-                      ))}
-                    </motion.div>
-
-                    <motion.div
-                      variants={itemVariants}
-                      className="grid grid-cols-2 gap-8 mb-10 text-xs tracking-widest uppercase text-gray-400"
-                    >
-                      <div>
-                        <div className="mb-2 font-medium text-gray-300">
-                          Valid Between
-                        </div>
-                        <div className="text-midnight-ocean font-bold">
-                          {pkg.valid}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="mb-2 font-medium text-gray-300">
-                          Group Size
-                        </div>
-                        <div className="text-midnight-ocean font-bold">
-                          {pkg.travelers}
-                        </div>
-                      </div>
-                      <div className="col-span-2">
-                        <div className="mb-2 font-medium text-gray-300">
-                          Inclusions
-                        </div>
-                        <div className="flex gap-4 text-midnight-ocean font-bold normal-case tracking-normal">
-                          {pkg.inclusions.map((inc) => (
-                            <span key={inc} className="flex items-center gap-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-soft-gold" />{" "}
-                              {inc}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-
-                    <motion.div
-                      variants={itemVariants}
-                      className="flex items-center gap-6 mt-auto"
-                    >
-                      <button className="bg-midnight-ocean text-white px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-deep-steel-blue transition-all duration-300">
-                        Book Now
-                      </button>
-                      <Link
-                        to={`/website/package/${pkg.id}`}
-                        className="text-xs font-bold tracking-[0.2em] uppercase text-midnight-ocean flex items-center gap-2 group hover:text-soft-gold transition-colors"
+                  <div
+                    className={`flex flex-col ${
+                      pkg.imagePosition === "right"
+                        ? "lg:flex-row"
+                        : "lg:flex-row-reverse"
+                    } gap-12 lg:gap-20 items-stretch min-h-[500px]`}
+                  >
+                    {/* Content Side */}
+                    <div className="w-full lg:w-1/2 flex flex-col py-4">
+                      <motion.div
+                        variants={itemVariants}
+                        className="flex justify-between items-start mb-6"
                       >
-                        {pkg.linkText}
-                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                      </Link>
+                        <div className="space-y-2">
+                          <h2 className="text-4xl font-serif text-midnight-ocean">
+                            {pkg.name}
+                          </h2>
+                          <span className="inline-block bg-blue-50 text-midnight-ocean text-xs font-bold px-3 py-1 uppercase tracking-widest">
+                            {pkg.nights}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-serif text-midnight-ocean">
+                            {pkg.price}
+                          </div>
+                          <div className="text-[10px] text-gray-400 uppercase tracking-widest">
+                            {pkg.priceUnit}
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        variants={itemVariants}
+                        className="flex-grow space-y-6 mb-10 border-t border-b border-gray-100 py-8"
+                      >
+                        {pkg.itinerary.map((item, idx) => (
+                          <div key={idx} className="flex gap-6 group">
+                            <span className="text-xs font-bold text-midnight-ocean w-12 flex-shrink-0 uppercase tracking-wide pt-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                              {item.day}
+                            </span>
+                            <span className="text-slate-600 text-sm leading-relaxed font-light">
+                              {item.text}
+                            </span>
+                          </div>
+                        ))}
+                      </motion.div>
+
+                      <motion.div
+                        variants={itemVariants}
+                        className="grid grid-cols-2 gap-8 mb-10 text-xs tracking-widest uppercase text-gray-400"
+                      >
+                        <div>
+                          <div className="mb-2 font-medium text-gray-300">
+                            Valid Between
+                          </div>
+                          <div className="text-midnight-ocean font-bold">
+                            {pkg.valid}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="mb-2 font-medium text-gray-300">
+                            Group Size
+                          </div>
+                          <div className="text-midnight-ocean font-bold">
+                            {pkg.travelers}
+                          </div>
+                        </div>
+                        <div className="col-span-2">
+                          <div className="mb-2 font-medium text-gray-300">
+                            Inclusions
+                          </div>
+                          <div className="flex gap-4 text-midnight-ocean font-bold normal-case tracking-normal">
+                            {pkg.inclusions.map((inc) => (
+                              <span
+                                key={inc}
+                                className="flex items-center gap-1"
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-soft-gold" />{" "}
+                                {inc}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        variants={itemVariants}
+                        className="flex items-center gap-6 mt-auto"
+                      >
+                        <button className="bg-midnight-ocean text-white px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-deep-steel-blue transition-all duration-300">
+                          Book Now
+                        </button>
+                        <Link
+                          to={`/website/package/${pkg.id}`}
+                          className="text-xs font-bold tracking-[0.2em] uppercase text-midnight-ocean flex items-center gap-2 group hover:text-soft-gold transition-colors"
+                        >
+                          {pkg.linkText}
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      </motion.div>
+                    </div>
+
+                    {/* Image Side */}
+                    <motion.div
+                      variants={itemVariants}
+                      className="w-full lg:w-1/2 relative min-h-[400px]"
+                    >
+                      <div className="absolute inset-0 overflow-hidden shadow-2xl">
+                        <img
+                          src={pkg.image}
+                          alt={pkg.name}
+                          className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-[1.5s]"
+                        />
+                      </div>
                     </motion.div>
                   </div>
-
-                  {/* Image Side */}
-                  <motion.div
-                    variants={itemVariants}
-                    className="w-full lg:w-1/2 relative min-h-[400px]"
-                  >
-                    <div className="absolute inset-0 overflow-hidden shadow-2xl">
-                      <img
-                        src={pkg.image}
-                        alt={pkg.name}
-                        className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-[1.5s]"
-                      />
-                    </div>
-                  </motion.div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          )}
         </div>
       </section>
 

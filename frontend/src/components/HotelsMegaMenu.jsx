@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
+import apiService from "../services/api";
 
 // Color Constants based on design requirements
 const COLORS = {
@@ -122,16 +123,47 @@ export const DESTINATIONS = [
 
 const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
   const [activeCategory, setActiveCategory] = useState(CATEGORIES.ALL);
+  const [places, setPlaces] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchPlaces = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getPlaces();
+        if (response.success) {
+          // Map backend data to mega menu structure
+          const mappedPlaces = (response.data.places || []).map((place) => ({
+            id: place.id,
+            name: place.name,
+            duration: "Flexible", // Default as backend doesn't have this yet
+            price: "View Details", // Default
+            location: place.name, // Using name as location for now
+            category: CATEGORIES.ALL, // Defaulting to ALL as backend lacks category/tag currently
+            tag: place.hotelsCount ? `${place.hotelsCount} Stays` : null,
+          }));
+          setPlaces(mappedPlaces);
+        }
+      } catch (err) {
+        console.error("Error fetching places for menu:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPlaces();
+  }, []);
 
   // Filter logic
-  // Filter logic
   const filteredStays = useMemo(() => {
+    // Since we only have ALL category for now effectively, we just return the full list
+    // If backend implements tags, we would filter here.
     if (activeCategory === CATEGORIES.ALL) {
-      // Return all if ALL, or just mix
-      return CURATED_STAYS;
+      return places;
     }
-    return CURATED_STAYS.filter((stay) => stay.category === activeCategory);
-  }, [activeCategory]);
+    // Fallback or future implementation for filtering
+    return places.filter((stay) => stay.category === activeCategory);
+  }, [activeCategory, places]);
 
   return (
     <AnimatePresence>
@@ -191,7 +223,7 @@ const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
                         filteredStays.map((stay) => (
                           <Link
                             key={stay.id}
-                            to={`/website/hotel/${stay.id}`}
+                            to={`/website/hotels/${stay.id}`}
                             className="group flex items-center justify-between p-4 rounded-lg transition-all duration-200"
                             onClick={onClose}
                             style={{
