@@ -33,19 +33,19 @@ const DestinationCard = ({ image, name, label }) => (
 const FeaturedDestinations = () => {
   const destinations = [
     {
-      src: "https://images.unsplash.com/photo-1536295243470-d7cba4efab7b?q=80&w=1138&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      src: "https://images.unsplash.com/photo-1536295243470-d7cba4efab7b?q=80&w=1138&auto=format&fit=crop",
       name: "Ladakh",
       label: "Signature Destination",
     },
     {
       src: "https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=2076&auto=format&fit=crop",
-      name: "Andaman Islands",
-      label: "Coastal Escape",
+      name: "Agra",
+      label: "Historic Culture",
     },
     {
-      src: "https://images.unsplash.com/photo-1599661046289-e31897846e41?q=80&w=1854&auto=format&fit=crop",
-      name: "Rajasthan",
-      label: "Royal Heritage",
+      src: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=2070",
+      name: "Manali",
+      label: "Mountain Retreat",
     },
     {
       src: "https://images.unsplash.com/photo-1536295243470-d7cba4efab7b?q=80&w=1138&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
@@ -53,12 +53,12 @@ const FeaturedDestinations = () => {
       label: "Signature Destination",
     },
     {
-      src: "https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=2076&auto=format&fit=crop",
+      src: "https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=2076",
       name: "Andaman Islands",
       label: "Coastal Escape",
     },
     {
-      src: "https://images.unsplash.com/photo-1599661046289-e31897846e41?q=80&w=1854&auto=format&fit=crop",
+      src: "https://images.unsplash.com/photo-1599661046289-e31897846e41?q=80&w=1854",
       name: "Rajasthan",
       label: "Royal Heritage",
     },

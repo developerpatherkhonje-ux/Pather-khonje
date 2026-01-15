@@ -26,69 +26,85 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import AppRouter from "./components/AppRouter";
 import { Toaster } from "react-hot-toast";
 import ScrollToTop from "./components/ScrollToTop";
+import { useState, useEffect } from "react";
+import LoadingScreen from "./components/LoadingScreen";
 import "./App.css";
 
 function App() {
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
   return (
     <AuthProvider>
-      <Router>
-        <ScrollToTop />
-        <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
-          <AnimatePresence mode="wait">
-            <Routes>
-              <Route path="/" element={<AppRouter />} />
+      <AnimatePresence mode="wait">
+        {loading && <LoadingScreen key="loading" />}
+      </AnimatePresence>
+      {!loading && (
+        <Router>
+          <ScrollToTop />
+          <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
+            <AnimatePresence mode="wait">
+              <Routes>
+                <Route path="/" element={<AppRouter />} />
 
-              <Route path="/auth" element={<AuthPage />} />
+                <Route path="/auth" element={<AuthPage />} />
 
-              <Route
-                path="/dashboard/*"
-                element={
-                  <ProtectedRoute requireAdmin={true}>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+                <Route
+                  path="/dashboard/*"
+                  element={
+                    <ProtectedRoute requireAdmin={true}>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              <Route
-                path="/website/*"
-                element={
-                  <>
-                    <Navbar />
-                    <main className="relative pt-24">
-                      <Routes>
-                        <Route index element={<Home />} />
-                        <Route path="about" element={<About />} />
-                        <Route path="gallery" element={<Gallery />} />
+                <Route
+                  path="/website/*"
+                  element={
+                    <>
+                      <Navbar />
+                      <main className="relative pt-24">
+                        <Routes>
+                          <Route index element={<Home />} />
+                          <Route path="about" element={<About />} />
+                          <Route path="gallery" element={<Gallery />} />
 
-                        <Route
-                          path="hotels/:placeId"
-                          element={<HotelPlace />}
-                        />
-                        <Route
-                          path="hotel/:hotelId"
-                          element={<HotelDetails />}
-                        />
-                        <Route path="packages" element={<Packages />} />
-                        <Route
-                          path="package/:packageId"
-                          element={<PackageDetails />}
-                        />
-                        <Route path="contact" element={<Contact />} />
-                        <Route
-                          path="privacy-policy"
-                          element={<PrivacyPolicy />}
-                        />
-                      </Routes>
-                    </main>
-                    <Footer />
-                    <WhatsAppFloat />
-                  </>
-                }
-              />
-            </Routes>
-          </AnimatePresence>
-        </div>
-      </Router>
+                          <Route
+                            path="hotels/:placeId"
+                            element={<HotelPlace />}
+                          />
+                          <Route
+                            path="hotel/:hotelId"
+                            element={<HotelDetails />}
+                          />
+                          <Route path="packages" element={<Packages />} />
+                          <Route
+                            path="package/:packageId"
+                            element={<PackageDetails />}
+                          />
+                          <Route path="contact" element={<Contact />} />
+                          <Route
+                            path="privacy-policy"
+                            element={<PrivacyPolicy />}
+                          />
+                        </Routes>
+                      </main>
+                      <Footer />
+                      <WhatsAppFloat />
+                    </>
+                  }
+                />
+              </Routes>
+            </AnimatePresence>
+          </div>
+        </Router>
+      )}
       <Toaster position="top-right" />
     </AuthProvider>
   );

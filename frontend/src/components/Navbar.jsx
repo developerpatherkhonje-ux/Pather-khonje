@@ -54,7 +54,7 @@ function Navbar() {
     { name: "HOME", path: "/website/" },
     { name: "ABOUT US", path: "/website/about" },
     { name: "GALLERY", path: "/website/gallery" },
-    { name: "HOTELS", path: null }, 
+    { name: "HOTELS", path: null },
     { name: "PACKAGES", path: "/website/packages" },
     { name: "CONTACT", path: "/website/contact" },
   ];
@@ -166,22 +166,7 @@ function Navbar() {
                   <LogOut size={18} />
                 </button>
               </div>
-            ) : (
-              <div className="flex items-center gap-6">
-                <Link
-                  to="/auth"
-                  className="text-sm font-sans font-medium text-slate-gray hover:text-midnight-ocean transition-colors"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  to="/website/contact"
-                  className="px-8 py-3 bg-midnight-ocean text-white text-xs font-sans font-bold tracking-widest uppercase hover:bg-deep-steel-blue transition-colors duration-300"
-                >
-                  Plan Your Trip
-                </Link>
-              </div>
-            )}
+            ) : null}
           </div>
 
           {/* Mobile Toggle */}
@@ -289,24 +274,7 @@ function Navbar() {
                     Logout
                   </button>
                 </div>
-              ) : (
-                <div className="pt-8 flex flex-col gap-4">
-                  <Link
-                    to="/auth"
-                    onClick={() => setIsOpen(false)}
-                    className="text-center text-midnight-ocean font-medium"
-                  >
-                    Sign In
-                  </Link>
-                  <Link
-                    to="/website/contact"
-                    onClick={() => setIsOpen(false)}
-                    className="block w-full text-center px-8 py-3 bg-midnight-ocean text-white text-xs font-sans font-bold tracking-widest uppercase"
-                  >
-                    Plan Your Trip
-                  </Link>
-                </div>
-              )}
+              ) : null}
             </div>
           </motion.div>
         )}

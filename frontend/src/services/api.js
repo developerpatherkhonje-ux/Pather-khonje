@@ -1,27 +1,27 @@
-import { config } from '../config/config.js';
+import { config } from "../config/config.js";
 
 const API_BASE_URL = config.API_BASE_URL;
-const PROD_BASE_URL = 'https://pather-khonje.onrender.com/api';
+const PROD_BASE_URL = "https://pather-khonje.onrender.com/api";
 
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
     this.fallbackBaseURL = PROD_BASE_URL;
-    
+
     // Debug logging
-    console.log('🔧 API Service initialized:', {
+    console.log("🔧 API Service initialized:", {
       baseURL: this.baseURL,
       currentDomain: config.CURRENT_DOMAIN,
       isCustomDomain: config.IS_CUSTOM_DOMAIN,
-      environment: config.NODE_ENV
+      environment: config.NODE_ENV,
     });
   }
 
   // Convert relative media paths to absolute URLs against the API origin
   toAbsoluteUrl(path) {
-    if (!path || typeof path !== 'string') return path;
-    if (path.startsWith('http://') || path.startsWith('https://')) return path;
-    if (path.startsWith('/uploads') || path.startsWith('/api/upload/gridfs')) {
+    if (!path || typeof path !== "string") return path;
+    if (path.startsWith("http://") || path.startsWith("https://")) return path;
+    if (path.startsWith("/uploads") || path.startsWith("/api/upload/gridfs")) {
       try {
         const origin = new URL(this.baseURL).origin;
         return `${origin}${path}`;
@@ -34,13 +34,13 @@ class ApiService {
 
   // Get auth token from localStorage
   getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
   }
 
   // Get headers with auth token
   getHeaders(includeAuth = true) {
     const headers = {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     };
 
     if (includeAuth) {
@@ -61,13 +61,13 @@ class ApiService {
       ...options,
       headers: {
         ...baseHeaders,
-        ...(options.headers || {})
-      }
+        ...(options.headers || {}),
+      },
     };
 
     // Remove Content-Type header for FormData to let browser set boundary
     if (options.body instanceof FormData) {
-      delete config.headers['Content-Type'];
+      delete config.headers["Content-Type"];
     }
 
     const doFetch = async (fullUrl) => {
@@ -76,24 +76,28 @@ class ApiService {
 
     try {
       let response = await doFetch(url);
-      
+
       if (!response.ok) {
         // Handle token expiration
         if (response.status === 401) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          window.location.href = '/auth';
-          throw new Error('Session expired. Please login again.');
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+          window.location.href = "/auth";
+          throw new Error("Session expired. Please login again.");
         }
-        
+
         // Handle rate limiting
         if (response.status === 429) {
-          throw new Error('Too many requests. Please wait a moment and try again.');
+          throw new Error(
+            "Too many requests. Please wait a moment and try again."
+          );
         }
-        
+
         const data = await response.json().catch(() => ({}));
-        console.error('API Error Response:', { status: response.status, data });
-        const error = new Error(data.message || `HTTP error! status: ${response.status}`);
+        console.error("API Error Response:", { status: response.status, data });
+        const error = new Error(
+          data.message || `HTTP error! status: ${response.status}`
+        );
         error.response = { data, status: response.status };
         throw error;
       }
@@ -101,9 +105,14 @@ class ApiService {
       const data = await response.json();
       return data;
     } catch (error) {
-      console.error('API request error:', error);
-      if (error.name === 'TypeError' && String(error.message).includes('fetch')) {
-        throw new Error('Unable to connect to server. Please check your connection.');
+      console.error("API request error:", error);
+      if (
+        error.name === "TypeError" &&
+        String(error.message).includes("fetch")
+      ) {
+        throw new Error(
+          "Unable to connect to server. Please check your connection."
+        );
       }
       throw error;
     }
@@ -112,7 +121,7 @@ class ApiService {
   // GET request
   async get(endpoint, options = {}) {
     return this.request(endpoint, {
-      method: 'GET',
+      method: "GET",
       ...options,
     });
   }
@@ -120,9 +129,13 @@ class ApiService {
   // POST request
   async post(endpoint, data, options = {}) {
     const body = data instanceof FormData ? data : JSON.stringify(data);
-    console.log('POST request:', { endpoint, isFormData: data instanceof FormData, body });
+    console.log("POST request:", {
+      endpoint,
+      isFormData: data instanceof FormData,
+      body,
+    });
     return this.request(endpoint, {
-      method: 'POST',
+      method: "POST",
       body,
       ...options,
     });
@@ -132,7 +145,7 @@ class ApiService {
   async put(endpoint, data, options = {}) {
     const body = data instanceof FormData ? data : JSON.stringify(data);
     return this.request(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       body,
       ...options,
     });
@@ -141,42 +154,46 @@ class ApiService {
   // DELETE request
   async delete(endpoint, options = {}) {
     return this.request(endpoint, {
-      method: 'DELETE',
+      method: "DELETE",
       ...options,
     });
   }
 
   // Auth specific methods
   async login(email, password) {
-    return this.post('/auth/login', { email, password }, { includeAuth: false });
+    return this.post(
+      "/auth/login",
+      { email, password },
+      { includeAuth: false }
+    );
   }
 
   async register(userData) {
-    return this.post('/auth/register', userData, { includeAuth: false });
+    return this.post("/auth/register", userData, { includeAuth: false });
   }
 
   async getProfile() {
-    return this.get('/auth/me');
+    return this.get("/auth/me");
   }
 
   async updateProfile(userData) {
-    return this.put('/auth/profile', userData);
+    return this.put("/auth/profile", userData);
   }
 
   async updatePassword(currentPassword, newPassword) {
-    return this.put('/auth/password', { currentPassword, newPassword });
+    return this.put("/auth/password", { currentPassword, newPassword });
   }
 
   async logout() {
-    return this.post('/auth/logout');
+    return this.post("/auth/logout");
   }
 
   async verifyToken() {
-    return this.post('/auth/verify-token');
+    return this.post("/auth/verify-token");
   }
 
   // Admin specific methods
-  async getUsers(page = 1, limit = 10, search = '') {
+  async getUsers(page = 1, limit = 10, search = "") {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
@@ -198,14 +215,14 @@ class ApiService {
   }
 
   async getAdminStats() {
-    return this.get('/admin/stats');
+    return this.get("/admin/stats");
   }
 
   async getAdminAuditLogs(page = 1, limit = 50, filters = {}) {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
-      ...filters
+      ...filters,
     });
     return this.get(`/admin/audit?${params}`);
   }
@@ -215,10 +232,13 @@ class ApiService {
   }
 
   // Invoices API
-  async listInvoices({ page = 1, limit = 20, type = '', search = '' } = {}) {
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (type) params.set('type', type);
-    if (search) params.set('search', search);
+  async listInvoices({ page = 1, limit = 20, type = "", search = "" } = {}) {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (type) params.set("type", type);
+    if (search) params.set("search", search);
     return this.get(`/invoices?${params.toString()}`);
   }
 
@@ -227,7 +247,7 @@ class ApiService {
   }
 
   async createInvoice(invoice) {
-    return this.post('/invoices', invoice);
+    return this.post("/invoices", invoice);
   }
 
   async updateInvoice(id, invoice) {
@@ -246,21 +266,21 @@ class ApiService {
     };
     try {
       let response = await fetch(url, fetchOpts);
-      if (!response.ok) throw new Error('Failed to download invoice PDF');
+      if (!response.ok) throw new Error("Failed to download invoice PDF");
       const blob = await response.blob();
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
       link.download = `${fileName || `invoice-${id}`}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (err) {
-      if (this.baseURL.includes('localhost')) {
+      if (this.baseURL.includes("localhost")) {
         const fallbackUrl = `${this.fallbackBaseURL}/invoices/${id}/pdf`;
         const response = await fetch(fallbackUrl, fetchOpts);
-        if (!response.ok) throw new Error('Failed to download invoice PDF');
+        if (!response.ok) throw new Error("Failed to download invoice PDF");
         const blob = await response.blob();
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
         link.download = `${fileName || `invoice-${id}`}.pdf`;
         document.body.appendChild(link);
@@ -274,7 +294,7 @@ class ApiService {
 
   // Places API
   async getPlaces() {
-    return this.get('/places', { includeAuth: false });
+    return this.get("/places", { includeAuth: false });
   }
 
   async getPlaceById(placeId) {
@@ -286,7 +306,7 @@ class ApiService {
   }
 
   async createPlace(placeData) {
-    return this.post('/places', placeData);
+    return this.post("/places", placeData);
   }
 
   async updatePlace(placeId, placeData) {
@@ -298,43 +318,43 @@ class ApiService {
   }
 
   async getPlaceStats() {
-    return this.get('/places/admin/stats');
+    return this.get("/places/admin/stats");
   }
 
   // Image upload methods
   async uploadImage(file) {
     const formData = new FormData();
-    formData.append('image', file);
-    
-    return this.request('/upload/upload-single', {
-      method: 'POST',
+    formData.append("image", file);
+
+    return this.request("/upload/upload-single", {
+      method: "POST",
       body: formData,
       headers: {
-        'Authorization': `Bearer ${this.getToken()}`
+        Authorization: `Bearer ${this.getToken()}`,
         // Don't set Content-Type, let browser set it with boundary
-      }
+      },
     });
   }
 
   async uploadMultipleImages(placeId, formData) {
     return this.request(`/places/${placeId}/images`, {
-      method: 'POST',
+      method: "POST",
       body: formData,
       headers: {
-        'Authorization': `Bearer ${this.getToken()}`
+        Authorization: `Bearer ${this.getToken()}`,
         // Don't set Content-Type, let browser set it with boundary
-      }
+      },
     });
   }
 
   async uploadMultipleHotelImages(hotelId, formData) {
     return this.request(`/hotels/${hotelId}/images`, {
-      method: 'POST',
+      method: "POST",
       body: formData,
       headers: {
-        'Authorization': `Bearer ${this.getToken()}`
+        Authorization: `Bearer ${this.getToken()}`,
         // Don't set Content-Type, let browser set it with boundary
-      }
+      },
     });
   }
 
@@ -348,7 +368,9 @@ class ApiService {
 
   // Hotels API
   async getHotels(page = 1, limit = 10) {
-    return this.get(`/hotels?page=${page}&limit=${limit}`, { includeAuth: false });
+    return this.get(`/hotels?page=${page}&limit=${limit}`, {
+      includeAuth: false,
+    });
   }
 
   async getHotelById(hotelId) {
@@ -360,7 +382,7 @@ class ApiService {
   }
 
   async createHotel(hotelData) {
-    return this.post('/hotels', hotelData);
+    return this.post("/hotels", hotelData);
   }
 
   async updateHotel(hotelId, hotelData) {
@@ -372,119 +394,126 @@ class ApiService {
   }
 
   async getHotelStats() {
-    return this.get('/hotels/admin/stats');
+    return this.get("/hotels/admin/stats");
   }
 
   // Upload API
   async uploadImage(file) {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append("image", file);
 
     try {
       // Primary: disk storage endpoint
-      return await this.request('/upload/image', {
-        method: 'POST',
+      return await this.request("/upload/image", {
+        method: "POST",
         body: formData,
         includeAuth: true,
-        headers: { 'Content-Type': undefined }
+        headers: { "Content-Type": undefined },
       });
     } catch (e) {
       // Fallback: GridFS upload via raw stream
       const url = `${this.baseURL}/upload/gridfs`;
       const token = this.getToken();
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: token ? `Bearer ${token}` : undefined,
-          'x-filename': file.name,
-          'Content-Type': file.type || 'application/octet-stream'
+          "x-filename": file.name,
+          "Content-Type": file.type || "application/octet-stream",
         },
-        body: file
+        body: file,
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'GridFS upload failed');
+        throw new Error(data.message || "GridFS upload failed");
       }
       const data = await response.json();
       // Normalize to same shape as disk upload
       return {
         success: true,
-        message: 'Uploaded via GridFS',
+        message: "Uploaded via GridFS",
         data: {
           url: data.data.url,
-          relativeUrl: data.data.url
-        }
+          relativeUrl: data.data.url,
+        },
       };
     }
   }
 
   async uploadImages(files) {
     const formData = new FormData();
-    files.forEach(file => {
-      formData.append('images', file);
+    files.forEach((file) => {
+      formData.append("images", file);
     });
-    
-    return this.request('/upload/images', {
-      method: 'POST',
+
+    return this.request("/upload/images", {
+      method: "POST",
       body: formData,
       includeAuth: true,
       headers: {
         // Don't set Content-Type, let browser set it with boundary
-        'Content-Type': undefined
-      }
+        "Content-Type": undefined,
+      },
     });
   }
 
   // Upload single hotel image
   async uploadHotelImage(file) {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append("image", file);
     try {
-      return await this.request('/upload/hotels/image', {
-        method: 'POST',
+      return await this.request("/upload/hotels/image", {
+        method: "POST",
         body: formData,
         includeAuth: true,
-        headers: { 'Content-Type': undefined }
+        headers: { "Content-Type": undefined },
       });
     } catch (e) {
       // Fallback to GridFS
       const url = `${this.baseURL}/upload/gridfs`;
       const token = this.getToken();
       const response = await fetch(url, {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: token ? `Bearer ${token}` : undefined,
-          'x-filename': file.name,
-          'Content-Type': file.type || 'application/octet-stream'
+          "x-filename": file.name,
+          "Content-Type": file.type || "application/octet-stream",
         },
-        body: file
+        body: file,
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'GridFS upload failed');
+        throw new Error(data.message || "GridFS upload failed");
       }
       const data = await response.json();
-      return { success: true, message: 'Uploaded via GridFS', data: { url: data.data.url, relativeUrl: data.data.url } };
+      return {
+        success: true,
+        message: "Uploaded via GridFS",
+        data: { url: data.data.url, relativeUrl: data.data.url },
+      };
     }
   }
 
   // Upload multiple hotel images
   async uploadHotelImages(files) {
     const formData = new FormData();
-    files.forEach(file => formData.append('images', file));
+    files.forEach((file) => formData.append("images", file));
     try {
-      return await this.request('/upload/hotels/images', {
-        method: 'POST',
+      return await this.request("/upload/hotels/images", {
+        method: "POST",
         body: formData,
         includeAuth: true,
-        headers: { 'Content-Type': undefined }
+        headers: { "Content-Type": undefined },
       });
     } catch (e) {
       // Fallback to uploading one by one via GridFS
       const results = [];
       for (const file of files) {
         const r = await this.uploadHotelImage(file);
-        results.push({ url: r.data.url, relativeUrl: r.data.relativeUrl || r.data.url });
+        results.push({
+          url: r.data.url,
+          relativeUrl: r.data.relativeUrl || r.data.url,
+        });
       }
       return { success: true, data: { files: results } };
     }
@@ -492,15 +521,18 @@ class ApiService {
 
   // Health check
   async healthCheck() {
-    return this.get('/health', { includeAuth: false });
+    return this.get("/health", { includeAuth: false });
   }
 
   // Packages API
   async listPackages() {
-    return this.get('/packages', { includeAuth: false });
+    return this.get("/packages", { includeAuth: false });
+  }
+  async getPackageById(id) {
+    return this.get(`/packages/${id}`, { includeAuth: false });
   }
   async createPackage(pkg) {
-    return this.post('/packages', pkg);
+    return this.post("/packages", pkg);
   }
   async updatePackage(id, pkg) {
     return this.put(`/packages/${id}`, pkg);
@@ -511,22 +543,32 @@ class ApiService {
 
   async uploadPackageImage(file) {
     const formData = new FormData();
-    formData.append('image', file);
-    return this.request('/upload/packages/image', {
-      method: 'POST',
+    formData.append("image", file);
+    return this.request("/upload/packages/image", {
+      method: "POST",
       body: formData,
       includeAuth: true,
-      headers: { 'Content-Type': undefined }
+      headers: { "Content-Type": undefined },
     });
   }
 
   // Payment Vouchers API
-  async listPaymentVouchers({ page = 1, limit = 20, category = '', search = '', startDate = '', endDate = '' } = {}) {
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
-    if (category) params.set('category', category);
-    if (search) params.set('search', search);
-    if (startDate) params.set('startDate', startDate);
-    if (endDate) params.set('endDate', endDate);
+  async listPaymentVouchers({
+    page = 1,
+    limit = 20,
+    category = "",
+    search = "",
+    startDate = "",
+    endDate = "",
+  } = {}) {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (category) params.set("category", category);
+    if (search) params.set("search", search);
+    if (startDate) params.set("startDate", startDate);
+    if (endDate) params.set("endDate", endDate);
     return this.get(`/payment-vouchers?${params.toString()}`);
   }
 
@@ -535,7 +577,7 @@ class ApiService {
   }
 
   async createPaymentVoucher(voucher) {
-    return this.post('/payment-vouchers', voucher);
+    return this.post("/payment-vouchers", voucher);
   }
 
   async updatePaymentVoucher(id, voucher) {
@@ -554,21 +596,21 @@ class ApiService {
     };
     try {
       let response = await fetch(url, fetchOpts);
-      if (!response.ok) throw new Error('Failed to download voucher PDF');
+      if (!response.ok) throw new Error("Failed to download voucher PDF");
       const blob = await response.blob();
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = window.URL.createObjectURL(blob);
       link.download = `${fileName || `voucher-${id}`}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (err) {
-      if (this.baseURL.includes('localhost')) {
+      if (this.baseURL.includes("localhost")) {
         const fallbackUrl = `${this.fallbackBaseURL}/payment-vouchers/${id}/pdf`;
         const response = await fetch(fallbackUrl, fetchOpts);
-        if (!response.ok) throw new Error('Failed to download voucher PDF');
+        if (!response.ok) throw new Error("Failed to download voucher PDF");
         const blob = await response.blob();
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = window.URL.createObjectURL(blob);
         link.download = `${fileName || `voucher-${id}`}.pdf`;
         document.body.appendChild(link);
@@ -581,19 +623,30 @@ class ApiService {
   }
 
   // Gallery API - Simplified
-  async getGalleryImages(category = 'all', page = 1, limit = 50) {
-    const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
-    if (category && category !== 'all') params.set('category', category);
+  async getGalleryImages(category = "all", page = 1, limit = 50) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (category && category !== "all") params.set("category", category);
     return this.get(`/gallery?${params.toString()}`, { includeAuth: false });
   }
-  async getAdminGalleries({ page = 1, limit = 20, category = 'all', search = '' } = {}) {
-    const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
-    if (category && category !== 'all') params.set('category', category);
-    if (search) params.set('search', search);
+  async getAdminGalleries({
+    page = 1,
+    limit = 20,
+    category = "all",
+    search = "",
+  } = {}) {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    if (category && category !== "all") params.set("category", category);
+    if (search) params.set("search", search);
     return this.get(`/gallery/admin?${params.toString()}`);
   }
   async createGallery(galleryData) {
-    return this.post('/gallery', galleryData);
+    return this.post("/gallery", galleryData);
   }
   async updateGallery(id, galleryData) {
     return this.put(`/gallery/${id}`, galleryData);
@@ -609,7 +662,3 @@ class ApiService {
 // Create and export singleton instance
 const apiService = new ApiService();
 export default apiService;
-
-
-
-

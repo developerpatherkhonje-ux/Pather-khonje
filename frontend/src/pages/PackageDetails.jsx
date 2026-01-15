@@ -13,6 +13,7 @@ import {
   Phone,
   ArrowRight,
 } from "lucide-react";
+import apiService from "../services/api";
 
 // Dummy Data matching the screenshot exactly
 const PACKAGE_DATA = {
@@ -87,15 +88,95 @@ const PACKAGE_DATA = {
 const PackageDetails = () => {
   const { packageId } = useParams();
   const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Simulating API fetch
-    setTimeout(() => {
-      setData(PACKAGE_DATA);
-    }, 500);
-  }, []);
+    const fetchPackage = async () => {
+      try {
+        setLoading(true);
+        const response = await apiService.getPackageById(packageId);
+        if (response.success && response.data.package) {
+          const pkg = response.data.package;
+          // Flatten/Normalize API data to UI structure
+          setData({
+            id: pkg.id,
+            name: pkg.name,
+            tagline: `${pkg.duration || "Flexible"} | ${
+              pkg.groupSize || "Flexible"
+            } | TOUR PACKAGE`,
+            images: pkg.image
+              ? [apiService.toAbsoluteUrl(pkg.image)]
+              : [
+                  "https://images.unsplash.com/photo-1509316785289-025f5b846b35?q=80&w=1176&auto=format&fit=crop",
+                ],
+            price: `₹${pkg.price?.toLocaleString()}`,
+            priceUnit: "per person",
+            description: pkg.description
+              ? [pkg.description]
+              : [
+                  "Experience the journey of a lifetime with our carefully curated package.",
+                ],
+            details: {
+              bestTime: pkg.bestTime || "All Year",
+              groupSize: pkg.groupSize || "Flexible",
+              idealFor: pkg.category
+                ? pkg.category.toUpperCase()
+                : "Leisure & Nature",
+              route: "See Itinerary", // Backend doesn't have route field
+            },
+            highlights: pkg.highlights || [
+              "Comfortable accommodation",
+              "Sightseeing transfers",
+              "Breakfast included",
+            ],
+            // Fake itinerary derived from description since backend lacks it
+            itinerary: [
+              {
+                day: "Overview",
+                title: "Trip Overview",
+                desc:
+                  pkg.description ||
+                  "Detailed itinerary will be provided upon booking.",
+                sub: "HIGHLIGHTS",
+              },
+            ],
+            inclusions: [
+              "Accommodation",
+              "Meals as specified",
+              "Transfers",
+              "Taxes",
+            ],
+            exclusions: ["Airfare", "Personal expenses", "Insurance"],
+          });
+        } else {
+          setError("Package not found");
+        }
+      } catch (err) {
+        console.error("Error fetching package details:", err);
+        setError("Failed to load package details");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  if (!data) return <div className="min-h-screen bg-white" />; // Clean loading state
+    if (packageId) {
+      fetchPackage();
+    }
+  }, [packageId]);
+
+  if (loading)
+    return (
+      <div className="min-h-screen bg-white flex justify-center items-center">
+        Loading...
+      </div>
+    );
+  if (error || !data)
+    return (
+      <div className="min-h-screen bg-white flex justify-center items-center text-red-500">
+        {error || "Package not found"}
+      </div>
+    );
 
   return (
     <div className="bg-white min-h-screen font-sans text-midnight-ocean pt-24 pb-20">

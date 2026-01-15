@@ -1,6 +1,7 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { MapPin } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, Loader2 } from "lucide-react";
+import apiService from "../services/api";
 
 const luxuryFadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -41,35 +42,18 @@ const cardHover = {
   },
 };
 
-// --- DATA ---
-const masonryImages = [
-  // Misty Mountains - Moody, fog-covered peaks
-  {
-    url: "https://images.unsplash.com/photo-1519681393784-d120267933ba?q=80&w=2070",
-    span: "col-span-1 md:col-span-2 row-span-2",
-    title: "Misty Mountains",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9?q=80&w=2070",
-    span: "col-span-1 row-span-2",
-    title: "Waterfalls",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073",
-    span: "col-span-1 md:col-span-1",
-    title: "Coastal Views",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3?q=80&w=2071",
-    span: "col-span-1",
-    title: "Temple Details",
-  },
-  {
-    url: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?q=80&w=2071",
-    span: "col-span-1",
-    title: "Forest Trails",
-  },
-];
+// Helper: Get span based on index for masonry layout
+const getGridSpan = (index) => {
+  const patterns = [
+    "col-span-1 md:col-span-2 row-span-2", // Large
+    "col-span-1", // Small
+    "col-span-1", // Small
+    "col-span-1 md:col-span-1", // Landscape
+    "col-span-1", // Small
+    "col-span-1", // Small
+  ];
+  return patterns[index % patterns.length];
+};
 
 const featuredDestinations = [
   // North Sikkim - Dramatic snow peaks
@@ -126,6 +110,36 @@ const moments = [
 ];
 
 function Gallery() {
+  const [activeTab, setActiveTab] = useState("all");
+  const [images, setImages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchImages();
+  }, [activeTab]);
+
+  const fetchImages = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getGalleryImages(activeTab);
+      if (response.success) {
+        setImages(response.data.galleries);
+      }
+    } catch (error) {
+      console.error("Failed to fetch images", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tabs = [
+    { id: "all", label: "All" },
+    { id: "destinations", label: "Destinations" },
+    { id: "activities", label: "Experiences" }, // Frontend maps 'activities' to 'Experiences' label
+    { id: "hotels", label: "Stays" },
+    { id: "food", label: "Cuisine" },
+  ];
+
   return (
     <div className="bg-white">
       {/* 1. HERO HEADER */}
@@ -170,7 +184,7 @@ function Gallery() {
       </section>
 
       {/* 2. MASONRY GRID (Main Gallery) */}
-      <section className="pb-12 px-6 md:px-12 bg-white">
+      <section className="pb-12 px-6 md:px-12 bg-white min-h-[600px]">
         <div className="container mx-auto">
           {/* Animated Tabs */}
           <motion.div
@@ -180,46 +194,73 @@ function Gallery() {
             variants={luxuryFadeUp}
             className="flex gap-8 mb-12 border-b border-gray-200 pb-4 text-sm font-sans uppercase tracking-widest text-slate-gray overflow-x-auto"
           >
-            <span className="text-midnight-ocean font-bold border-b-2 border-midnight-ocean pb-4 -mb-[17px] cursor-pointer">
-              All
-            </span>
-            <span className="cursor-pointer hover:text-midnight-ocean transition-colors">
-              Destinations
-            </span>
-            <span className="cursor-pointer hover:text-midnight-ocean transition-colors">
-              Experiences
-            </span>
-            <span className="cursor-pointer hover:text-midnight-ocean transition-colors">
-              Stays
-            </span>
-          </motion.div>
-
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-50px" }}
-            variants={staggerContainer}
-            className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[300px]"
-          >
-            {masonryImages.map((img, idx) => (
-              <motion.div
-                key={idx}
-                variants={luxuryFadeUp}
-                className={`relative rounded-sm overflow-hidden group ${img.span}`}
+            {tabs.map((tab) => (
+              <span
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`cursor-pointer transition-colors pb-4 -mb-[17px] ${
+                  activeTab === tab.id
+                    ? "text-midnight-ocean font-bold border-b-2 border-midnight-ocean"
+                    : "hover:text-midnight-ocean"
+                }`}
               >
-                <img
-                  src={img.url}
-                  alt={img.title}
-                  className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
-                  <span className="text-white font-serif text-xl translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                    {img.title}
-                  </span>
-                </div>
-              </motion.div>
+                {tab.label}
+              </span>
             ))}
           </motion.div>
+
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-soft-gold" />
+            </div>
+          ) : (
+            <motion.div
+              layout
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
+              className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[300px]"
+            >
+              <AnimatePresence mode="popLayout">
+                {images.map((img, idx) => (
+                  <motion.div
+                    key={img._id || idx}
+                    layout
+                    variants={luxuryFadeUp}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className={`relative rounded-sm overflow-hidden group ${getGridSpan(
+                      idx
+                    )}`}
+                  >
+                    <img
+                      src={apiService.toAbsoluteUrl(img.image?.url)}
+                      alt={img.title}
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                      <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                        <span className="text-white font-serif text-xl block">
+                          {img.title}
+                        </span>
+                        <span className="text-white/80 text-sm font-sans mt-1 block">
+                          {img.description}
+                        </span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          )}
+
+          {!loading && images.length === 0 && (
+            <div className="text-center py-20 text-slate-400">
+              <p>No images found in this category.</p>
+            </div>
+          )}
         </div>
       </section>
 

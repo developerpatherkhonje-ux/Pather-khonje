@@ -91,6 +91,9 @@ function Footer() {
             <a href="#" className="hover:text-white transition-colors">
               Sitemap
             </a>
+            <a href="/auth" className="hover:text-white transition-colors">
+              Admin
+            </a>
           </div>
         </div>
       </div>
