@@ -1,237 +1,333 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import apiService from '../services/api';
-import { Calendar, Users, MapPin, Star, Clock } from 'lucide-react';
-import hero8 from '/assets/hero8.jpg';
-
-
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
+import { Clock, ArrowRight, Check } from "lucide-react";
+import apiService from "../services/api";
 
 const Packages = () => {
-  const [loading, setLoading] = useState(true);
-  const [packages, setPackages] = useState([]);
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeCategory, setActiveCategory] = useState("ALL PACKAGES");
+
   const categories = [
-    { id: 'all', name: 'All Packages' },
-    { id: 'adventure', name: 'Adventure' },
-    { id: 'heritage', name: 'Heritage' },
-    { id: 'beach', name: 'Beach' },
-    { id: 'mountain', name: 'Mountain' },
-    { id: 'spiritual', name: 'Spiritual' }
+    { id: "ALL PACKAGES", name: "ALL PACKAGES" },
+    { id: "HILL STATIONS", name: "HILL STATIONS" },
+    { id: "COASTAL & BEACH", name: "COASTAL & BEACH" },
+    { id: "HERITAGE TOURS", name: "HERITAGE TOURS" },
+    { id: "GROUP SPECIALS", name: "GROUP SPECIALS" },
   ];
 
+  const [packages, setPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
-    const load = async () => {
+    const fetchPackages = async () => {
       try {
-        const res = await apiService.listPackages();
-        if (res.success) {
-          const list = Array.isArray(res.data.packages) ? res.data.packages : [];
-          // Deduplicate by id/_id to avoid double entries
-          const byId = new Map();
-          list.forEach((p) => {
-            const key = String(p.id || p._id || '');
-            if (key && !byId.has(key)) byId.set(key, p);
-          });
-          setPackages(Array.from(byId.values()));
+        setLoading(true);
+        const response = await apiService.listPackages();
+        if (response.success) {
+          const mappedPackages = (response.data.packages || []).map(
+            (pkg, index) => ({
+              id: pkg.id,
+              name: pkg.name,
+              price: `₹${pkg.price?.toLocaleString()}`,
+              priceUnit: "(per person)",
+              nights: pkg.duration, // Assuming backend sends "X Nights / Y Days" or similar string
+              tag: pkg.duration,
+              description: pkg.description,
+              // Backend lacks structured itinerary. Using description as a single day overview or generic placeholder.
+              itinerary: [
+                {
+                  day: "Overview",
+                  text:
+                    pkg.description ||
+                    "Contact us for a detailed day-wise itinerary.",
+                },
+              ],
+              valid: pkg.bestTime || "All Year",
+              travelers: pkg.groupSize || "Flexible",
+              inclusions: pkg.highlights || [
+                "Accommodation",
+                "Meals",
+                "Transfers",
+              ], // Using highlights as inclusions/features
+              image: apiService.toAbsoluteUrl(pkg.image),
+              imagePosition: index % 2 === 0 ? "right" : "left",
+              linkText: "View Details",
+            })
+          );
+          setPackages(mappedPackages);
         }
+      } catch (err) {
+        console.error("Error fetching packages:", err);
       } finally {
         setLoading(false);
       }
     };
-    load();
+
+    fetchPackages();
   }, []);
 
-  const filteredPackages = activeCategory === 'all'
-    ? packages
-    : packages.filter(pkg => ((pkg.category || '').toLowerCase()) === activeCategory);
+  // Animation Variants
+  const containerVariants = {
+    hidden: {},
+    visible: {
+      transition: { staggerChildren: 0.1 },
+    },
+  };
 
-  const handleWhatsAppBooking = (packageData) => {
-    const message = `Hi! I'm interested in booking the "${packageData.name}" package (${packageData.duration}) for ₹${packageData.price.toLocaleString()}. Please provide more details.`;
-    window.open(`https://wa.me/917439857694?text=${encodeURIComponent(message)}`, '_blank');
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" },
+    },
   };
 
   return (
-    <div className="pt-20">
-      {/* Header */}
-      <section 
-        className="py-20 bg-cover bg-center bg-no-repeat relative"
-        style={{ backgroundImage: "url('/assets/hero14.jpg')" }}
-      >
-        {/* Light overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/20"></div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+    <div className="bg-gray-50 min-h-screen font-sans">
+      {/* 1. HERO SECTION */}
+      <section className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1548876995-629f48ad9a6c?fm=jpg&q=60&w=3000')",
+          }}
+        >
+          <div className="absolute inset-0 bg-black/20" />
+        </div>
+
+        <div className="relative z-10 h-full flex flex-col justify-center items-center text-center px-4 pt-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-white"
+            transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">Tour Packages</h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto">
-              Discover incredible destinations with our carefully crafted tour packages
+            <h1 className="text-5xl md:text-7xl font-serif text-white mb-4 shadow-sm">
+              Explore Our Packages
+            </h1>
+            <p className="text-lg md:text-xl text-white/90 font-light max-w-2xl mx-auto tracking-wide mb-8">
+              Handpicked journeys crafted for memories, comfort, and peace of
+              mind
             </p>
+            {/* <div className="w-20 h-1 bg-white/60 mx-auto rounded-full" /> */}
           </motion.div>
         </div>
       </section>
 
-      {/* Sub Navigation (Categories) - matches Gallery style */}
-      <section className="py-12 bg-white">
+      {/* 2. FILTER TABS */}
+      <section className="bg-white border-b border-gray-200 sticky top-20 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap justify-center gap-3 md:gap-4"
-          >
-            {categories.map(cat => (
+          <div className="flex overflow-x-auto gap-8 py-6 no-scrollbar items-center justify-start md:justify-center">
+            {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
-                className={`px-5 py-2.5 rounded-full text-sm md:text-base font-medium transition-all duration-300 ${
-                  activeCategory === cat.id
-                    ? 'bg-sky-600 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-sky-100 hover:text-sky-600'
-                }`}
+                className={`text-xs tracking-[0.15em] whitespace-nowrap uppercase font-medium transition-colors duration-300 relative group
+                  ${
+                    activeCategory === cat.id
+                      ? "text-midnight-ocean"
+                      : "text-gray-400 hover:text-gray-600"
+                  }`}
               >
                 {cat.name}
+                <span
+                  className={`absolute -bottom-2 left-0 w-full h-0.5 bg-midnight-ocean transform origin-left transition-transform duration-300
+                    ${
+                      activeCategory === cat.id
+                        ? "scale-x-100"
+                        : "scale-x-0 group-hover:scale-x-50"
+                    }`}
+                />
               </button>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
-      {/* Packages from admin */}
-      <section className="pt-12 pb-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 3. PACKAGES LIST (Cards) */}
+      <section className="py-20 px-4">
+        <div className="max-w-7xl mx-auto space-y-24">
           {loading ? (
-            <div className="text-center py-20">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                <h2 className="text-2xl font-semibold text-gray-600">Loading packages...</h2>
-              </motion.div>
-            </div>
-          ) : filteredPackages.length === 0 ? (
-            <div className="text-center py-20">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-                <h2 className="text-3xl font-bold text-gray-900 mb-4">No Packages Available</h2>
-                <p className="text-gray-600 mb-6">Please check back later.</p>
-                <Link to="/website/contact" className="inline-flex items-center bg-sky-600 text-white px-6 py-3 rounded-lg hover:bg-sky-700 transition-colors">Contact Us</Link>
-              </motion.div>
+            <div className="flex justify-center items-center h-64 text-gray-400 tracking-widest uppercase">
+              Loading Packages...
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {filteredPackages.map((pkg, index) => (
+            <AnimatePresence mode="wait">
+              {packages.map((pkg) => (
                 <motion.div
-                  key={pkg.id || pkg._id}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover-3d"
+                  key={pkg.id}
+                  initial="hidden"
+                  whileInView="visible"
+                  viewport={{ once: true, margin: "-100px" }}
+                  variants={containerVariants}
+                  className="bg-white p-0 md:p-12 shadow-sm border border-gray-100 flex flex-col gap-10"
                 >
-                  <div className="relative aspect-[16/10] overflow-hidden">
-                    <img
-                      src={apiService.toAbsoluteUrl(pkg.image) || '/public/hpackages/kerala.jpg'}
-                      alt={pkg.name}
-                      loading='lazy'
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    {pkg.category && (
-                      <div className="absolute top-4 left-4">
-                        <span className="bg-white/90 backdrop-blur-sm text-sky-600 font-semibold px-3 py-1 rounded-full text-sm shadow">
-                          {(pkg.category || '').charAt(0).toUpperCase() + (pkg.category || '').slice(1)}
-                        </span>
-                      </div>
-                    )}
-                    {pkg.rating && (
-                      <div className="absolute top-4 right-4">
-                        <div className="bg-white/90 backdrop-blur-sm rounded-full px-3 py-1 flex items-center space-x-1 shadow">
-                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                          <span className="text-sm font-medium">{pkg.rating}</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">{pkg.name}</h3>
-                    <p className="text-gray-600 mb-3 line-clamp-2">{pkg.description}</p>
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center text-gray-500">
-                        <Clock className="h-4 w-4 mr-1" />
-                        <span className="text-sm">{pkg.duration}</span>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-sky-600">₹{pkg.price?.toLocaleString?.() || pkg.price}</p>
-                        <p className="text-xs text-gray-500">per person</p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 mb-4">
-                      {pkg.bestTime && (
-                        <div>
-                          <p className="text-xs text-gray-500">Best Time</p>
-                          <p className="text-sm text-gray-700 line-clamp-1">{pkg.bestTime}</p>
-                        </div>
-                      )}
-                      {pkg.groupSize && (
-                        <div>
-                          <p className="text-xs text-gray-500">Group Size</p>
-                          <p className="text-sm text-gray-700">{pkg.groupSize}</p>
-                        </div>
-                      )}
-                    </div>
-                    {Array.isArray(pkg.highlights) && pkg.highlights.length > 0 && (
-                      <div className="mb-4">
-                        <p className="text-sm font-medium text-gray-700 mb-2">Highlights:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {pkg.highlights.slice(0, 3).map((h) => (
-                            <span key={h} className="bg-sky-100 text-sky-700 text-xs px-2 py-1 rounded">{h}</span>
-                          ))}
-                          {pkg.highlights.length > 3 && (
-                            <span className="text-xs text-gray-500 px-2 py-1">+{pkg.highlights.length - 3} more</span>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div className="flex gap-3 mt-2">
-                      <Link
-                        to={`/website/package/${pkg.id}`}
-                        className="flex-1 bg-gray-100 text-gray-700 text-center py-3 px-4 rounded-lg font-semibold hover:bg-gray-200 transition-all duration-300"
+                  <div
+                    className={`flex flex-col ${
+                      pkg.imagePosition === "right"
+                        ? "lg:flex-row"
+                        : "lg:flex-row-reverse"
+                    } gap-12 lg:gap-20 items-stretch min-h-[500px]`}
+                  >
+                    {/* Content Side */}
+                    <div className="w-full lg:w-1/2 flex flex-col py-4">
+                      <motion.div
+                        variants={itemVariants}
+                        className="flex justify-between items-start mb-6"
                       >
-                        View Details
-                      </Link>
-                      <button
-                        onClick={() => handleWhatsAppBooking(pkg)}
-                        className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-all duration-300"
+                        <div className="space-y-2">
+                          <h2 className="text-4xl font-serif text-midnight-ocean">
+                            {pkg.name}
+                          </h2>
+                          <span className="inline-block bg-blue-50 text-midnight-ocean text-xs font-bold px-3 py-1 uppercase tracking-widest">
+                            {pkg.nights}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-3xl font-serif text-midnight-ocean">
+                            {pkg.price}
+                          </div>
+                          <div className="text-[10px] text-gray-400 uppercase tracking-widest">
+                            {pkg.priceUnit}
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        variants={itemVariants}
+                        className="flex-grow space-y-6 mb-10 border-t border-b border-gray-100 py-8"
                       >
-                        Book Now
-                      </button>
+                        {pkg.itinerary.map((item, idx) => (
+                          <div key={idx} className="flex gap-6 group">
+                            <span className="text-xs font-bold text-midnight-ocean w-12 flex-shrink-0 uppercase tracking-wide pt-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                              {item.day}
+                            </span>
+                            <span className="text-slate-600 text-sm leading-relaxed font-light">
+                              {item.text}
+                            </span>
+                          </div>
+                        ))}
+                      </motion.div>
+
+                      <motion.div
+                        variants={itemVariants}
+                        className="grid grid-cols-2 gap-8 mb-10 text-xs tracking-widest uppercase text-gray-400"
+                      >
+                        <div>
+                          <div className="mb-2 font-medium text-gray-300">
+                            Valid Between
+                          </div>
+                          <div className="text-midnight-ocean font-bold">
+                            {pkg.valid}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="mb-2 font-medium text-gray-300">
+                            Group Size
+                          </div>
+                          <div className="text-midnight-ocean font-bold">
+                            {pkg.travelers}
+                          </div>
+                        </div>
+                        <div className="col-span-2">
+                          <div className="mb-2 font-medium text-gray-300">
+                            Inclusions
+                          </div>
+                          <div className="flex gap-4 text-midnight-ocean font-bold normal-case tracking-normal">
+                            {pkg.inclusions.map((inc) => (
+                              <span
+                                key={inc}
+                                className="flex items-center gap-1"
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-soft-gold" />{" "}
+                                {inc}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </motion.div>
+
+                      <motion.div
+                        variants={itemVariants}
+                        className="flex items-center gap-6 mt-auto"
+                      >
+                        <button className="bg-midnight-ocean text-white px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-deep-steel-blue transition-all duration-300">
+                          Book Now
+                        </button>
+                        <Link
+                          to={`/website/package/${pkg.id}`}
+                          className="text-xs font-bold tracking-[0.2em] uppercase text-midnight-ocean flex items-center gap-2 group hover:text-soft-gold transition-colors"
+                        >
+                          {pkg.linkText}
+                          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      </motion.div>
                     </div>
+
+                    {/* Image Side */}
+                    <motion.div
+                      variants={itemVariants}
+                      className="w-full lg:w-1/2 relative min-h-[400px]"
+                    >
+                      <div className="absolute inset-0 overflow-hidden shadow-2xl">
+                        <img
+                          src={pkg.image}
+                          alt={pkg.name}
+                          className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-[1.5s]"
+                        />
+                      </div>
+                    </motion.div>
                   </div>
                 </motion.div>
               ))}
-            </div>
+            </AnimatePresence>
           )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <h2 className="text-4xl font-bold text-gray-900 mb-6">
-              Need a Custom Package?
+      {/* 4. DESIGN YOUR OWN JOURNEY */}
+      <section className="bg-midnight-ocean py-24 text-white">
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-16">
+          <div className="max-w-2xl">
+            <h2 className="text-5xl font-serif mb-6">
+              Design Your Own Journey
             </h2>
-            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-              We can create personalized tour packages based on your preferences, budget, and timeline.
+            <p className="text-gray-300 text-lg font-light leading-relaxed mb-10 max-w-xl">
+              Don't see exactly what you're looking for? Tell us your
+              preferences, dates, and budget, and our travel experts will curate
+              a personalized itinerary just for you.
+            </p>
+
+            <div className="space-y-3">
+              {[
+                "Flexible Dates & Duration",
+                "Handpicked Hotels & Stays",
+                "Private Transfers & Local Guides",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="flex items-center gap-3 text-sm tracking-widest uppercase text-soft-gold"
+                >
+                  <div className="w-1 h-1 bg-soft-gold rounded-full" />
+                  {item}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="w-full max-w-md bg-white/5 backdrop-blur-sm border border-white/10 p-10">
+            <h3 className="text-2xl font-serif mb-2">Start Planning</h3>
+            <p className="text-gray-400 text-sm mb-8">
+              Get a free, no-obligation quote within 24 hours.
             </p>
             <Link
-              to="/contact"
-              className="inline-flex items-center bg-sky-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-sky-700 transition-all duration-300 hover:transform hover:scale-105"
+              to="/website/contact"
+              className="block w-full bg-white text-midnight-ocean text-center py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-gray-100 transition-colors"
             >
-              Get Custom Quote
+              Request Custom Quote
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
     </div>

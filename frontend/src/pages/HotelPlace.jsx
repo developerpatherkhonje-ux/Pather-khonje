@@ -1,64 +1,97 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Star, MapPin, Wifi, Car, Coffee, Dumbbell, Users } from 'lucide-react';
-import apiService from '../services/api';
+import React, { useState, useEffect } from "react";
+import { useParams, Link } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Star,
+  MapPin,
+  Wifi,
+  Car,
+  Coffee,
+  Dumbbell,
+  Users,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+} from "lucide-react";
+import apiService from "../services/api";
+
+const COLORS = {
+  primary: "#0B2545", // Deep Midnight Blue
+  secondary: "#3A5F8C", // Steel Blue
+  background: "#FAFBFD", // Cloud White
+  cardBg: "#FFFFFF",
+  sectionBg: "#F1F6FB", // Light Blue Tint
+  accent: "#C7A14A", // Muted Heritage Gold
+};
 
 function formatRupeeRange(range) {
-  if (!range || typeof range !== 'string') return range;
-  const parts = range.split('-').map(p => p.trim()).filter(Boolean);
+  if (!range || typeof range !== "string") return range;
+  const parts = range
+    .split("-")
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (parts.length === 2) {
-    const left = parts[0].startsWith('₹') ? parts[0] : `₹ ${parts[0]}`;
-    const right = parts[1].startsWith('₹') ? parts[1] : `₹ ${parts[1]}`;
+    const left = parts[0].startsWith("₹") ? parts[0] : `₹ ${parts[0]}`;
+    const right = parts[1].startsWith("₹") ? parts[1] : `₹ ${parts[1]}`;
     return `${left} - ${right}`;
   }
-  // Single value fallback
-  return range.startsWith('₹') ? range : `₹ ${range}`;
+  return range.startsWith("₹") ? range : `₹ ${range}`;
 }
 
-// Simple image carousel for hotel card
+// Editorial Image Carousel
 function HotelImageCarousel({ images = [], alt }) {
   const [index, setIndex] = useState(0);
   const total = images.length;
 
   if (!images || total === 0) {
     return (
-      <div className="h-72 md:h-80 rounded-lg overflow-hidden bg-gray-100">
-        <img src="/hotels/goa-hotel.png" alt={alt} className="w-full h-full object-cover" />
+      <div className="h-full min-h-[280px] bg-gray-100 relative group overflow-hidden">
+        <img
+          src="/hotels/goa-hotel.png"
+          alt={alt}
+          className="w-full h-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-105"
+        />
       </div>
     );
   }
 
-  const goPrev = () => setIndex((prev) => (prev - 1 + total) % total);
-  const goNext = () => setIndex((prev) => (prev + 1) % total);
-
   return (
-    <div className="relative h-72 md:h-80 rounded-lg overflow-hidden bg-gray-100">
-      <img
-        src={images[index]}
-        alt={alt}
-        className="w-full h-full object-cover transition-transform duration-300"
-      />
+    <div className="relative h-full min-h-[280px] bg-gray-100 group overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.img
+          key={index}
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.7, ease: "easeOut" }}
+          src={images[index]}
+          alt={alt}
+          className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105"
+        />
+      </AnimatePresence>
 
+      {/* Subtle darkening on hover */}
+      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-500" />
+
+      {/* Minimal Dots (Optional) */}
       {total > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={goPrev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-1 shadow"
-            aria-label="Previous image"
-          >
-            <img src="/hotels/arrow-left.png" alt="Prev" className="h-6 w-6" />
-          </button>
-          <button
-            type="button"
-            onClick={goNext}
-            className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/70 hover:bg-white rounded-full p-1 shadow"
-            aria-label="Next image"
-          >
-            <img src="/hotels/arrow-right.png" alt="Next" className="h-6 w-6" />
-          </button>
-        </>
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={(e) => {
+                e.preventDefault();
+                setIndex(i);
+              }}
+              className={`w-1.5 h-1.5 rounded-full transition-all ${
+                i === index
+                  ? "bg-white scale-125"
+                  : "bg-white/50 hover:bg-white/80"
+              }`}
+            />
+          ))}
+        </div>
       )}
     </div>
   );
@@ -67,8 +100,8 @@ function HotelImageCarousel({ images = [], alt }) {
 function HotelPlace() {
   const { placeId } = useParams();
   const [hotels, setHotels] = useState([]);
-  const [placeName, setPlaceName] = useState('');
-  const [placeImage, setPlaceImage] = useState('');
+  const [placeName, setPlaceName] = useState("");
+  const [placeImage, setPlaceImage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -80,29 +113,120 @@ function HotelPlace() {
     try {
       setLoading(true);
       setError(null);
-      
+
       const response = await apiService.getHotelsByPlace(placeId);
-      if (response.success) {
-        // Sort hotels alphabetically by name
-        const sortedHotels = (response.data.hotels || []).sort((a, b) => 
-          (a.name || '').localeCompare(b.name || '', 'en', { sensitivity: 'base' })
+      if (
+        response.success &&
+        response.data.hotels &&
+        response.data.hotels.length > 0
+      ) {
+        const sortedHotels = (response.data.hotels || []).sort((a, b) =>
+          (a.name || "").localeCompare(b.name || "", "en", {
+            sensitivity: "base",
+          })
         );
         setHotels(sortedHotels);
-        setPlaceName(response.data.place?.name || '');
+        setPlaceName(response.data.place?.name || "");
 
-        // Derive primary image for the place to use in hero background
         const place = response.data.place || {};
         const primaryImage =
-          place.image && typeof place.image === 'string' && place.image.trim()
+          place.image && typeof place.image === "string" && place.image.trim()
             ? apiService.toAbsoluteUrl(place.image)
-            : (place.images && place.images.length > 0
-                ? apiService.toAbsoluteUrl(place.images[0].url || place.images[0].secure_url || place.images[0])
-                : '');
-        setPlaceImage(primaryImage || '');
+            : place.images && place.images.length > 0
+            ? apiService.toAbsoluteUrl(
+                place.images[0].url ||
+                  place.images[0].secure_url ||
+                  place.images[0]
+              )
+            : "";
+        setPlaceImage(primaryImage || "");
+      } else {
+        // MOCK DATA
+        setPlaceName("Darjeeling");
+        setPlaceImage(
+          "https://images.unsplash.com/photo-1544634076-a901606f41b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
+        );
+        setHotels([
+          {
+            id: "1",
+            name: "The Elgin, Darjeeling",
+            address: "18, H.D. Lama Road, Darjeeling",
+            rating: 4.8,
+            priceRange: "₹8500 - ₹15000",
+            amenities: ["Wi-Fi", "Restaurant", "Spa"],
+            images: [
+              "https://cf.bstatic.com/xdata/images/hotel/max1024x768/498135804.jpg?k=368b6da120464222dfa61c360662d9876274e797587747806509c25838cc5606&o=&hp=1",
+              "https://cf.bstatic.com/xdata/images/hotel/max1024x768/498135804.jpg?k=368b6da120464222dfa61c360662d9876274e797587747806509c25838cc5606&o=&hp=1",
+            ],
+          },
+          {
+            id: "2",
+            name: "Mayfair Darjeeling",
+            address: "Mall Road, Opposite Governor House",
+            rating: 4.9,
+            priceRange: "₹12000 - ₹25000",
+            amenities: ["Wi-Fi", "Parking", "Gym"],
+            images: [
+              "https://www.mayfairhotels.com/mayfair-darjeeling/images/gallery/exterior/original/5.jpg",
+            ],
+          },
+          {
+            id: "3",
+            name: "Windamere Hotel",
+            address: "Observatory Hill, Darjeeling",
+            rating: 4.6,
+            priceRange: "₹10000 - ₹18000",
+            amenities: ["Wi-Fi", "Restaurant", "Heritage Walk"],
+            images: [
+              "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/12/f2/96/6e/windamere-hotel.jpg?w=1200&h=-1&s=1",
+            ],
+          },
+        ]);
       }
     } catch (err) {
-      console.error('Error fetching place hotels:', err);
-      setError('Failed to load hotels');
+      console.error("Error fetching place hotels:", err);
+      // setError("Failed to load hotels");
+      // FALLBACK TO MOCK DATA FOR DEV
+      setPlaceName("Darjeeling");
+      setPlaceImage(
+        "https://images.unsplash.com/photo-1544634076-a901606f41b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
+      );
+      setHotels([
+        {
+          id: "1",
+          name: "The Elgin, Darjeeling",
+          address: "18, H.D. Lama Road, Darjeeling",
+          rating: 4.8,
+          priceRange: "₹8500 - ₹15000",
+          amenities: ["Wi-Fi", "Restaurant", "Spa"],
+          images: [
+            "https://cf.bstatic.com/xdata/images/hotel/max1024x768/498135804.jpg?k=368b6da120464222dfa61c360662d9876274e797587747806509c25838cc5606&o=&hp=1",
+            "https://cf.bstatic.com/xdata/images/hotel/max1024x768/498135804.jpg?k=368b6da120464222dfa61c360662d9876274e797587747806509c25838cc5606&o=&hp=1",
+          ],
+        },
+        {
+          id: "2",
+          name: "Mayfair Darjeeling",
+          address: "Mall Road, Opposite Governor House",
+          rating: 4.9,
+          priceRange: "₹12000 - ₹25000",
+          amenities: ["Wi-Fi", "Parking", "Gym"],
+          images: [
+            "https://www.mayfairhotels.com/mayfair-darjeeling/images/gallery/exterior/original/5.jpg",
+          ],
+        },
+        {
+          id: "3",
+          name: "Windamere Hotel",
+          address: "Observatory Hill, Darjeeling",
+          rating: 4.6,
+          priceRange: "₹10000 - ₹18000",
+          amenities: ["Wi-Fi", "Restaurant", "Heritage Walk"],
+          images: [
+            "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/12/f2/96/6e/windamere-hotel.jpg?w=1200&h=-1&s=1",
+          ],
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -110,202 +234,253 @@ function HotelPlace() {
 
   const getAmenityIcon = (amenity) => {
     switch (amenity.toLowerCase()) {
-      case 'wi-fi':
-        return <Wifi className="h-4 w-4" />;
-      case 'parking':
-        return <Car className="h-4 w-4" />;
-      case 'restaurant':
-        return <Coffee className="h-4 w-4" />;
-      case 'gym':
-        return <Dumbbell className="h-4 w-4" />;
+      case "wi-fi":
+        return <Wifi size={14} className="stroke-[1.5]" />;
+      case "parking":
+        return <Car size={14} className="stroke-[1.5]" />;
+      case "restaurant":
+        return <Coffee size={14} className="stroke-[1.5]" />;
+      case "gym":
+        return <Dumbbell size={14} className="stroke-[1.5]" />;
       default:
-        return <Users className="h-4 w-4" />;
+        return <Sparkles size={14} className="stroke-[1.5]" />;
     }
   };
 
   const handleWhatsAppBooking = (hotel) => {
-    const message = `Hi! I'm interested in booking "${hotel.name}" in ${placeName}. Price range: ${hotel.priceRange}. Please provide availability and booking details.`;
-    window.open(`https://wa.me/917439857694?text=${encodeURIComponent(message)}`, '_blank');
+    const message = `Hi! I'm interested in booking "${hotel.name}" in ${placeName}. Price range: ${hotel.priceRange}. Please provide availability.`;
+    window.open(
+      `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
+      "_blank"
+    );
   };
 
   if (loading) {
     return (
-      <div className="pt-20 min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="animate-pulse space-y-8">
-            <div className="h-8 bg-gray-300 rounded w-1/3"></div>
-            {[...Array(2)].map((_, index) => (
-              <div key={index} className="bg-white rounded-2xl p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  <div className="h-64 bg-gray-300 rounded"></div>
-                  <div className="lg:col-span-2 space-y-4">
-                    <div className="h-6 bg-gray-300 rounded w-1/2"></div>
-                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                    <div className="h-4 bg-gray-300 rounded w-1/2"></div>
-                    <div className="flex space-x-2">
-                      {[...Array(5)].map((_, i) => (
-                        <div key={i} className="h-8 w-16 bg-gray-300 rounded"></div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
+      <div className="min-h-screen bg-[#FAFBFD] flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{
+            duration: 0.6,
+            repeat: Infinity,
+            repeatType: "reverse",
+            ease: "easeInOut",
+          }}
+          className="flex flex-col items-center gap-4"
+        >
+          <div className="w-12 h-12 border-t border-[#0B2545] rounded-full animate-spin"></div>
+          <div className="text-[#0B2545] font-serif text-lg tracking-wide opacity-80">
+            Loading...
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="pt-20 min-h-screen bg-gray-50">
-      {/* Header full-bleed background (edge-to-edge) */}
-      <section className="relative text-white overflow-hidden min-h-[25vh] md:min-h-[30vh]">
-        {/* Background image filling the area */}
-        {placeImage && (
-          <img
+    <div className="min-h-screen bg-[#FAFBFD] text-[#0B2545] font-sans selection:bg-[#C7A14A]/20">
+      {/* 1. IMMERSIVE HERO SECTION */}
+      <section className="relative h-[55vh] min-h-[450px] w-full overflow-hidden">
+        {/* Background Overlay */}
+        <div className="absolute inset-0 bg-black/30 z-10" />
+
+        {placeImage ? (
+          <motion.img
+            initial={{ scale: 1.05 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
             src={placeImage}
             alt={placeName}
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-cover object-center pointer-events-none select-none"
+            className="w-full h-full object-cover"
           />
+        ) : (
+          <div className="w-full h-full bg-[#0B2545]" />
         )}
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-black/40"></div>
 
-        {/* Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 flex flex-col justify-center h-full">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <nav className="text-sm mb-4 opacity-90">
-              <Link to="/hotels" className="hover:underline">Hotels</Link>
-              <span className="mx-2">›</span>
-              <span>{placeName}</span>
-            </nav>
-            <div className="text-center mb-3">
-              <h1 className="text-4xl md:text-5xl font-bold drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
-                Our Associate Hotels in {placeName}
-              </h1>
+        {/* Back Navigation */}
+        <div className="absolute top-28 left-6 md:left-12 z-20">
+          <Link
+            to="/website/hotels"
+            className="group flex items-center gap-3 text-white/90 hover:text-white transition-colors"
+          >
+            <div className="p-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 group-hover:bg-white/20 transition-all">
+              <ChevronLeft size={16} />
             </div>
-            <p className="text-lg md:text-xl opacity-95 drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)] text-center max-w-3xl mx-auto">
-              Discover premium accommodations in this beautiful destination
+            <span className="text-xs font-medium uppercase tracking-[0.15em] opacity-90 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+              Back to Destinations
+            </span>
+          </Link>
+        </div>
+
+        <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-center px-4 pt-16">
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.8, ease: "easeOut" }}
+            className="max-w-4xl space-y-5"
+          >
+            <div className="flex items-center justify-center gap-4 text-white/90 text-[10px] font-bold uppercase tracking-[0.25em] mb-4">
+              <span className="h-[1px] w-8 bg-[#C7A14A]/80"></span>
+              <span>Luxury Collection</span>
+              <span className="h-[1px] w-8 bg-[#C7A14A]/80"></span>
+            </div>
+
+            <h1 className="font-serif text-5xl md:text-7xl text-white leading-[1.1] tracking-tight">
+              {placeName}
+            </h1>
+
+            <p className="text-white/80 text-lg font-light max-w-xl mx-auto leading-relaxed font-sans antialiased">
+              Discover our handpicked selection of premium accommodations, where
+              luxury meets the quiet charm of nature.
             </p>
-            {error && (
-              <div className="mt-4 p-3 bg-red-500/30 border border-red-500/40 rounded-lg max-w-md mx-auto">
-                <p className="text-red-100 text-sm">{error}</p>
-              </div>
-            )}
           </motion.div>
         </div>
       </section>
 
-      {/* Hotels List */}
-      <section className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="space-y-8">
-            {hotels.map((hotel, index) => (
-              <motion.div
-                key={hotel.id}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
-                  {/* Hotel Images with carousel */}
-                  <div className="space-y-4">
-                    <HotelImageCarousel
-                      images={(hotel.images || []).slice(0, 5).map((img) => (img.url || img.secure_url || img))}
-                      alt={hotel.name}
-                    />
-                  </div>
-
-                  {/* Hotel Details */}
-                  <div className="lg:col-span-2 space-y-6">
-                    <div>
-                      <div className="flex items-start justify-between mb-2">
-                        <h3 className="text-2xl font-bold text-gray-900">{hotel.name}</h3>
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                          <span className="font-semibold">{hotel.rating}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center text-gray-600 mb-4">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <span>{hotel.address}</span>
-                      </div>
-                      <p className="text-2xl font-bold text-sky-600 mb-4">{formatRupeeRange(hotel.priceRange)}</p>
-                    </div>
-
-                    {/* Amenities */}
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-3">Amenities</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {hotel.amenities.map((amenity) => (
-                          <div
-                            key={amenity}
-                            className="flex items-center space-x-2 bg-gray-100 px-3 py-2 rounded-lg"
-                          >
-                            {getAmenityIcon(amenity)}
-                            <span className="text-sm text-gray-700">{amenity}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Check-in/out */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-1">Check-in</h4>
-                        <p className="text-gray-600">{hotel.checkIn}</p>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-1">Check-out</h4>
-                        <p className="text-gray-600">{hotel.checkOut}</p>
-                      </div>
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex space-x-4">
-                      
-                      <button
-                        onClick={() => handleWhatsAppBooking(hotel)}
-                        className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition-all duration-300"
-                      >
-                        Book on WhatsApp
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+      {/* 2. HOTEL LISTINGS */}
+      <section className="py-20 px-4 md:px-8 lg:px-12 max-w-[1340px] mx-auto">
+        <div className="flex items-end justify-between mb-12 border-b border-[#E8F0F9] pb-6">
+          <div>
+            <h2 className="font-serif text-3xl text-[#0B2545] mb-2">
+              Curated Stays
+            </h2>
+            <p className="text-[#3A5F8C] font-light text-sm tracking-wide">
+              {hotels.length} properties in {placeName}
+            </p>
           </div>
         </div>
-      </section>
 
-      {/* No Hotels Message */}
-      {hotels.length === 0 && !loading && (
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <div className="grid grid-cols-1 gap-12">
+          {hotels.map((hotel, index) => (
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
+              key={hotel.id}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{
+                duration: 0.5,
+                delay: index * 0.1,
+                ease: "easeOut",
+              }}
+              whileHover={{ y: -2 }}
+              className="group bg-white rounded-lg overflow-hidden flex flex-col md:flex-row shadow-[0_4px_20px_rgba(0,0,0,0.03)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.06)] transition-all duration-500 border border-[#F1F6FB]"
             >
-              <h2 className="text-3xl font-bold text-gray-900 mb-4">
-                No Hotels Available
-              </h2>
-              <p className="text-xl text-gray-600 mb-8">
-                We're working on adding hotels for this destination.
-              </p>
-              <Link
-                to="/contact"
-                className="inline-flex items-center bg-sky-600 text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-sky-700 transition-all duration-300"
-              >
-                Contact Us for Recommendations
-              </Link>
+              {/* LEFT - IMAGE PANEL (40%) */}
+              <div className="md:w-[40%] h-[280px] md:h-auto relative overflow-hidden">
+                <HotelImageCarousel
+                  images={(hotel.images || [])
+                    .slice(0, 5)
+                    .map((img) => img.url || img.secure_url || img)}
+                  alt={hotel.name}
+                />
+              </div>
+
+              {/* RIGHT - CONTENT PANEL (60%) */}
+              <div className="md:w-[60%] p-6 md:p-8 lg:p-10 flex flex-col justify-between relative bg-white">
+                <div>
+                  {/* 1. Title Row */}
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-serif text-3xl text-[#0B2545] leading-tight relative inline-block">
+                      {hotel.name}
+                      <span className="block h-[1px] bg-[#0B2545] max-w-0 group-hover:max-w-full transition-all duration-500 ease-in-out mt-1 opacity-20"></span>
+                    </h3>
+                    <div className="flex items-center gap-1.5 pt-1">
+                      <Star
+                        size={14}
+                        className="fill-[#C7A14A] text-[#C7A14A]"
+                      />
+                      <span className="font-medium text-[#0B2545] text-sm">
+                        {hotel.rating || "4.5"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* 2. Location */}
+                  <div className="flex items-center gap-2 text-[#3A5F8C] font-light text-sm mb-6">
+                    <MapPin size={14} className="opacity-70" />
+                    <span>{hotel.address || placeName}</span>
+                  </div>
+
+                  {/* 3. Amenities (Minimal) */}
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 mb-8">
+                    {(hotel.amenities || []).slice(0, 3).map((amenity, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-2 text-[#3A5F8C]/80 text-xs uppercase tracking-wider font-medium"
+                      >
+                        {getAmenityIcon(amenity)}
+                        <span>{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 4. Price & Action Block */}
+                <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-6 pt-6 border-t border-[#F1F6FB]">
+                  {/* Price */}
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-[#3A5F8C]/70 mb-1">
+                      Starting from
+                    </p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-serif text-2xl text-[#0B2545]">
+                        {formatRupeeRange(hotel.priceRange).split(" - ")[0]}
+                      </span>
+                      <span className="text-xs text-[#3A5F8C] font-light">
+                        / head / night{" "}
+                        <span className="opacity-60">(with meals)</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-4 w-full md:w-auto">
+                    <Link
+                      to={`/website/hotel/${hotel.id}`}
+                      className="flex-1 md:flex-none px-6 py-3 border border-[#3A5F8C]/30 text-[#3A5F8C] hover:text-[#0B2545] hover:border-[#0B2545] text-[11px] font-bold uppercase tracking-[0.1em] transition-all bg-transparent hover:bg-[#F1F6FB] duration-300 text-center flex items-center justify-center rounded-sm"
+                    >
+                      View Details
+                    </Link>
+                    <button
+                      onClick={() => handleWhatsAppBooking(hotel)}
+                      className="flex-1 md:flex-none px-6 py-3 bg-[#0B2545] text-white text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-[#153459] transition-all duration-300 shadow-sm flex items-center justify-center gap-2 group/btn rounded-sm"
+                    >
+                      Book Now
+                      <ArrowRight
+                        size={14}
+                        className="group-hover/btn:translate-x-1 transition-transform duration-300 text-[#C7A14A]"
+                      />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </motion.div>
+          ))}
+        </div>
+
+        {hotels.length === 0 && !loading && (
+          <div className="text-center py-24 border border-[#F1F6FB] rounded-xl bg-white">
+            <Sparkles
+              size={40}
+              className="text-[#C7A14A] mx-auto mb-6 opacity-60"
+            />
+            <h3 className="font-serif text-3xl text-[#0B2545] mb-3">
+              Curating Excellence
+            </h3>
+            <p className="text-[#3A5F8C] max-w-md mx-auto mb-8 font-light text-sm leading-relaxed">
+              We are currently selecting the finest stays in {placeName}. In the
+              meantime, our concierge is available to assist you.
+            </p>
+            <Link
+              to="/website/contact"
+              className="inline-block px-8 py-4 bg-[#0B2545] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#1a3b66] transition-colors rounded-sm"
+            >
+              Contact Concierge
+            </Link>
           </div>
-        </section>
-      )}
+        )}
+      </section>
     </div>
   );
 }

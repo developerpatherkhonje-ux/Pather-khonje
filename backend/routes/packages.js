@@ -44,6 +44,20 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Public: get package by id
+router.get('/:id', async (req, res) => {
+  try {
+    const pkg = await Package.findById(req.params.id);
+    if (!pkg) {
+      return res.status(404).json({ success: false, message: 'Package not found' });
+    }
+    res.json({ success: true, data: { package: pkg.getPublicProfile() } });
+  } catch (e) {
+    logger.error('Get package by id error', { error: e.message });
+    res.status(500).json({ success: false, message: 'Failed to get package' });
+  }
+});
+
 // Admin: create package
 router.post('/', authenticateToken, requireAdmin, pkgValidation, handleValidationErrors, async (req, res) => {
   try {

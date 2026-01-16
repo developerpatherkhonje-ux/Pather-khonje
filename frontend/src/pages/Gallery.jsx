@@ -1,266 +1,463 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
-import hero6 from '/assets/hero7.jpg';
-import apiService from '../services/api';
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MapPin, Loader2 } from "lucide-react";
+import apiService from "../services/api";
+
+const luxuryFadeUp = {
+  hidden: { opacity: 0, y: 40 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 1.0, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.15,
+      delayChildren: 0.1,
+    },
+  },
+};
+
+const imageReveal = {
+  hidden: { scale: 1.1, opacity: 0, filter: "blur(5px)" },
+  visible: {
+    scale: 1,
+    opacity: 1,
+    filter: "blur(0px)",
+    transition: { duration: 1.4, ease: "easeOut" },
+  },
+};
+
+const cardHover = {
+  rest: { scale: 1, y: 0 },
+  hover: {
+    scale: 1.03,
+    y: -5,
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
+};
+
+// Helper: Get span based on index for masonry layout
+const getGridSpan = (index) => {
+  const patterns = [
+    "col-span-1 md:col-span-2 row-span-2", // Large
+    "col-span-1", // Small
+    "col-span-1", // Small
+    "col-span-1 md:col-span-1", // Landscape
+    "col-span-1", // Small
+    "col-span-1", // Small
+  ];
+  return patterns[index % patterns.length];
+};
+
+const featuredDestinations = [
+  // North Sikkim - Dramatic snow peaks
+  {
+    title: "North Sikkim",
+    subtitle: "Mountain Escapades",
+    img: "https://images.unsplash.com/photo-1553787931-f70f4728af0e?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+  },
+  {
+    title: "Kashmir Valley",
+    subtitle: "Alpine Glow",
+    img: "https://images.unsplash.com/photo-1595846519845-68e298c2edd8?q=80&w=1887",
+  },
+  // Historic Hampi - The Stone Chariot (Iconic)
+  {
+    title: "Historic Hampi",
+    subtitle: "Timeless Journey",
+    img: "https://images.unsplash.com/photo-1589308078059-be1415eab4c3?q=80&w=2070",
+  },
+];
+
+const staysLines = [
+  {
+    title: "Luxury & Organic Resorts",
+    img: "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070",
+  },
+  {
+    title: "Forest Stay Experiences",
+    img: "https://images.unsplash.com/photo-1499363536502-87642509e31b?q=80&w=1974",
+  },
+  {
+    title: "Mountain View Dining",
+    img: "https://images.unsplash.com/photo-1544148103-0773bf10d330?q=80&w=2070",
+  },
+];
+
+const moments = [
+  {
+    title: "Find Joy",
+    img: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?q=80&w=1883",
+  },
+  {
+    title: "Evening Together",
+    img: "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?q=80&w=2069",
+  },
+  {
+    title: "Nature Walks",
+    img: "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070",
+  },
+  {
+    title: "Joyful Locals",
+    img: "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?q=80&w=2070",
+  },
+];
 
 function Gallery() {
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [activeCategory, setActiveCategory] = useState('all');
+  const [activeTab, setActiveTab] = useState("all");
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  const categories = [
-    { id: 'all', name: 'All' },
-    { id: 'destinations', name: 'Destinations' },
-    { id: 'hotels', name: 'Hotels' },
-    { id: 'activities', name: 'Activities' },
-    { id: 'food', name: 'Cuisine' }
+  useEffect(() => {
+    fetchImages();
+  }, [activeTab]);
+
+  const fetchImages = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getGalleryImages(activeTab);
+      if (response.success) {
+        setImages(response.data.galleries);
+      }
+    } catch (error) {
+      console.error("Failed to fetch images", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tabs = [
+    { id: "all", label: "All" },
+    { id: "destinations", label: "Destinations" },
+    { id: "activities", label: "Experiences" }, // Frontend maps 'activities' to 'Experiences' label
+    { id: "hotels", label: "Stays" },
+    { id: "food", label: "Cuisine" },
   ];
 
-  // Fetch gallery images from API
-  useEffect(() => {
-    const fetchGalleryImages = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const response = await apiService.getGalleryImages(activeCategory);
-        if (response.success) {
-          setImages(response.data.galleries || []);
-        } else {
-          setError('Failed to load gallery images');
-        }
-      } catch (err) {
-        console.error('Error fetching gallery images:', err);
-        setError('Failed to load gallery images');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchGalleryImages();
-  }, [activeCategory]);
-
-  // Images are already filtered by the API based on activeCategory
-  const filteredImages = images;
-
-  const openLightbox = (index) => {
-    setSelectedImage(index);
-  };
-
-  const closeLightbox = () => {
-    setSelectedImage(null);
-  };
-
-  const nextImage = () => {
-    if (selectedImage !== null) {
-      setSelectedImage((selectedImage + 1) % filteredImages.length);
-    }
-  };
-
-  const prevImage = () => {
-    if (selectedImage !== null) {
-      setSelectedImage(selectedImage === 0 ? filteredImages.length - 1 : selectedImage - 1);
-    }
-  };
-
   return (
-    <div className="pt-20">
-      {/* Header */}
-      <section 
-        className="py-20 bg-cover bg-center bg-no-repeat relative"
-        style={{ backgroundImage: "url('/assets/hero14.jpg')" }}
-      >
-        {/* Light overlay for better text readability */}
-        <div className="absolute inset-0 bg-black/20"></div>
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
+    <div className="bg-white">
+      {/* 1. HERO HEADER */}
+      <section className="relative py-32 bg-ice-blue/30 overflow-hidden">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={imageReveal}
+          className="absolute inset-0"
+        >
+          {/* Gallery Banner - Dramatic Mountains */}
+          <img
+            src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070"
+            className="w-full h-full object-cover opacity-90"
+            alt="Gallery Hero"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-white/5"></div>
+        </motion.div>
+
+        <div className="container mx-auto px-6 md:px-12 relative z-10">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-white"
+            initial="hidden"
+            animate="visible"
+            variants={luxuryFadeUp}
+            className="max-w-2xl"
           >
-            <h1 className="text-5xl md:text-6xl font-bold mb-6">Gallery</h1>
-            <p className="text-xl md:text-2xl max-w-3xl mx-auto">
-              Explore our collection of breathtaking destinations, luxurious accommodations, 
-              and unforgettable experiences
+            <h1 className="font-serif text-5xl md:text-6xl text-midnight-ocean mb-6 drop-shadow-sm">
+              Gallery
+            </h1>
+            <p className="font-sans text-midnight-ocean/80 text-lg leading-relaxed mix-blend-multiply font-medium">
+              A glimpse into the destinations, stays, and experiences we curate.
+              Every image tells a story of discovery and beauty.
             </p>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 96 }}
+              transition={{ duration: 1.2, delay: 0.5, ease: "circOut" }}
+              className="h-1 bg-soft-gold mt-8"
+            ></motion.div>
           </motion.div>
         </div>
       </section>
 
-      {/* Category Filter */}
-      <section className="pt-12 pb-6 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* 2. MASONRY GRID (Main Gallery) */}
+      <section className="pb-12 px-6 md:px-12 bg-white min-h-[600px]">
+        <div className="container mx-auto">
+          {/* Animated Tabs */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-wrap justify-center gap-4 mb-12"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={luxuryFadeUp}
+            className="flex gap-8 mb-12 border-b border-gray-200 pb-4 text-sm font-sans uppercase tracking-widest text-slate-gray overflow-x-auto"
           >
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => setActiveCategory(category.id)}
-                className={`px-6 py-3 rounded-full font-medium transition-all duration-300 ${
-                  activeCategory === category.id
-                    ? 'bg-sky-600 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-sky-100 hover:text-sky-600'
+            {tabs.map((tab) => (
+              <span
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`cursor-pointer transition-colors pb-4 -mb-[17px] ${
+                  activeTab === tab.id
+                    ? "text-midnight-ocean font-bold border-b-2 border-midnight-ocean"
+                    : "hover:text-midnight-ocean"
                 }`}
               >
-                {category.name}
-              </button>
+                {tab.label}
+              </span>
             ))}
           </motion.div>
-        </div>
-      </section>
 
-      {/* Image Grid */}
-      <section className="pb-20 bg-white/50">
-        <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4">
           {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-w-2xl gap-6">
-              {[...Array(8)].map((_, index) => (
-                <div key={index} className="bg-white rounded-2xl shadow-lg overflow-hidden animate-pulse">
-                  <div className="aspect-square bg-gray-300"></div>
-                  <div className="p-4">
-                    <div className="h-4 bg-gray-300 rounded mb-2"></div>
-                    <div className="h-3 bg-gray-300 rounded w-3/4"></div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : error ? (
-            <div className="text-center py-12">
-              <div className="text-red-600 mb-4">
-                <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-                <h3 className="text-xl font-semibold mb-2">Failed to Load Gallery</h3>
-                <p className="text-gray-600 mb-4">{error}</p>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="bg-sky-600 text-white px-6 py-3 rounded-lg hover:bg-sky-700 transition-colors"
-                >
-                  Try Again
-                </button>
-              </div>
-            </div>
-          ) : filteredImages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-400 mb-4">
-                <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <h3 className="text-xl font-semibold mb-2">No Images Found</h3>
-                <p className="text-gray-600">No gallery images available for the selected category.</p>
-              </div>
+            <div className="flex justify-center py-20">
+              <Loader2 className="w-10 h-10 animate-spin text-soft-gold" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 min-w-2xl gap-6">
-              <AnimatePresence>
-                {filteredImages.map((image, index) => (
-                <motion.div
-                  key={image._id || image.id}
-                  layout
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.3 }}
-                  className="relative group cursor-pointer overflow-hidden rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300"
-                  onClick={() => openLightbox(index)}
-                >
-                  <div className="aspect-square">
+            <motion.div
+              layout
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
+              className="grid grid-cols-1 md:grid-cols-3 gap-4 auto-rows-[300px]"
+            >
+              <AnimatePresence mode="popLayout">
+                {images.map((img, idx) => (
+                  <motion.div
+                    key={img._id || idx}
+                    layout
+                    variants={luxuryFadeUp}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className={`relative rounded-sm overflow-hidden group ${getGridSpan(
+                      idx
+                    )}`}
+                  >
                     <img
-                      src={apiService.toAbsoluteUrl(image.image?.url) || '/gallery/placeholder.jpg'}
-                      alt={image.title}
-                      loading='lazy'
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      src={apiService.toAbsoluteUrl(img.image?.url)}
+                      alt={img.title}
+                      className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                      loading="lazy"
                     />
-                  </div>
-                  
-                  {/* Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <h3 className="text-lg font-semibold mb-1">{image.title}</h3>
-                      <p className="text-sm opacity-90">{image.description}</p>
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
+                      <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                        <span className="text-white font-serif text-xl block">
+                          {img.title}
+                        </span>
+                        <span className="text-white/80 text-sm font-sans mt-1 block">
+                          {img.description}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-
-                  {/* Category Badge */}
-                  <div className="absolute top-4 left-4">
-                    <span className="bg-sky-600 text-white text-xs font-medium px-2 py-1 rounded-full">
-                      {categories.find(cat => cat.id === image.category)?.name}
-                    </span>
-                  </div>
-                </motion.div>
-              ))}
+                  </motion.div>
+                ))}
               </AnimatePresence>
+            </motion.div>
+          )}
+
+          {!loading && images.length === 0 && (
+            <div className="text-center py-20 text-slate-400">
+              <p>No images found in this category.</p>
             </div>
           )}
         </div>
       </section>
 
-      {/* Lightbox */}
-      <AnimatePresence>
-        {selectedImage !== null && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center p-4"
-            onClick={closeLightbox}
+      {/* 3. FEATURED DESTINATIONS */}
+      <section className="py-20 bg-ice-blue/20 px-6 md:px-12">
+        <div className="container mx-auto">
+          <motion.h2
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={luxuryFadeUp}
+            className="font-serif text-3xl md:text-4xl text-midnight-ocean mb-10"
           >
-            <div className="relative top-4 max-w-4xl max-h-full" onClick={(e) => e.stopPropagation()}>
-              {/* Close Button */}
-              <button
-                onClick={closeLightbox}
-                className="absolute -top-8 md:-top-12 right-0 text-white hover:text-gray-300 transition-colors"
+            Featured Destinations
+          </motion.h2>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
+            {featuredDestinations.map((dest, idx) => (
+              <motion.div
+                key={idx}
+                variants={luxuryFadeUp}
+                whileHover="hover"
+                initial="rest"
+                animate="rest"
+                className="group cursor-pointer"
               >
-                <X className="h-5 w-5 md:h-8 md:w-8" />
-              </button>
-
-              {/* Navigation Buttons */}
-              <button
-                onClick={prevImage}
-                className="absolute left-2 lg:left-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors"
-              >
-                <ChevronLeft className="h-5 w-5 md:h-8 md:w-8" />
-              </button>
-
-              <button
-                onClick={nextImage}
-                className="absolute right-2 lg:right-4 top-1/2 transform -translate-y-1/2 text-white hover:text-gray-300 transition-colors"
-              >
-                <ChevronRight className="h-5 w-5 md:h-8 md:w-8" />
-              </button>
-
-              {/* Image */}
-              <motion.img
-                key={selectedImage}
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                src={apiService.toAbsoluteUrl(filteredImages[selectedImage].image?.url) || '/gallery/placeholder.jpg'}
-                alt={filteredImages[selectedImage].title}
-                loading='lazy'
-                className="max-w-full lg:min-w-[743px] max-h-full object-contain rounded-lg"
-              />
-
-              {/* Image Info */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white p-6 rounded-b-lg">
-                <h3 className="text-lg lg:text-2xl font-semibold mb-1 lg:mb-2">
-                  {filteredImages[selectedImage].title}
+                <motion.div
+                  variants={cardHover}
+                  className="h-64 overflow-hidden rounded-sm mb-4 shadow-md"
+                >
+                  <img
+                    src={dest.img}
+                    alt={dest.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                </motion.div>
+                <h3 className="font-serif text-2xl text-midnight-ocean mb-1 group-hover:text-soft-gold transition-colors">
+                  {dest.title}
                 </h3>
-                <p className="text-[12px] lg:text-[14px] text-gray-300">
-                  {filteredImages[selectedImage].description}
+                <p className="font-sans text-xs text-slate-gray uppercase tracking-widest">
+                  {dest.subtitle}
                 </p>
-              </div>
-            </div>
+              </motion.div>
+            ))}
           </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
+      </section>
+
+      {/* 4. STAYS & COMFORT */}
+      <section className="py-20 bg-white px-6 md:px-12">
+        <div className="container mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={luxuryFadeUp}
+          >
+            <h2 className="font-serif text-3xl md:text-4xl text-midnight-ocean mb-4">
+              Stays & Comfort
+            </h2>
+            <p className="font-sans text-slate-gray mb-12 max-w-xl">
+              Comfortable camps, exquisite resorts, and cozy homestays selected
+              for your delight.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-3 gap-8"
+          >
+            {staysLines.map((stay, idx) => (
+              <motion.div
+                key={idx}
+                variants={luxuryFadeUp}
+                whileHover="hover"
+                className="group cursor-pointer"
+              >
+                <motion.div
+                  variants={cardHover}
+                  className="h-80 overflow-hidden rounded-sm mb-4 relative shadow-lg"
+                >
+                  <img
+                    src={stay.img}
+                    alt={stay.title}
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                  />
+                </motion.div>
+                <h3 className="font-sans font-bold text-sm text-midnight-ocean uppercase tracking-wider group-hover:text-soft-gold transition-colors">
+                  {stay.title}
+                </h3>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 5. MOMENTS & PEOPLE */}
+      <section className="py-20 bg-ice-blue/30 px-6 md:px-12">
+        <div className="container mx-auto">
+          <motion.h2
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={luxuryFadeUp}
+            className="font-serif text-3xl md:text-4xl text-midnight-ocean mb-12"
+          >
+            Moments & People
+          </motion.h2>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {moments.map((moment, idx) => (
+              <motion.div
+                key={idx}
+                variants={luxuryFadeUp}
+                whileHover="hover"
+                className="group cursor-pointer"
+              >
+                <motion.div
+                  variants={cardHover}
+                  className="aspect-[3/4] overflow-hidden rounded-sm mb-3 shadow-md"
+                >
+                  <img
+                    src={moment.img}
+                    alt={moment.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                </motion.div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-soft-gold rounded-full"></div>
+                  <span className="font-sans text-xs font-bold text-midnight-ocean uppercase tracking-wider group-hover:text-soft-gold transition-colors">
+                    {moment.title}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 6. BOTTOM CTA */}
+      <section className="relative h-[60vh] flex items-center justify-center overflow-hidden">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={imageReveal}
+          className="absolute inset-0"
+        >
+          <img
+            src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070"
+            className="w-full h-full object-cover"
+            alt="Footer CTA"
+          />
+          <div className="absolute inset-0 bg-midnight-ocean/60"></div>
+        </motion.div>
+
+        <div className="relative z-10 text-center px-4">
+          <motion.h2
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={luxuryFadeUp}
+            className="font-serif text-4xl md:text-6xl text-white mb-6"
+          >
+            Travel experiences,
+            <br /> thoughtfully curated.
+          </motion.h2>
+          <motion.button
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2, duration: 0.8 }}
+            whileHover={{ scale: 1.05, backgroundColor: "#C6A75E" }}
+            whileTap={{ scale: 0.95 }}
+            className="px-8 py-4 bg-midnight-ocean text-white font-sans text-sm font-bold uppercase tracking-widest transition-all duration-300 shadow-xl border border-white/20"
+          >
+            Plan Your Journey
+          </motion.button>
+        </div>
+      </section>
     </div>
   );
 }
+
 export default Gallery;
