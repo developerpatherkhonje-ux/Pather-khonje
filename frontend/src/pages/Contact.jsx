@@ -171,7 +171,7 @@ const Contact = () => {
               </p>
               <a
                 href="tel:+917439857694"
-                className="text-xl font-medium text-deep-steel-blue hover:text-soft-gold transition-colors"
+                className="text-lg font-medium text-deep-steel-blue hover:text-soft-gold transition-colors"
               >
                 +91 7439857694
               </a>
@@ -191,7 +191,7 @@ const Contact = () => {
               </p>
               <a
                 href="mailto:contact@patherkhonje.com"
-                className="text-xl font-medium text-deep-steel-blue hover:text-soft-gold transition-colors"
+                className="text-lg font-medium text-deep-steel-blue hover:text-soft-gold transition-colors"
               >
                 contact@patherkhonje.com
               </a>
@@ -209,8 +209,8 @@ const Contact = () => {
               <p className="text-slate-600 mb-6 font-light">
                 Come have a coffee with us at our Kolkata expert center.
               </p>
-              <address className="text-lg text-deep-steel-blue not-italic font-medium">
-                64/2/12, Lake Gardens, <br /> Kolkata — 700045
+              <address className="text-base text-deep-steel-blue not-italic font-medium">
+                64/2/12, Biren Roy Road (East), <br /> Bohala Chowrasta, Kolkata — 700045
               </address>
             </div>
           </motion.div>

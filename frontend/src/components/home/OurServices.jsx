@@ -53,7 +53,7 @@ const servicesList = [
         title: "Office Picnics",
         desc: "Relaxing day trips and excursions.",
         image:
-          "https://images.unsplash.com/photo-1561525940-5e60802c0d58?q=80&w=1974&auto=format&fit=crop",
+          "/assets/office-picnic.jpg",
       },
       {
         title: "Corporate Meetings",
@@ -77,7 +77,7 @@ const servicesList = [
         title: "Train Tickets",
         desc: "Hassle-free rail reservations.",
         image:
-          "https://images.unsplash.com/photo-1474487548417-781cb714c2f0?q=80&w=2069&auto=format&fit=crop",
+          "/assets/train.jpg",
       },
       {
         title: "Flight Booking",

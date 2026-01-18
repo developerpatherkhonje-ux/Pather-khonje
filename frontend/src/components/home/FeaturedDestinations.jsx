@@ -48,12 +48,7 @@ const FeaturedDestinations = () => {
       label: "Mountain Retreat",
     },
     {
-      src: "https://images.unsplash.com/photo-1536295243470-d7cba4efab7b?q=80&w=1138&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      name: "Ladakh",
-      label: "Signature Destination",
-    },
-    {
-      src: "https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=2076",
+      src: "https://images.unsplash.com/photo-1661413499880-d2169a0a7fea?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       name: "Andaman Islands",
       label: "Coastal Escape",
     },

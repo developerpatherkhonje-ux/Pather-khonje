@@ -64,25 +64,10 @@ const timelineData = [
 
 const teamData = [
   {
-    name: "Vikram Das",
-    role: "Founder & CEO",
-    img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=1887&auto=format&fit=crop",
-  },
-  {
     name: "Soma Shah",
     role: "Head of Operations",
-    img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1887&auto=format&fit=crop",
-  },
-  {
-    name: "Arjun Ray",
-    role: "Senior Travel Guide",
-    img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=1887&auto=format&fit=crop",
-  },
-  {
-    name: "Priya Roy",
-    role: "Experience Curator",
-    img: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=1888&auto=format&fit=crop",
-  },
+    // img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1887&auto=format&fit=crop",
+  }
 ];
 
 const About = () => {
@@ -158,7 +143,7 @@ const About = () => {
             className="w-full lg:w-1/2 h-[450px] overflow-hidden rounded-2xl shadow-2xl relative"
           >
             <img
-              src="https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=2073&auto=format&fit=crop"
+              src="https://images.unsplash.com/photo-1667694138821-ff480ed816d3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
               alt="Planning the Journey"
               className="w-full h-full object-cover"
             />
@@ -444,7 +429,7 @@ const About = () => {
             </h2>
           </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="flex justify-center">
             {teamData.map((member, idx) => (
               <motion.div
                 key={idx}

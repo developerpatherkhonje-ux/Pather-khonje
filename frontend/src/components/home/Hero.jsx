@@ -82,7 +82,7 @@ const Hero = () => {
           className="absolute inset-0"
         >
           <img
-            src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2070&auto=format&fit=crop"
+            src="/assets/hero13.jpg"
             alt="Scenic Travel Journey"
             className="w-full h-full object-cover"
           />
