@@ -8,9 +8,15 @@ import Testimonials from "../components/home/Testimonials";
 import FinalCTA from "../components/home/FinalCTA";
 import OurServices from "../components/home/OurServices";
 
+import SEO from "../components/SEO";
+
 const Home = () => {
   return (
     <div className="min-h-screen font-sans bg-white selection:bg-horizon-blue selection:text-white">
+      <SEO
+        title="Home"
+        description="Pather Khonje - Discover the hidden gems of Sikkim, Darjeeling and beyond with our curated travel experiences."
+      />
       <Hero />
       <TrustMetrics />
       <OurServices />

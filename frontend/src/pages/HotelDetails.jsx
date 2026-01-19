@@ -15,6 +15,9 @@ import {
   ArrowRight,
   Sparkles,
 } from "lucide-react";
+import SEO from "../components/SEO";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 const COLORS = {
   primary: "#0B2545",
@@ -107,7 +110,7 @@ function HotelDetails() {
     message += " Please confirm availability and rates.";
     window.open(
       `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
-      "_blank"
+      "_blank",
     );
   };
 
@@ -129,6 +132,13 @@ function HotelDetails() {
 
   return (
     <div className="min-h-screen bg-[#FAFBFD] font-sans text-[#0B2545] pb-24">
+      <SEO
+        title={hotel.name}
+        description={`Stay at ${hotel.name}. ${hotel.description.substring(
+          0,
+          150,
+        )}...`}
+      />
       {/* 1. IMAGE & TITLE SECTION */}
       <section className="pt-28 pb-12 px-6 lg:px-12 max-w-[1400px] mx-auto">
         {/* Gallery - Calm grid, not carousel */}
@@ -139,25 +149,31 @@ function HotelDetails() {
           className="grid grid-cols-12 gap-4 h-[60vh] min-h-[500px] mb-8 rounded-xl overflow-hidden"
         >
           <div className="col-span-8 h-full relative cursor-pointer group">
-            <img
+            <LazyLoadImage
               src={hotel.images[0]}
               alt="Main"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              effect="blur"
+              wrapperClassName="w-full h-full"
             />
           </div>
           <div className="col-span-4 flex flex-col gap-4 h-full">
             <div className="h-1/2 relative overflow-hidden cursor-pointer group">
-              <img
+              <LazyLoadImage
                 src={hotel.images[1]}
                 alt="Detail 1"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                effect="blur"
+                wrapperClassName="w-full h-full"
               />
             </div>
             <div className="h-1/2 relative overflow-hidden cursor-pointer group">
-              <img
+              <LazyLoadImage
                 src={hotel.images[2]}
                 alt="Detail 2"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                effect="blur"
+                wrapperClassName="w-full h-full"
               />
             </div>
           </div>

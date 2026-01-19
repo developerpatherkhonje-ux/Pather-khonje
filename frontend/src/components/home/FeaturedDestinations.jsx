@@ -1,5 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 const DestinationCard = ({ image, name, label }) => (
   <motion.div
@@ -10,14 +12,20 @@ const DestinationCard = ({ image, name, label }) => (
     className="flex flex-col gap-4 group cursor-pointer"
   >
     <div className="w-full h-[450px] overflow-hidden relative">
-      <motion.img
+      <motion.div
         whileHover={{ scale: 1.1 }}
         transition={{ duration: 0.7, ease: "easeInOut" }}
-        src={image}
-        alt={name}
-        className="w-full h-full object-cover"
-      />
-      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500" />
+        className="w-full h-full"
+      >
+        <LazyLoadImage
+          src={image}
+          alt={name}
+          className="w-full h-full object-cover"
+          effect="blur"
+          wrapperClassName="w-full h-full"
+        />
+      </motion.div>
+      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500 pointer-events-none" />
     </div>
     <div className="flex flex-col items-start px-2">
       <span className="font-sans text-[10px] font-bold text-soft-gold uppercase tracking-[0.15em] mb-1">

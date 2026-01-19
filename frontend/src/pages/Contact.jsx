@@ -9,6 +9,9 @@ import {
   Facebook,
   Globe,
 } from "lucide-react";
+import SEO from "../components/SEO";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -30,6 +33,10 @@ const Contact = () => {
 
   return (
     <div className="bg-ice-blue min-h-screen font-sans">
+      <SEO
+        title="Contact Us"
+        description="Get in touch with Pather Khonje to plan your unforgettable journey to Sikkim and Darjeeling."
+      />
       {/* SECTION 1: MODERN EDITORIAL HERO */}
       <section className="relative w-full py-4 px-6 md:px-12 bg-ice-blue overflow-hidden">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
@@ -121,7 +128,7 @@ const Contact = () => {
               ></motion.div>
               <div className="w-full h-[600px] rounded-[250px_0px_0px_250px] overflow-hidden shadow-2xl relative">
                 <img
-                  src="/assets/hero14.jpg"
+                  src="/assets/hero12.jpg"
                   alt="Luxury Travel"
                   className="w-full h-full object-cover hover:scale-105 transition-transform duration-1000"
                 />
@@ -210,7 +217,8 @@ const Contact = () => {
                 Come have a coffee with us at our Kolkata expert center.
               </p>
               <address className="text-base text-deep-steel-blue not-italic font-medium">
-                64/2/12, Biren Roy Road (East), <br /> Bohala Chowrasta, Kolkata — 700045
+                64/2/12, Biren Roy Road (East), <br /> Bohala Chowrasta, Kolkata
+                — 700045
               </address>
             </div>
           </motion.div>
@@ -323,10 +331,12 @@ const Contact = () => {
             {/* RIGHT: TRUST & STORY */}
             <div className="lg:col-span-5 bg-ice-blue/30 p-10 md:p-16 flex flex-col justify-center relative border-l border-white/50">
               <div className="mb-10">
-                <img
+                <LazyLoadImage
                   src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80"
                   alt="Our Team"
                   className="w-full h-64 object-cover mb-8 shadow-md"
+                  effect="blur"
+                  wrapperClassName="w-full h-64 mb-8"
                 />
                 <p className="text-lg text-midnight-ocean leading-relaxed mb-6 font-medium">
                   Since <span className="text-soft-gold font-bold">2015</span>,

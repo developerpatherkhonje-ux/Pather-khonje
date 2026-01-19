@@ -7,18 +7,22 @@ import {
 } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import Navbar from "./components/Navbar";
-import Home from "./pages/Home";
-import About from "./pages/About";
-import Gallery from "./pages/Gallery";
-import Hotels from "./pages/Hotels";
-import HotelPlace from "./pages/HotelPlace";
-import HotelDetails from "./pages/HotelDetails";
-import Packages from "./pages/Packages";
-import PackageDetails from "./pages/PackageDetails";
-import Contact from "./pages/Contact";
-import Dashboard from "./pages/Dashboard";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import AuthPage from "./pages/AuthPage";
+import { HelmetProvider } from "react-helmet-async";
+import { Suspense } from "react";
+
+// Lazy Load Pages
+const Home = React.lazy(() => import("./pages/Home"));
+const About = React.lazy(() => import("./pages/About"));
+const Gallery = React.lazy(() => import("./pages/Gallery"));
+const Hotels = React.lazy(() => import("./pages/Hotels"));
+const HotelPlace = React.lazy(() => import("./pages/HotelPlace"));
+const HotelDetails = React.lazy(() => import("./pages/HotelDetails"));
+const Packages = React.lazy(() => import("./pages/Packages"));
+const PackageDetails = React.lazy(() => import("./pages/PackageDetails"));
+const Contact = React.lazy(() => import("./pages/Contact"));
+const Dashboard = React.lazy(() => import("./pages/Dashboard"));
+const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
+const AuthPage = React.lazy(() => import("./pages/AuthPage"));
 import Footer from "./components/Footer";
 import WhatsAppFloat from "./components/WhatsAppFloat";
 import { AuthProvider } from "./context/AuthContext";
@@ -41,72 +45,76 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
   return (
-    <AuthProvider>
-      <AnimatePresence mode="wait">
-        {loading && <LoadingScreen key="loading" />}
-      </AnimatePresence>
-      {!loading && (
-        <Router>
-          <ScrollToTop />
-          <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
-            <AnimatePresence mode="wait">
-              <Routes>
-                <Route path="/" element={<AppRouter />} />
+    <HelmetProvider>
+      <AuthProvider>
+        <AnimatePresence mode="wait">
+          {loading && <LoadingScreen key="loading" />}
+        </AnimatePresence>
+        {!loading && (
+          <Router>
+            <ScrollToTop />
+            <div className="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100">
+              <AnimatePresence mode="wait">
+                <Suspense fallback={<LoadingScreen />}>
+                  <Routes>
+                    <Route path="/" element={<AppRouter />} />
 
-                <Route path="/auth" element={<AuthPage />} />
+                    <Route path="/auth" element={<AuthPage />} />
 
-                <Route
-                  path="/dashboard/*"
-                  element={
-                    <ProtectedRoute requireAdmin={true}>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
+                    <Route
+                      path="/dashboard/*"
+                      element={
+                        <ProtectedRoute requireAdmin={true}>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      }
+                    />
 
-                <Route
-                  path="/website/*"
-                  element={
-                    <>
-                      <Navbar />
-                      <main className="relative pt-24">
-                        <Routes>
-                          <Route index element={<Home />} />
-                          <Route path="about" element={<About />} />
-                          <Route path="gallery" element={<Gallery />} />
+                    <Route
+                      path="/website/*"
+                      element={
+                        <>
+                          <Navbar />
+                          <main className="relative pt-24">
+                            <Routes>
+                              <Route index element={<Home />} />
+                              <Route path="about" element={<About />} />
+                              <Route path="gallery" element={<Gallery />} />
 
-                          <Route
-                            path="hotels/:placeId"
-                            element={<HotelPlace />}
-                          />
-                          <Route
-                            path="hotel/:hotelId"
-                            element={<HotelDetails />}
-                          />
-                          <Route path="packages" element={<Packages />} />
-                          <Route
-                            path="package/:packageId"
-                            element={<PackageDetails />}
-                          />
-                          <Route path="contact" element={<Contact />} />
-                          <Route
-                            path="privacy-policy"
-                            element={<PrivacyPolicy />}
-                          />
-                        </Routes>
-                      </main>
-                      <Footer />
-                      <WhatsAppFloat />
-                    </>
-                  }
-                />
-              </Routes>
-            </AnimatePresence>
-          </div>
-        </Router>
-      )}
-      <Toaster position="top-right" />
-    </AuthProvider>
+                              <Route
+                                path="hotels/:placeId"
+                                element={<HotelPlace />}
+                              />
+                              <Route
+                                path="hotel/:hotelId"
+                                element={<HotelDetails />}
+                              />
+                              <Route path="packages" element={<Packages />} />
+                              <Route
+                                path="package/:packageId"
+                                element={<PackageDetails />}
+                              />
+                              <Route path="contact" element={<Contact />} />
+                              <Route
+                                path="privacy-policy"
+                                element={<PrivacyPolicy />}
+                              />
+                            </Routes>
+                          </main>
+                          <Footer />
+                          <WhatsAppFloat />
+                        </>
+                      }
+                    />
+                  </Routes>
+                </Suspense>
+              </AnimatePresence>
+            </div>
+          </Router>
+        )}
+        <Toaster position="top-right" />
+      </AuthProvider>
+    </HelmetProvider>
   );
 }
 

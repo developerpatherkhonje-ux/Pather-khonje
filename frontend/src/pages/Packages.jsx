@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Clock, ArrowRight, Check } from "lucide-react";
 import apiService from "../services/api";
+import SEO from "../components/SEO";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 const Packages = () => {
   const [activeCategory, setActiveCategory] = useState("ALL PACKAGES");
@@ -52,7 +55,7 @@ const Packages = () => {
               image: apiService.toAbsoluteUrl(pkg.image),
               imagePosition: index % 2 === 0 ? "right" : "left",
               linkText: "View Details",
-            })
+            }),
           );
           setPackages(mappedPackages);
         }
@@ -85,6 +88,10 @@ const Packages = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans">
+      <SEO
+        title="Holiday Packages"
+        description="Explore our curated holiday packages for Sikkim, Darjeeling, and more."
+      />
       {/* 1. HERO SECTION */}
       <section className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
         <div
@@ -271,10 +278,12 @@ const Packages = () => {
                       className="w-full lg:w-1/2 relative min-h-[400px]"
                     >
                       <div className="absolute inset-0 overflow-hidden shadow-2xl">
-                        <img
+                        <LazyLoadImage
                           src={pkg.image}
                           alt={pkg.name}
                           className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-[1.5s]"
+                          effect="blur"
+                          wrapperClassName="w-full h-full"
                         />
                       </div>
                     </motion.div>

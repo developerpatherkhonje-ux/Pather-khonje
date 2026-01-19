@@ -1,6 +1,8 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 const ExperienceCard = ({
   index,
@@ -30,10 +32,12 @@ const ExperienceCard = ({
             transition={{ duration: 1.4, ease: "easeOut" }}
             className="w-full h-full"
           >
-            <img
+            <LazyLoadImage
               src={image}
               alt={title}
               className="w-full h-full object-cover"
+              effect="blur"
+              wrapperClassName="w-full h-full"
             />
           </motion.div>
         </div>

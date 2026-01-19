@@ -1,6 +1,9 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Star, Map, Compass, Users } from "lucide-react";
+import SEO from "../components/SEO";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 const fadeUp = {
   hidden: { opacity: 0, y: 30 },
@@ -67,12 +70,16 @@ const teamData = [
     name: "Soma Shah",
     role: "Head of Operations",
     // img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=1887&auto=format&fit=crop",
-  }
+  },
 ];
 
 const About = () => {
   return (
     <div className="bg-white overflow-hidden">
+      <SEO
+        title="About Us"
+        description="Learn about Pather Khonje, our story, philosophy, and the team dedicated to curating your perfect travel experience."
+      />
       {/* 1. HERO SECTION */}
       <section className="relative w-full h-[70vh] overflow-hidden">
         <motion.div
@@ -142,10 +149,12 @@ const About = () => {
             variants={fadeInRight}
             className="w-full lg:w-1/2 h-[450px] overflow-hidden rounded-2xl shadow-2xl relative"
           >
-            <img
+            <LazyLoadImage
               src="https://images.unsplash.com/photo-1667694138821-ff480ed816d3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
               alt="Planning the Journey"
               className="w-full h-full object-cover"
+              effect="blur"
+              wrapperClassName="w-full h-full"
             />
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-6">
               <p className="text-white font-serif italic text-lg">
@@ -198,10 +207,12 @@ const About = () => {
             variants={fadeInLeft}
             className="w-full lg:w-1/2 h-[500px] overflow-hidden rounded-2xl shadow-2xl order-2 lg:order-1 relative group"
           >
-            <img
+            <LazyLoadImage
               src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?q=80&w=2070&auto=format&fit=crop"
               alt="Group Travel Philosophy"
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              effect="blur"
+              wrapperClassName="w-full h-full"
             />
           </motion.div>
 
@@ -327,10 +338,12 @@ const About = () => {
                   </div>
                 </div>
                 <div className="h-56 overflow-hidden rounded-lg">
-                  <img
+                  <LazyLoadImage
                     src={item.img}
                     alt={item.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    effect="blur"
+                    wrapperClassName="w-full h-full"
                   />
                 </div>
               </motion.div>
@@ -441,10 +454,12 @@ const About = () => {
                 className="flex flex-col items-center text-center group"
               >
                 <div className="w-48 h-48 rounded-full overflow-hidden mb-6 border-4 border-white shadow-lg relative">
-                  <img
+                  <LazyLoadImage
                     src={member.img}
                     alt={member.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    effect="blur"
+                    wrapperClassName="w-full h-full"
                   />
                 </div>
                 <h3 className="font-serif text-xl text-midnight-ocean group-hover:text-soft-gold transition-colors">

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MapPin, Loader2 } from "lucide-react";
 import apiService from "../services/api";
+import SEO from "../components/SEO";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 const luxuryFadeUp = {
   hidden: { opacity: 0, y: 40 },
@@ -142,6 +145,10 @@ function Gallery() {
 
   return (
     <div className="bg-white">
+      <SEO
+        title="Gallery"
+        description="Explore our travel gallery featuring destinations, stays, and experiences in Sikkim and Darjeeling."
+      />
       {/* 1. HERO HEADER */}
       <section className="relative py-32 bg-ice-blue/30 overflow-hidden">
         <motion.div
@@ -231,14 +238,15 @@ function Gallery() {
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.9 }}
                     className={`relative rounded-sm overflow-hidden group ${getGridSpan(
-                      idx
+                      idx,
                     )}`}
                   >
-                    <img
+                    <LazyLoadImage
                       src={apiService.toAbsoluteUrl(img.image?.url)}
                       alt={img.title}
                       className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                      loading="lazy"
+                      effect="blur"
+                      wrapperClassName="w-full h-full"
                     />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
                       <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
@@ -297,10 +305,12 @@ function Gallery() {
                   variants={cardHover}
                   className="h-64 overflow-hidden rounded-sm mb-4 shadow-md"
                 >
-                  <img
+                  <LazyLoadImage
                     src={dest.img}
                     alt={dest.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    effect="blur"
+                    wrapperClassName="w-full h-full"
                   />
                 </motion.div>
                 <h3 className="font-serif text-2xl text-midnight-ocean mb-1 group-hover:text-soft-gold transition-colors">
@@ -351,10 +361,12 @@ function Gallery() {
                   variants={cardHover}
                   className="h-80 overflow-hidden rounded-sm mb-4 relative shadow-lg"
                 >
-                  <img
+                  <LazyLoadImage
                     src={stay.img}
                     alt={stay.title}
                     className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                    effect="blur"
+                    wrapperClassName="w-full h-full"
                   />
                 </motion.div>
                 <h3 className="font-sans font-bold text-sm text-midnight-ocean uppercase tracking-wider group-hover:text-soft-gold transition-colors">
@@ -397,10 +409,12 @@ function Gallery() {
                   variants={cardHover}
                   className="aspect-[3/4] overflow-hidden rounded-sm mb-3 shadow-md"
                 >
-                  <img
+                  <LazyLoadImage
                     src={moment.img}
                     alt={moment.title}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    effect="blur"
+                    wrapperClassName="w-full h-full"
                   />
                 </motion.div>
                 <div className="flex items-center gap-2">

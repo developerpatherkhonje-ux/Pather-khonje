@@ -3,6 +3,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import apiService from "../services/api"; // Retaining API service for fetching hotels/places
 import { Clock, MapPin, ArrowRight, Star, Globe, Shield } from "lucide-react";
+import SEO from "../components/SEO";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 const Hotels = () => {
   // State for API data
@@ -118,6 +121,10 @@ const Hotels = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans">
+      <SEO
+        title="Hotels & Stays"
+        description="Find the best luxury hotels, resorts, and homestays in Sikkim and Darjeeling."
+      />
       {/* 1. HERO SECTION */}
       <section className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
         <div
@@ -286,7 +293,7 @@ const Hotels = () => {
                     >
                       <div className="absolute inset-0 overflow-hidden shadow-2xl group">
                         {/* If API image url exists use it, else generic placeholder */}
-                        <img
+                        <LazyLoadImage
                           src={
                             place.image?.url ||
                             place.image ||
@@ -294,6 +301,8 @@ const Hotels = () => {
                           }
                           alt={place.name}
                           className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[1.5s]"
+                          effect="blur"
+                          wrapperClassName="w-full h-full"
                         />
                         <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500" />
                       </div>

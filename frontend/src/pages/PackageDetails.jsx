@@ -14,6 +14,9 @@ import {
   ArrowRight,
 } from "lucide-react";
 import apiService from "../services/api";
+import SEO from "../components/SEO";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 // Dummy Data matching the screenshot exactly
 const PACKAGE_DATA = {
@@ -180,6 +183,7 @@ const PackageDetails = () => {
 
   return (
     <div className="bg-white min-h-screen font-sans text-midnight-ocean pt-24 pb-20">
+      <SEO title={data.name} description={data.description[0]} />
       {/* HEADER SECTION */}
       <div className="max-w-7xl mx-auto px-6 mb-12">
         <div className="flex justify-between items-start mb-2">
@@ -205,10 +209,12 @@ const PackageDetails = () => {
 
         {/* HERO IMAGE */}
         <div className="w-full h-[500px] overflow-hidden relative mb-16">
-          <img
+          <LazyLoadImage
             src={data.images[0]}
             alt={data.name}
             className="w-full h-full object-cover"
+            effect="blur"
+            wrapperClassName="w-full h-full"
           />
         </div>
 

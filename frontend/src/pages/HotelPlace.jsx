@@ -15,6 +15,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import apiService from "../services/api";
+import SEO from "../components/SEO";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 const COLORS = {
   primary: "#0B2545", // Deep Midnight Blue
@@ -59,16 +62,22 @@ function HotelImageCarousel({ images = [], alt }) {
   return (
     <div className="relative h-full min-h-[280px] bg-gray-100 group overflow-hidden">
       <AnimatePresence mode="wait">
-        <motion.img
+        <motion.div
           key={index}
           initial={{ opacity: 0, scale: 1.1 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
-          src={images[index]}
-          alt={alt}
-          className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105"
-        />
+          className="w-full h-full absolute inset-0"
+        >
+          <LazyLoadImage
+            src={images[index]}
+            alt={alt}
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            effect="blur"
+            wrapperClassName="w-full h-full"
+          />
+        </motion.div>
       </AnimatePresence>
 
       {/* Subtle darkening on hover */}
@@ -123,7 +132,7 @@ function HotelPlace() {
         const sortedHotels = (response.data.hotels || []).sort((a, b) =>
           (a.name || "").localeCompare(b.name || "", "en", {
             sensitivity: "base",
-          })
+          }),
         );
         setHotels(sortedHotels);
         setPlaceName(response.data.place?.name || "");
@@ -136,7 +145,7 @@ function HotelPlace() {
             ? apiService.toAbsoluteUrl(
                 place.images[0].url ||
                   place.images[0].secure_url ||
-                  place.images[0]
+                  place.images[0],
               )
             : "";
         setPlaceImage(primaryImage || "");
@@ -144,7 +153,7 @@ function HotelPlace() {
         // MOCK DATA
         setPlaceName("Darjeeling");
         setPlaceImage(
-          "https://images.unsplash.com/photo-1544634076-a901606f41b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
+          "https://images.unsplash.com/photo-1544634076-a901606f41b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80",
         );
         setHotels([
           {
@@ -189,7 +198,7 @@ function HotelPlace() {
       // FALLBACK TO MOCK DATA FOR DEV
       setPlaceName("Darjeeling");
       setPlaceImage(
-        "https://images.unsplash.com/photo-1544634076-a901606f41b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
+        "https://images.unsplash.com/photo-1544634076-a901606f41b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80",
       );
       setHotels([
         {
@@ -251,7 +260,7 @@ function HotelPlace() {
     const message = `Hi! I'm interested in booking "${hotel.name}" in ${placeName}. Price range: ${hotel.priceRange}. Please provide availability.`;
     window.open(
       `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
-      "_blank"
+      "_blank",
     );
   };
 
@@ -280,6 +289,12 @@ function HotelPlace() {
 
   return (
     <div className="min-h-screen bg-[#FAFBFD] text-[#0B2545] font-sans selection:bg-[#C7A14A]/20">
+      <SEO
+        title={placeName ? `${placeName} Hotels` : "Luxury Hotels"}
+        description={`Explore the best luxury hotels and resorts in ${
+          placeName || "Sikkim & Darjeeling"
+        }.`}
+      />
       {/* 1. IMMERSIVE HERO SECTION */}
       <section className="relative h-[55vh] min-h-[450px] w-full overflow-hidden">
         {/* Background Overlay */}
