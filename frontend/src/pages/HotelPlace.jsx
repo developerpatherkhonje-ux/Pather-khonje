@@ -451,12 +451,6 @@ function HotelPlace() {
 
                   {/* Actions */}
                   <div className="flex gap-4 w-full md:w-auto">
-                    <Link
-                      to={`/website/hotel/${hotel.id}`}
-                      className="flex-1 md:flex-none px-6 py-3 border border-[#3A5F8C]/30 text-[#3A5F8C] hover:text-[#0B2545] hover:border-[#0B2545] text-[11px] font-bold uppercase tracking-[0.1em] transition-all bg-transparent hover:bg-[#F1F6FB] duration-300 text-center flex items-center justify-center rounded-sm"
-                    >
-                      View Details
-                    </Link>
                     <button
                       onClick={() => handleWhatsAppBooking(hotel)}
                       className="flex-1 md:flex-none px-6 py-3 bg-[#0B2545] text-white text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-[#153459] transition-all duration-300 shadow-sm flex items-center justify-center gap-2 group/btn rounded-sm"

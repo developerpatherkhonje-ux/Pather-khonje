@@ -1,8 +1,22 @@
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 
+const heroImages = [
+  "/assets/hero13.jpg",
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070",
+  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070",
+];
+
 const Hero = () => {
+  const [activeImage, setActiveImage] = React.useState(0);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveImage((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
   return (
     <section className="relative w-full min-h-[90vh] flex flex-col lg:flex-row overflow-hidden bg-[#FFFFFF]">
       {/* Left Content Panel */}
@@ -44,7 +58,7 @@ const Hero = () => {
             >
               A Kolkata-based boutique travel company curating thoughtful
               journeys across India since{" "}
-              <span className="text-soft-gold font-medium">2015</span>.
+              <span className="text-soft-gold font-medium">estd.</span>.
             </motion.p>
 
             <motion.div
@@ -75,18 +89,22 @@ const Hero = () => {
 
       {/* Right Image Panel */}
       <div className="w-full lg:w-[55%] h-[40vh] lg:h-auto relative order-1 lg:order-2 overflow-hidden">
-        <motion.div
-          initial={{ scale: 1.15, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 1.5, ease: "easeOut" }}
-          className="absolute inset-0"
-        >
-          <img
-            src="/assets/hero13.jpg"
-            alt="Scenic Travel Journey"
-            className="w-full h-full object-cover"
-          />
-        </motion.div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeImage}
+            initial={{ scale: 1.15, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5, ease: "easeOut" }}
+            className="absolute inset-0"
+          >
+            <img
+              src={heroImages[activeImage]}
+              alt="Scenic Travel Journey"
+              className="w-full h-full object-cover"
+            />
+          </motion.div>
+        </AnimatePresence>
       </div>
     </section>
   );

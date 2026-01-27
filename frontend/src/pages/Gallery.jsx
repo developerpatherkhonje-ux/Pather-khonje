@@ -112,6 +112,60 @@ const moments = [
   },
 ];
 
+// Famous Places from Hotels List (Mapped with images)
+const famousPlaces = [
+  {
+    title: "Vizag – Araku",
+    location: "Visakhapatnam",
+    img: "https://images.unsplash.com/photo-1622307185698-1b292f72591b?q=80&w=2000",
+  },
+  {
+    title: "Glenburn Tea Estate",
+    location: "Darjeeling",
+    img: "https://images.unsplash.com/photo-1588661706248-ec824204d80d?q=80&w=2000",
+  },
+  {
+    title: "Kaziranga Wilderness",
+    location: "Assam",
+    img: "https://images.unsplash.com/photo-1599557766863-71958632617f?q=80&w=2000",
+  },
+  {
+    title: "Mayfair Gangtok",
+    location: "Sikkim",
+    img: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=2000",
+  },
+  {
+    title: "Goa Villas",
+    location: "Goa",
+    img: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=2000",
+  },
+  {
+    title: "Munnar Misty Hills",
+    location: "Kerala",
+    img: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?q=80&w=2000",
+  },
+  {
+    title: "Shimla Heritage",
+    location: "Shimla",
+    img: "https://images.unsplash.com/photo-1562649795-3e1ee4e82352?q=80&w=2000",
+  },
+  {
+    title: "Jaipur Palace",
+    location: "Rajasthan",
+    img: "https://images.unsplash.com/photo-1477587458883-47145ed94245?q=80&w=2000",
+  },
+  {
+    title: "Coorg Plantation",
+    location: "Coorg",
+    img: "https://images.unsplash.com/photo-1596328325603-5188fd218731?q=80&w=2000",
+  },
+  {
+    title: "Andaman Blue",
+    location: "Andaman",
+    img: "https://images.unsplash.com/photo-1589901550992-0b81c2be0b4a?q=80&w=2000",
+  },
+];
+
 function Gallery() {
   const [activeTab, setActiveTab] = useState("all");
   const [images, setImages] = useState([]);
@@ -422,6 +476,60 @@ function Gallery() {
                   <span className="font-sans text-xs font-bold text-midnight-ocean uppercase tracking-wider group-hover:text-soft-gold transition-colors">
                     {moment.title}
                   </span>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* 6. FAMOUS PLACES (ASSOCIATE HOTELS) */}
+      <section className="py-20 bg-white px-6 md:px-12">
+        <div className="container mx-auto">
+          <motion.h2
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={luxuryFadeUp}
+            className="font-serif text-3xl md:text-4xl text-midnight-ocean mb-12 text-center"
+          >
+            Famous Places & Stays
+          </motion.h2>
+
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-50px" }}
+            variants={staggerContainer}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
+          >
+            {famousPlaces.map((place, idx) => (
+              <motion.div
+                key={idx}
+                variants={luxuryFadeUp}
+                whileHover="hover"
+                className="group cursor-pointer"
+              >
+                <motion.div
+                  variants={cardHover}
+                  className="aspect-square overflow-hidden rounded-sm mb-3 shadow-md relative"
+                >
+                  <LazyLoadImage
+                    src={place.img}
+                    alt={place.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                    effect="blur"
+                    wrapperClassName="w-full h-full"
+                  />
+                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors" />
+                </motion.div>
+                <div className="text-center">
+                  <h3 className="font-serif text-lg text-midnight-ocean mb-1 group-hover:text-soft-gold transition-colors">
+                    {place.title}
+                  </h3>
+                  <p className="font-sans text-[10px] text-slate-gray uppercase tracking-widest">
+                    {place.location}
+                  </p>
                 </div>
               </motion.div>
             ))}

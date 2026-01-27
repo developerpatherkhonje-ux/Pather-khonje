@@ -50,7 +50,7 @@ const Contact = () => {
               <div className="flex items-center gap-4 mb-6">
                 <div className="h-[1px] w-12 bg-soft-gold"></div>
                 <span className="text-sm font-bold tracking-widest text-deep-steel-blue uppercase">
-                  Est. 2015
+                  Estd. 2015
                 </span>
               </div>
               <h1 className="text-6xl md:text-8xl font-serif text-midnight-ocean leading-[1.1] mb-8">

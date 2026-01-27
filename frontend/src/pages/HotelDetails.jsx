@@ -213,7 +213,29 @@ function HotelDetails() {
         </motion.div>
       </section>
 
-      {/* 2. MAIN LAYOUT */}
+      {/* 2. NAVIGATION & MAIN LAYOUT */}
+      <div className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-8 flex justify-between items-center">
+        <a
+          href="/website/hotels/previous-id"
+          className="flex items-center gap-2 text-sm font-medium text-[#3A5F8C] hover:text-[#0B2545] transition-colors uppercase tracking-widest"
+        >
+          <div className="p-2 rounded-full border border-[#3A5F8C]/20 hover:border-[#0B2545]">
+            <ArrowRight size={14} className="rotate-180" />
+          </div>
+          <span className="hidden md:inline">Previous Hotel</span>
+        </a>
+        <a
+          href="/website/hotels/next-id"
+          className="flex items-center gap-2 text-sm font-medium text-[#3A5F8C] hover:text-[#0B2545] transition-colors uppercase tracking-widest"
+        >
+          <span className="hidden md:inline">Next Hotel</span>
+          <div className="p-2 rounded-full border border-[#3A5F8C]/20 hover:border-[#0B2545]">
+            <ArrowRight size={14} />
+          </div>
+        </a>
+      </div>
+
+      {/* 3. MAIN CONTENT GRID */}
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-16">
         {/* LEFT COLUMN: PRIMARY CONTENT (70%) */}
         <div className="lg:col-span-8 space-y-20">

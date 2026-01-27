@@ -154,16 +154,8 @@ const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
     fetchPlaces();
   }, []);
 
-  // Filter logic
-  const filteredStays = useMemo(() => {
-    // Since we only have ALL category for now effectively, we just return the full list
-    // If backend implements tags, we would filter here.
-    if (activeCategory === CATEGORIES.ALL) {
-      return places;
-    }
-    // Fallback or future implementation for filtering
-    return places.filter((stay) => stay.category === activeCategory);
-  }, [activeCategory, places]);
+  // Filter logic - Simplify to show all
+  const filteredStays = places;
 
   return (
     <AnimatePresence>
@@ -179,21 +171,21 @@ const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
           onMouseLeave={onMouseLeave}
         >
           <div className="container mx-auto px-6 lg:px-12 py-8">
-            <div className="grid grid-cols-12 gap-12">
+            <div className="grid grid-cols-12 gap-8">
               {/* COLUMN 1: INTRO / CONTEXT */}
               <div className="col-span-3 border-r border-gray-100 pr-8">
                 <h3
                   className="font-inter font-semibold text-lg mb-4 tracking-tight"
                   style={{ color: COLORS.primary }}
                 >
-                  Curated Hotel Stays
+                  Associate Hotels
                 </h3>
                 <p
                   className="font-inter font-medium text-sm leading-relaxed mb-6"
                   style={{ color: COLORS.secondary }}
                 >
-                  Carefully selected stays paired with thoughtfully planned
-                  itineraries.
+                  Our trusted partners providing exceptional hospitality across
+                  destinations.
                 </p>
                 <div
                   className="w-12 h-[1px]"
@@ -201,130 +193,48 @@ const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
                 ></div>
               </div>
 
-              {/* COLUMN 2: HOTEL LIST (PRIMARY) - DYNAMIC */}
-              <div
-                className="col-span-6 border-r border-gray-100 px-8 h-[350px] overflow-y-auto"
-                style={{
-                  scrollbarWidth: "thin",
-                  scrollbarColor: "#CBD5E1 transparent",
-                }}
-              >
-                <div className="flex flex-col space-y-2">
+              {/* COLUMN 2: HOTEL LIST (PRIMARY) - DYNAMIC - EXPANDED */}
+              <div className="col-span-9 pl-4">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
                   <AnimatePresence mode="wait">
-                    <motion.div
-                      key={activeCategory}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 10 }}
-                      transition={{ duration: 0.2 }}
-                      className="flex flex-col space-y-2"
-                    >
-                      {filteredStays.length > 0 ? (
-                        filteredStays.map((stay) => (
-                          <Link
-                            key={stay.id}
-                            to={`/website/hotels/${stay.id}`}
-                            className="group flex items-center justify-between p-4 rounded-lg transition-all duration-200"
-                            onClick={onClose}
-                            style={{
-                              backgroundColor: "transparent",
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                COLORS.hoverBg;
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor =
-                                "transparent";
-                            }}
-                          >
-                            <div className="flex items-center gap-4 border-l-2 border-transparent group-hover:border-[#3A5F8C] pl-2 transition-all">
-                              <div>
-                                <h4
-                                  className="font-inter font-medium text-base group-hover:translate-x-1 transition-transform"
-                                  style={{ color: COLORS.primary }}
+                    {filteredStays.length > 0 ? (
+                      filteredStays.map((stay) => (
+                        <Link
+                          key={stay.id}
+                          to={`/website/hotels/${stay.id}`}
+                          className="group flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-[#F1F6FB]"
+                          onClick={onClose}
+                        >
+                          <div className="flex items-center gap-3 border-l-2 border-transparent group-hover:border-[#3A5F8C] pl-2 transition-all w-full">
+                            <div className="w-full">
+                              <h4
+                                className="font-inter font-medium text-sm group-hover:translate-x-1 transition-transform truncate"
+                                style={{ color: COLORS.primary }}
+                              >
+                                {stay.name}
+                              </h4>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <span
+                                  className="font-inter text-[10px]"
+                                  style={{ color: COLORS.secondary }}
                                 >
-                                  {stay.name}
-                                </h4>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <span
-                                    className="font-inter text-xs"
-                                    style={{ color: COLORS.secondary }}
-                                  >
-                                    {stay.duration}
-                                  </span>
-                                  <span className="text-gray-300">•</span>
-                                  <span
-                                    className="font-inter text-xs"
-                                    style={{ color: COLORS.secondary }}
-                                  >
-                                    {stay.location}
-                                  </span>
-                                  <span className="text-gray-300">•</span>
-                                  <span
-                                    className="font-inter text-xs font-semibold"
-                                    style={{ color: COLORS.secondary }}
-                                  >
-                                    {stay.price}
-                                  </span>
-                                </div>
+                                  {stay.location}
+                                </span>
                               </div>
                             </div>
-
                             <ArrowRight
-                              size={16}
+                              size={14}
                               className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-[#3A5F8C]"
                             />
-                          </Link>
-                        ))
-                      ) : (
-                        <div className="py-10 text-center text-sm text-gray-400 font-inter">
-                          No stays found for this category yet.
-                        </div>
-                      )}
-                    </motion.div>
+                          </div>
+                        </Link>
+                      ))
+                    ) : (
+                      <div className="col-span-3 py-10 text-center text-sm text-gray-400 font-inter">
+                        No stays found.
+                      </div>
+                    )}
                   </AnimatePresence>
-                </div>
-              </div>
-
-              {/* COLUMN 3: DESTINATION GROUPING - FILTER CONTROLS */}
-              <div className="col-span-3 pl-4">
-                <h4
-                  className="font-inter font-semibold text-xs tracking-widest uppercase mb-6 opacity-70"
-                  style={{ color: COLORS.primary }}
-                >
-                  Explore by Destination
-                </h4>
-                <div className="flex flex-col space-y-3">
-                  {DESTINATIONS.map((dest) => (
-                    <button
-                      key={dest.id}
-                      onClick={() => setActiveCategory(dest.id)}
-                      className="font-inter text-sm group flex items-start text-left gap-2 w-fit transition-colors relative"
-                      style={{
-                        color:
-                          activeCategory === dest.id
-                            ? COLORS.primary
-                            : COLORS.secondary,
-                        fontWeight: activeCategory === dest.id ? 600 : 400,
-                      }}
-                    >
-                      <span className="relative overflow-hidden hover:text-[#0B2545]">
-                        {dest.name}
-                        {/* Underline for active state */}
-                        {activeCategory === dest.id && (
-                          <motion.span
-                            layoutId="activeCategory"
-                            className="absolute bottom-0 left-0 w-full h-[1px] bg-[#C7A14A]"
-                          />
-                        )}
-                        {/* Underline for hover state (if not active) */}
-                        {activeCategory !== dest.id && (
-                          <span className="absolute bottom-0 left-0 w-full h-[1px] bg-[#C7A14A] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
-                        )}
-                      </span>
-                    </button>
-                  ))}
                 </div>
               </div>
             </div>
