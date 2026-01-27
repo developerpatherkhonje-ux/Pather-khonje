@@ -169,21 +169,59 @@ const famousPlaces = [
 function Gallery() {
   const [activeTab, setActiveTab] = useState("all");
   const [images, setImages] = useState([]);
+  const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchImages();
+    fetchData();
   }, [activeTab]);
 
-  const fetchImages = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const response = await apiService.getGalleryImages(activeTab);
-      if (response.success) {
-        setImages(response.data.galleries);
+
+      // Fetch both Gallery Images and Places in parallel
+      const [galleryResponse, placesResponse] = await Promise.all([
+        apiService.getGalleryImages(activeTab),
+        apiService.getPlaces(),
+      ]);
+
+      let combinedImages = [];
+      let placesData = [];
+
+      // 1. Handle Gallery Images
+      if (galleryResponse.success) {
+        combinedImages = [...galleryResponse.data.galleries];
       }
+
+      // 2. Handle Places (Hotels Places)
+      if (placesResponse.success) {
+        placesData = placesResponse.data.places;
+        setPlaces(placesData);
+
+        // Merge places into main grid if tab is 'all' or 'destinations'
+        if (activeTab === "all" || activeTab === "destinations") {
+          const placesAsImages = placesData.map((place) => ({
+            _id: place.id,
+            title: place.name,
+            description: place.name, // Use name as description/location
+            image: {
+              url:
+                place.image ||
+                (place.images && place.images[0]?.url) ||
+                place.images?.[0],
+            },
+            isPlace: true, // Marker to distinguish if needed
+          }));
+
+          // Interleave or append? Appending for now.
+          combinedImages = [...combinedImages, ...placesAsImages];
+        }
+      }
+
+      setImages(combinedImages);
     } catch (error) {
-      console.error("Failed to fetch images", error);
+      console.error("Failed to fetch gallery data", error);
     } finally {
       setLoading(false);
     }
@@ -346,9 +384,9 @@ function Gallery() {
             variants={staggerContainer}
             className="grid grid-cols-1 md:grid-cols-3 gap-8"
           >
-            {featuredDestinations.map((dest, idx) => (
+            {places.slice(0, 3).map((dest, idx) => (
               <motion.div
-                key={idx}
+                key={dest.id || idx}
                 variants={luxuryFadeUp}
                 whileHover="hover"
                 initial="rest"
@@ -360,18 +398,26 @@ function Gallery() {
                   className="h-64 overflow-hidden rounded-sm mb-4 shadow-md"
                 >
                   <LazyLoadImage
-                    src={dest.img}
-                    alt={dest.title}
+                    src={
+                      dest.image && typeof dest.image === "string"
+                        ? apiService.toAbsoluteUrl(dest.image)
+                        : dest.images && dest.images.length > 0
+                        ? apiService.toAbsoluteUrl(
+                            dest.images[0].url || dest.images[0],
+                          )
+                        : "https://images.unsplash.com/photo-1544634076-a901606f41b9?q=80&w=2000"
+                    }
+                    alt={dest.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     effect="blur"
                     wrapperClassName="w-full h-full"
                   />
                 </motion.div>
                 <h3 className="font-serif text-2xl text-midnight-ocean mb-1 group-hover:text-soft-gold transition-colors">
-                  {dest.title}
+                  {dest.name}
                 </h3>
                 <p className="font-sans text-xs text-slate-gray uppercase tracking-widest">
-                  {dest.subtitle}
+                  Featured Destination
                 </p>
               </motion.div>
             ))}
@@ -503,9 +549,9 @@ function Gallery() {
             variants={staggerContainer}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6"
           >
-            {famousPlaces.map((place, idx) => (
+            {places.map((place, idx) => (
               <motion.div
-                key={idx}
+                key={place.id || idx}
                 variants={luxuryFadeUp}
                 whileHover="hover"
                 className="group cursor-pointer"
@@ -515,8 +561,16 @@ function Gallery() {
                   className="aspect-square overflow-hidden rounded-sm mb-3 shadow-md relative"
                 >
                   <LazyLoadImage
-                    src={place.img}
-                    alt={place.title}
+                    src={
+                      place.image && typeof place.image === "string"
+                        ? apiService.toAbsoluteUrl(place.image)
+                        : place.images && place.images.length > 0
+                        ? apiService.toAbsoluteUrl(
+                            place.images[0].url || place.images[0],
+                          )
+                        : "https://images.unsplash.com/photo-1544634076-a901606f41b9?q=80&w=2000"
+                    }
+                    alt={place.name}
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     effect="blur"
                     wrapperClassName="w-full h-full"
@@ -525,10 +579,10 @@ function Gallery() {
                 </motion.div>
                 <div className="text-center">
                   <h3 className="font-serif text-lg text-midnight-ocean mb-1 group-hover:text-soft-gold transition-colors">
-                    {place.title}
+                    {place.name}
                   </h3>
                   <p className="font-sans text-[10px] text-slate-gray uppercase tracking-widest">
-                    {place.location}
+                    {place.name}
                   </p>
                 </div>
               </motion.div>

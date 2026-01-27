@@ -89,14 +89,14 @@ class ApiService {
         // Handle rate limiting
         if (response.status === 429) {
           throw new Error(
-            "Too many requests. Please wait a moment and try again."
+            "Too many requests. Please wait a moment and try again.",
           );
         }
 
         const data = await response.json().catch(() => ({}));
         console.error("API Error Response:", { status: response.status, data });
         const error = new Error(
-          data.message || `HTTP error! status: ${response.status}`
+          data.message || `HTTP error! status: ${response.status}`,
         );
         error.response = { data, status: response.status };
         throw error;
@@ -111,7 +111,7 @@ class ApiService {
         String(error.message).includes("fetch")
       ) {
         throw new Error(
-          "Unable to connect to server. Please check your connection."
+          "Unable to connect to server. Please check your connection.",
         );
       }
       throw error;
@@ -160,11 +160,11 @@ class ApiService {
   }
 
   // Auth specific methods
-  async login(email, password) {
+  async login(email, password, token) {
     return this.post(
       "/auth/login",
-      { email, password },
-      { includeAuth: false }
+      { email, password, token },
+      { includeAuth: false },
     );
   }
 

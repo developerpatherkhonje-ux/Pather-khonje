@@ -1,12 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import apiService from '../services/api';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import apiService from "../services/api";
 
 const AuthContext = createContext(undefined);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -17,7 +17,7 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       if (token) {
         try {
           // Verify token with backend
@@ -26,14 +26,14 @@ export function AuthProvider({ children }) {
             setUser(response.data.user);
           } else {
             // Token is invalid, clear it
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
           }
         } catch (error) {
-          console.error('Token verification failed:', error);
+          console.error("Token verification failed:", error);
           // Clear invalid token
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
           // Don't redirect here as it might cause infinite loops
           // Set user to null to prevent context errors
           setUser(null);
@@ -45,21 +45,21 @@ export function AuthProvider({ children }) {
     initializeAuth();
   }, []);
 
-  const login = async (email, password) => {
+  const login = async (email, password, token) => {
     try {
-      const response = await apiService.login(email, password);
+      const response = await apiService.login(email, password, token);
       if (response.success) {
         const { user: userData, token } = response.data;
-        
+
         // Store token and user data
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Login error:', error);
+      console.error("Login error:", error);
       throw error;
     }
   };
@@ -69,11 +69,11 @@ export function AuthProvider({ children }) {
       // Call logout endpoint to invalidate token on server
       await apiService.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       // Clear local storage regardless of API call result
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       setUser(null);
     }
   };
@@ -85,21 +85,21 @@ export function AuthProvider({ children }) {
         email,
         password,
         phone,
-        designation
+        designation,
       });
-      
+
       if (response.success) {
         const { user: userData, token } = response.data;
-        
+
         // Store token and user data
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Signup error:', error);
+      console.error("Signup error:", error);
       throw error;
     }
   };
@@ -109,23 +109,26 @@ export function AuthProvider({ children }) {
       const response = await apiService.updateProfile(profileData);
       if (response.success) {
         const updatedUser = response.data.user;
-        localStorage.setItem('user', JSON.stringify(updatedUser));
+        localStorage.setItem("user", JSON.stringify(updatedUser));
         setUser(updatedUser);
         return true;
       }
       return false;
     } catch (error) {
-      console.error('Profile update error:', error);
+      console.error("Profile update error:", error);
       throw error;
     }
   };
 
   const updatePassword = async (currentPassword, newPassword) => {
     try {
-      const response = await apiService.updatePassword(currentPassword, newPassword);
+      const response = await apiService.updatePassword(
+        currentPassword,
+        newPassword,
+      );
       return response.success;
     } catch (error) {
-      console.error('Password update error:', error);
+      console.error("Password update error:", error);
       throw error;
     }
   };
@@ -135,28 +138,30 @@ export function AuthProvider({ children }) {
       const response = await apiService.getProfile();
       if (response.success) {
         const userData = response.data.user;
-        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
         return userData;
       }
     } catch (error) {
-      console.error('Refresh user error:', error);
+      console.error("Refresh user error:", error);
       // If refresh fails, logout user
       logout();
     }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      signup, 
-      updateProfile,
-      updatePassword,
-      refreshUser,
-      isLoading 
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        signup,
+        updateProfile,
+        updatePassword,
+        refreshUser,
+        isLoading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

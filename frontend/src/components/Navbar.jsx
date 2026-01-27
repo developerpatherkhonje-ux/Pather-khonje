@@ -144,7 +144,7 @@ function Navbar() {
           </div>
 
           {/* Right Action & Auth */}
-          <div className="hidden lg:flex items-center gap-6">
+          {/* <div className="hidden lg:flex items-center gap-6">
             {user ? (
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-midnight-ocean font-medium text-sm">
@@ -167,7 +167,7 @@ function Navbar() {
                 </button>
               </div>
             ) : null}
-          </div>
+          </div> */}
 
           {/* Mobile Toggle */}
           <button
