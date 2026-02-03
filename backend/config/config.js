@@ -71,8 +71,7 @@ module.exports = {
     passwordRequireLowercase: process.env.PASSWORD_REQUIRE_LOWERCASE === "true",
     passwordRequireNumbers: process.env.PASSWORD_REQUIRE_NUMBERS === "true",
     passwordRequireSymbols: process.env.PASSWORD_REQUIRE_SYMBOLS === "true",
-    turnstileSecretKey:
-      process.env.TURNSTILE_SECRET_KEY,
+    turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY,
   },
 
   // Logging Configuration (default values)

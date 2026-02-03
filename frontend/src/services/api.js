@@ -552,6 +552,17 @@ class ApiService {
     });
   }
 
+  async uploadPackageImages(files) {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("images", file));
+    return this.request("/upload/packages/images", {
+      method: "POST",
+      body: formData,
+      includeAuth: true,
+      headers: { "Content-Type": undefined },
+    });
+  }
+
   // Payment Vouchers API
   async listPaymentVouchers({
     page = 1,
