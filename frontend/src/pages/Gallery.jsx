@@ -255,7 +255,7 @@ function Gallery() {
             className="w-full h-full object-cover opacity-90"
             alt="Gallery Hero"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/20 to-white/5"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-white via-black/20 to-white/5"></div>
         </motion.div>
 
         <div className="container mx-auto px-6 md:px-12 relative z-10">
@@ -265,10 +265,10 @@ function Gallery() {
             variants={luxuryFadeUp}
             className="max-w-2xl"
           >
-            <h1 className="font-serif text-5xl md:text-6xl text-midnight-ocean mb-6 drop-shadow-sm">
+            <h1 className="font-serif text-5xl md:text-6xl text-white mb-6 drop-shadow-sm">
               Gallery
             </h1>
-            <p className="font-sans text-midnight-ocean/80 text-lg leading-relaxed mix-blend-multiply font-medium">
+            <p className="font-sans text-white/90 text-lg leading-relaxed font-medium">
               A glimpse into the destinations, stays, and experiences we curate.
               Every image tells a story of discovery and beauty.
             </p>

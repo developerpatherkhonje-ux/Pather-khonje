@@ -14,6 +14,7 @@ import {
   X,
   User,
   Image,
+  Mail,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import DashboardHome from "../components/dashboard/DashboardHome";
@@ -28,6 +29,7 @@ import PaymentVoucherPage from "./admin/PaymentVoucherPage";
 import Analytics from "../components/dashboard/Analytics";
 import UserProfile from "../components/dashboard/UserProfile";
 import GalleryManagement from "../components/dashboard/GalleryManagement";
+import EnquiriesPanel from "../components/dashboard/EnquiriesPanel";
 
 function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,6 +45,7 @@ function Dashboard() {
     { name: "Invoices", path: "/dashboard/invoices", icon: FileText },
     { name: "Payment Vouchers", path: "/dashboard/vouchers", icon: Receipt },
     { name: "Analytics", path: "/dashboard/analytics", icon: BarChart3 },
+    { name: "Enquiries", path: "/dashboard/enquiries", icon: Mail },
     { name: "Profile", path: "/dashboard/profile", icon: User },
   ];
 
@@ -169,6 +172,7 @@ function Dashboard() {
                 element={<PaymentVoucherPage />}
               />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/enquiries" element={<EnquiriesPanel />} />
               <Route path="/profile" element={<UserProfile />} />
             </Routes>
           </motion.div>

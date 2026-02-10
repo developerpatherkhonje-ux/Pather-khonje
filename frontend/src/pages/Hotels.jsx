@@ -66,7 +66,7 @@ const Hotels = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState("ALL DESTINATIONS");
-
+ 
   // Fetch Logic - Commented out for now
   /*
   useEffect(() => {
@@ -118,6 +118,11 @@ const Hotels = () => {
       transition: { duration: 0.6, ease: "easeOut" },
     },
   };
+
+  const filteredPlaces =
+    activeCategory === "ALL DESTINATIONS"
+      ? places
+      : places.filter((place) => place.tag === activeCategory);
 
   return (
     <div className="bg-gray-50 min-h-screen font-sans">
@@ -191,13 +196,18 @@ const Hotels = () => {
             <div className="flex justify-center items-center h-64 text-gray-400 tracking-widest uppercase">
               Loading Destinations...
             </div>
-          ) : places.length === 0 ? (
-            <div className="flex justify-center items-center h-64 text-gray-400 tracking-widest uppercase">
-              No destinations found.
+          ) : filteredPlaces.length === 0 ? (
+            <div className="flex flex-col justify-center items-center h-64 text-center space-y-4">
+              <div className="text-midnight-ocean text-xl font-serif">
+                Coming Soon
+              </div>
+              <div className="text-slate-gray text-sm tracking-widest uppercase">
+                We do not have any associate hotels in this category yet.
+              </div>
             </div>
           ) : (
             <AnimatePresence mode="wait">
-              {places.map((place, index) => (
+              {filteredPlaces.map((place, index) => (
                 <motion.div
                   key={place.id || index}
                   initial="hidden"

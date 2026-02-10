@@ -21,14 +21,55 @@ const Contact = () => {
     message: "",
   });
 
+  const [status, setStatus] = useState({
+    submitting: false,
+    success: false,
+    error: null,
+  });
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    // Reset status on change
+    if (status.success || status.error) {
+      setStatus({ submitting: false, success: false, error: null });
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log("Form submitted:", formData);
+    setStatus({ ...status, submitting: true, error: null });
+
+    try {
+      // Import dynamically to avoid top-level issues if any
+      const { submitEnquiry } = await import("../services/enquiryService");
+
+      await submitEnquiry(formData);
+
+      setStatus({
+        submitting: false,
+        success: true,
+        error: null,
+      });
+
+      // Reset form
+      setFormData({
+        name: "",
+        email: "",
+        subject: "",
+        message: "",
+        destination: "",
+        month: "",
+      });
+    } catch (error) {
+      console.error("Error submitting enquiry:", error);
+      setStatus({
+        submitting: false,
+        success: false,
+        error:
+          error.response?.data?.message ||
+          "Something went wrong. Please try again.",
+      });
+    }
   };
 
   return (
@@ -316,13 +357,38 @@ const Contact = () => {
                     />
                   </div>
 
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-4">
-                    <button className="bg-midnight-ocean text-white px-8 py-4 font-medium hover:bg-deep-steel-blue transition-colors duration-300 w-full md:w-auto shadow-lg hover:shadow-xl rounded-sm">
-                      Request a Callback
-                    </button>
-                    <p className="text-sm text-slate-500 italic">
-                      We usually respond within one business day.
-                    </p>
+                  <div className="flex flex-col gap-4 pt-4">
+                    {status.success && (
+                      <div className="p-4 bg-green-50 text-green-700 border border-green-200 rounded-lg">
+                        Thank you! Your message has been sent successfully. We
+                        will get back to you shortly.
+                      </div>
+                    )}
+
+                    {status.error && (
+                      <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded-lg">
+                        {status.error}
+                      </div>
+                    )}
+
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                      <button
+                        type="submit"
+                        disabled={status.submitting}
+                        className={`bg-midnight-ocean text-white px-8 py-4 font-medium hover:bg-deep-steel-blue transition-colors duration-300 w-full md:w-auto shadow-lg hover:shadow-xl rounded-sm ${
+                          status.submitting
+                            ? "opacity-70 cursor-not-allowed"
+                            : ""
+                        }`}
+                      >
+                        {status.submitting
+                          ? "Sending..."
+                          : "Request a Callback"}
+                      </button>
+                      <p className="text-sm text-slate-500 italic">
+                        We usually respond within one business day.
+                      </p>
+                    </div>
                   </div>
                 </form>
               </motion.div>

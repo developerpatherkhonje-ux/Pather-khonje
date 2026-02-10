@@ -64,9 +64,9 @@ function App() {
                     <Route
                       path="/dashboard/*"
                       element={
-                        <ProtectedRoute requireAdmin={true}>
+                        // <ProtectedRoute requireAdmin={true}>
                           <Dashboard />
-                        </ProtectedRoute>
+                        // </ProtectedRoute>
                       }
                     />
 

@@ -80,6 +80,9 @@ function Navbar() {
               alt="Pather Khonje Logo"
               className="md:h-24 h-12 w-auto object-contain"
             />
+            <span className="font-serif text-xl tracking-widest text-midnight-ocean font-bold">
+              Pather Khonje
+            </span>
           </Link>
 
           {/* Desktop Navigation */}

@@ -124,20 +124,10 @@ function HotelPlace() {
       setError(null);
 
       const response = await apiService.getHotelsByPlace(placeId);
-      if (
-        response.success &&
-        response.data.hotels &&
-        response.data.hotels.length > 0
-      ) {
-        const sortedHotels = (response.data.hotels || []).sort((a, b) =>
-          (a.name || "").localeCompare(b.name || "", "en", {
-            sensitivity: "base",
-          }),
-        );
-        setHotels(sortedHotels);
-        setPlaceName(response.data.place?.name || "");
-
+      if (response.success) {
         const place = response.data.place || {};
+        setPlaceName(place.name || "");
+
         const primaryImage =
           place.image && typeof place.image === "string" && place.image.trim()
             ? apiService.toAbsoluteUrl(place.image)
@@ -149,93 +139,21 @@ function HotelPlace() {
               )
             : "";
         setPlaceImage(primaryImage || "");
-      } else {
-        // MOCK DATA
-        setPlaceName("Darjeeling");
-        setPlaceImage(
-          "https://images.unsplash.com/photo-1544634076-a901606f41b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80",
-        );
-        setHotels([
-          {
-            id: "1",
-            name: "The Elgin, Darjeeling",
-            address: "18, H.D. Lama Road, Darjeeling",
-            rating: 4.8,
-            priceRange: "₹8500 - ₹15000",
-            amenities: ["Wi-Fi", "Restaurant", "Spa"],
-            images: [
-              "https://cf.bstatic.com/xdata/images/hotel/max1024x768/498135804.jpg?k=368b6da120464222dfa61c360662d9876274e797587747806509c25838cc5606&o=&hp=1",
-              "https://cf.bstatic.com/xdata/images/hotel/max1024x768/498135804.jpg?k=368b6da120464222dfa61c360662d9876274e797587747806509c25838cc5606&o=&hp=1",
-            ],
-          },
-          {
-            id: "2",
-            name: "Mayfair Darjeeling",
-            address: "Mall Road, Opposite Governor House",
-            rating: 4.9,
-            priceRange: "₹12000 - ₹25000",
-            amenities: ["Wi-Fi", "Parking", "Gym"],
-            images: [
-              "https://www.mayfairhotels.com/mayfair-darjeeling/images/gallery/exterior/original/5.jpg",
-            ],
-          },
-          {
-            id: "3",
-            name: "Windamere Hotel",
-            address: "Observatory Hill, Darjeeling",
-            rating: 4.6,
-            priceRange: "₹10000 - ₹18000",
-            amenities: ["Wi-Fi", "Restaurant", "Heritage Walk"],
-            images: [
-              "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/12/f2/96/6e/windamere-hotel.jpg?w=1200&h=-1&s=1",
-            ],
-          },
-        ]);
+
+        if (response.data.hotels && response.data.hotels.length > 0) {
+          const sortedHotels = (response.data.hotels || []).sort((a, b) =>
+            (a.name || "").localeCompare(b.name || "", "en", {
+              sensitivity: "base",
+            }),
+          );
+          setHotels(sortedHotels);
+        } else {
+          setHotels([]);
+        }
       }
     } catch (err) {
       console.error("Error fetching place hotels:", err);
       // setError("Failed to load hotels");
-      // FALLBACK TO MOCK DATA FOR DEV
-      setPlaceName("Darjeeling");
-      setPlaceImage(
-        "https://images.unsplash.com/photo-1544634076-a901606f41b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80",
-      );
-      setHotels([
-        {
-          id: "1",
-          name: "The Elgin, Darjeeling",
-          address: "18, H.D. Lama Road, Darjeeling",
-          rating: 4.8,
-          priceRange: "₹8500 - ₹15000",
-          amenities: ["Wi-Fi", "Restaurant", "Spa"],
-          images: [
-            "https://cf.bstatic.com/xdata/images/hotel/max1024x768/498135804.jpg?k=368b6da120464222dfa61c360662d9876274e797587747806509c25838cc5606&o=&hp=1",
-            "https://cf.bstatic.com/xdata/images/hotel/max1024x768/498135804.jpg?k=368b6da120464222dfa61c360662d9876274e797587747806509c25838cc5606&o=&hp=1",
-          ],
-        },
-        {
-          id: "2",
-          name: "Mayfair Darjeeling",
-          address: "Mall Road, Opposite Governor House",
-          rating: 4.9,
-          priceRange: "₹12000 - ₹25000",
-          amenities: ["Wi-Fi", "Parking", "Gym"],
-          images: [
-            "https://www.mayfairhotels.com/mayfair-darjeeling/images/gallery/exterior/original/5.jpg",
-          ],
-        },
-        {
-          id: "3",
-          name: "Windamere Hotel",
-          address: "Observatory Hill, Darjeeling",
-          rating: 4.6,
-          priceRange: "₹10000 - ₹18000",
-          amenities: ["Wi-Fi", "Restaurant", "Heritage Walk"],
-          images: [
-            "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/12/f2/96/6e/windamere-hotel.jpg?w=1200&h=-1&s=1",
-          ],
-        },
-      ]);
     } finally {
       setLoading(false);
     }
@@ -313,20 +231,7 @@ function HotelPlace() {
           <div className="w-full h-full bg-[#0B2545]" />
         )}
 
-        {/* Back Navigation */}
-        <div className="absolute top-28 left-6 md:left-12 z-20">
-          <Link
-            to="/website/hotels"
-            className="group flex items-center gap-3 text-white/90 hover:text-white transition-colors"
-          >
-            <div className="p-2 bg-white/10 backdrop-blur-sm rounded-full border border-white/20 group-hover:bg-white/20 transition-all">
-              <ChevronLeft size={16} />
-            </div>
-            <span className="text-xs font-medium uppercase tracking-[0.15em] opacity-90 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
-              Back to Destinations
-            </span>
-          </Link>
-        </div>
+        {/* REMOVED BACK NAVIGATION */}
 
         <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-center px-4 pt-16">
           <motion.div
@@ -469,23 +374,18 @@ function HotelPlace() {
         </div>
 
         {hotels.length === 0 && !loading && (
-          <div className="text-center py-24 border border-[#F1F6FB] rounded-xl bg-white">
-            <Sparkles
-              size={40}
-              className="text-[#C7A14A] mx-auto mb-6 opacity-60"
-            />
-            <h3 className="font-serif text-3xl text-[#0B2545] mb-3">
-              Curating Excellence
+          <div className="flex flex-col justify-center items-center h-64 text-center space-y-4 py-24">
+            <h3 className="font-serif text-3xl text-[#0B2545] mb-2">
+              Coming Soon
             </h3>
-            <p className="text-[#3A5F8C] max-w-md mx-auto mb-8 font-light text-sm leading-relaxed">
-              We are currently selecting the finest stays in {placeName}. In the
-              meantime, our concierge is available to assist you.
+            <p className="text-[#3A5F8C] text-sm tracking-widest uppercase mb-6">
+              We do not have any associate hotels in this category yet.
             </p>
             <Link
               to="/website/contact"
-              className="inline-block px-8 py-4 bg-[#0B2545] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#1a3b66] transition-colors rounded-sm"
+              className="inline-block px-8 py-3 border border-[#0B2545] text-[#0B2545] text-xs font-bold uppercase tracking-widest hover:bg-[#0B2545] hover:text-white transition-all rounded-sm"
             >
-              Contact Concierge
+              Contact Support
             </Link>
           </div>
         )}
