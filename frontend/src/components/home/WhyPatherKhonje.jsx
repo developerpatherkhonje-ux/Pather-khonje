@@ -12,7 +12,7 @@ const WhyPatherKhonje = () => {
               <span className="absolute bottom-1 left-0 w-full h-[2px] bg-soft-gold/40"></span>
             </h2>
             <a
-              href="/website/about"
+              href="/about"
               className="inline-block mt-4 text-sm font-sans font-bold text-midnight-ocean uppercase tracking-widest border-b border-midnight-ocean pb-1 hover:text-horizon-blue hover:border-horizon-blue transition-colors"
             >
               Learn More

@@ -163,7 +163,7 @@ const AuthPage = () => {
             {/* Turnstile Captcha */}
             <div className="flex justify-center">
               <Turnstile
-                siteKey="0x4AAAAAACTXvwa_aLkWECIU"
+                siteKey="0x4AAAAAAC0nD1uEj7L8ZOdO"
                 onSuccess={(token) => setTurnstileToken(token)}
                 onError={() => setError("Captcha validation failed")}
                 options={{

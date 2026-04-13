@@ -1,15 +1,47 @@
-import React from "react";
+import React, { useRef } from "react";
 import { motion } from "framer-motion";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { LazyLoadImage } from "react-lazy-load-image-component";
+import { Link } from "react-router-dom";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
-const DestinationCard = ({ image, name, label }) => (
-  <motion.div
-    initial={{ opacity: 0, scale: 0.95 }}
-    whileInView={{ opacity: 1, scale: 1 }}
-    viewport={{ once: true, margin: "-50px" }}
-    transition={{ duration: 0.5, ease: "easeOut" }}
-    className="flex flex-col gap-4 group cursor-pointer"
+const destinations = [
+  {
+    image: "https://images.unsplash.com/photo-1544634076-a900ce0dcbfb?q=80&w=2070",
+    name: "Darjeeling",
+    label: "Queen of the Hills",
+    path: "/hotels/darjeeling"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=2070",
+    name: "Sikkim",
+    label: "Mystic Mountains",
+    path: "/hotels/sikkim"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?q=80&w=2070",
+    name: "Ladakh",
+    label: "High Altitude Desert",
+    path: "/hotels/ladakh"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1605649487212-4d48bfceb477?q=80&w=2070",
+    name: "Manali",
+    label: "Valley of Gods",
+    path: "/hotels/manali"
+  },
+  {
+    image: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=1974",
+    name: "Goa",
+    label: "Coastal Paradise",
+    path: "/hotels/goa"
+  }
+];
+
+const DestinationCard = ({ image, name, label, path }) => (
+  <Link 
+    to={path} 
+    className="flex-none w-[85vw] md:w-[400px] flex flex-col gap-4 group cursor-pointer snap-center"
   >
     <div className="w-full h-[450px] overflow-hidden relative">
       <motion.div
@@ -27,49 +59,30 @@ const DestinationCard = ({ image, name, label }) => (
       </motion.div>
       <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500 pointer-events-none" />
     </div>
-    <div className="flex flex-col items-start px-2">
-      <span className="font-sans text-[10px] font-bold text-soft-gold uppercase tracking-[0.15em] mb-1">
+    <div className="flex flex-col items-start">
+      <span className="text-[10px] font-bold text-soft-gold uppercase tracking-[0.2em] mb-1">
         {label}
       </span>
-      <h3 className="font-serif text-2xl text-midnight-ocean group-hover:text-deep-steel-blue transition-colors duration-200">
+      <h3 className="font-serif text-2xl text-midnight-ocean group-hover:text-horizon-blue transition-colors">
         {name}
       </h3>
     </div>
-  </motion.div>
+  </Link>
 );
 
 const FeaturedDestinations = () => {
-  const destinations = [
-    {
-      src: "https://images.unsplash.com/photo-1536295243470-d7cba4efab7b?q=80&w=1138&auto=format&fit=crop",
-      name: "Ladakh",
-      label: "Signature Destination",
-    },
-    {
-      src: "https://images.unsplash.com/photo-1548013146-72479768bada?q=80&w=2076&auto=format&fit=crop",
-      name: "Agra",
-      label: "Historic Culture",
-    },
-    {
-      src: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=2070",
-      name: "Manali",
-      label: "Mountain Retreat",
-    },
-    {
-      src: "https://images.unsplash.com/photo-1661413499880-d2169a0a7fea?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      name: "Andaman Islands",
-      label: "Coastal Escape",
-    },
-    {
-      src: "https://images.unsplash.com/photo-1599661046289-e31897846e41?q=80&w=1854",
-      name: "Rajasthan",
-      label: "Royal Heritage",
-    },
-  ];
+  const scrollRef = useRef(null);
+
+  const scroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === "left" ? -400 : 400;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
 
   return (
-    <section className="bg-white py-24">
-      <div className="text-center mb-16">
+    <section className="bg-white py-24 relative">
+      <div className="text-center mb-16 px-6">
         <motion.h2
           initial={{ opacity: 0, y: 12 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -88,21 +101,29 @@ const FeaturedDestinations = () => {
         ></motion.div>
       </div>
 
-      <div className="container mx-auto px-6 max-w-7xl">
-        <div className="flex gap-8 overflow-x-auto pb-8 snap-x snap-mandatory scrollbar-thin">
-          {destinations.map((dest, idx) => (
-            <div
-              key={idx}
-              className="min-w-[300px] md:min-w-[400px] snap-center"
-            >
-              <DestinationCard
-                image={dest.src}
-                name={dest.name}
-                label={dest.label}
-              />
-            </div>
+      <div className="relative group">
+        <button 
+          onClick={() => scroll("left")}
+          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 backdrop-blur-sm p-4 rounded-full shadow-lg text-midnight-ocean hover:bg-midnight-ocean hover:text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
+        >
+          <ChevronLeft size={24} />
+        </button>
+
+        <div 
+          ref={scrollRef}
+          className="flex gap-8 overflow-x-auto pb-12 snap-x snap-mandatory scrollbar-thin px-6 md:px-12"
+        >
+          {destinations.map((dest, index) => (
+            <DestinationCard key={index} {...dest} />
           ))}
         </div>
+
+        <button 
+          onClick={() => scroll("right")}
+          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 backdrop-blur-sm p-4 rounded-full shadow-lg text-midnight-ocean hover:bg-midnight-ocean hover:text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
+        >
+          <ChevronRight size={24} />
+        </button>
       </div>
     </section>
   );

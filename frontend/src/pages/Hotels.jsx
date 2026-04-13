@@ -288,7 +288,7 @@ const Hotels = () => {
                         className="flex items-center gap-6 mt-auto"
                       >
                         <Link
-                          to={`/website/hotels/${place.id}`}
+                          to={`/hotels/${place.id}`}
                           className="bg-midnight-ocean text-white px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-deep-steel-blue transition-all duration-300 text-center"
                         >
                           Explore Hotels
@@ -354,7 +354,7 @@ const Hotels = () => {
               Get personalized recommendations instantly.
             </p>
             <Link
-              to="/website/contact"
+              to="/contact"
               className="block w-full bg-white text-midnight-ocean text-center py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-gray-100 transition-colors"
             >
               Contact Us

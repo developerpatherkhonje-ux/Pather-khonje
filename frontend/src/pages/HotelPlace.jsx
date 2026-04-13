@@ -382,7 +382,7 @@ function HotelPlace() {
               We do not have any associate hotels in this category yet.
             </p>
             <Link
-              to="/website/contact"
+              to="/contact"
               className="inline-block px-8 py-3 border border-[#0B2545] text-[#0B2545] text-xs font-bold uppercase tracking-widest hover:bg-[#0B2545] hover:text-white transition-all rounded-sm"
             >
               Contact Support

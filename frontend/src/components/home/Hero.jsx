@@ -1,110 +1,120 @@
-import React from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
 
+// Indian Mountain Photos: Ladakh, Manali, Sikkim, Darjeeling
 const heroImages = [
-  "/assets/hero13.jpg",
-  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=2070",
-  "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?q=80&w=2070",
+  "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?q=80&w=2070", // Ladakh (Confirmed working)
+  "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070", // Manali (Epic Snow Mountains)
+  "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=2070", // Sikkim (Confirmed working)
+  "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?q=80&w=2070", // Darjeeling (Mist & Hills)
 ];
-
 const Hero = () => {
-  const [activeImage, setActiveImage] = React.useState(0);
+  const [activeImage, setActiveImage] = useState(0);
+  const navigate = useNavigate();
 
-  React.useEffect(() => {
+  // Auto-slide every 4.5 seconds
+  useEffect(() => {
     const interval = setInterval(() => {
       setActiveImage((prev) => (prev + 1) % heroImages.length);
-    }, 5000);
+    }, 4500);
     return () => clearInterval(interval);
   }, []);
+
   return (
-    <section className="relative w-full min-h-[90vh] flex flex-col lg:flex-row overflow-hidden bg-[#FFFFFF]">
+    <section className="relative w-full min-h-[90vh] flex flex-col lg:flex-row overflow-hidden bg-white">
       {/* Left Content Panel */}
-      <div className="w-full lg:w-[45%] flex flex-col justify-center relative z-10 order-2 lg:order-1 bg-white">
-        <div className="px-6 md:px-12 lg:px-24 xl:px-32 py-16 lg:py-0">
+      <div className="w-full lg:w-[45%] flex flex-col justify-center relative z-10 order-2 lg:order-1 bg-white py-16 lg:py-0 px-6 md:px-12 lg:px-24">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        >
+          <div className="flex items-center gap-4 mb-6">
+            <div className="h-[1px] w-12 bg-soft-gold"></div>
+            <span className="text-xs font-bold tracking-widest text-slate-gray uppercase">
+              Estd. 2015
+            </span>
+          </div>
+
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif text-midnight-ocean leading-[1.1] mb-6">
+            A Tour That <br />
+            <span className="italic text-soft-gold">Never Seen Before.</span>
+          </h1>
+
+          <p className="text-lg text-slate-gray font-light max-w-md leading-relaxed mb-10">
+            Discover the hidden gems of the Himalayas. We craft journeys that 
+            match the rhythm of your heart with clarity, comfort, and character.
+          </p>
+
           <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: { opacity: 0 },
-              visible: {
-                opacity: 1,
-                transition: { staggerChildren: 0.15, delayChildren: 0.2 },
-              },
-            }}
-            className="flex flex-col gap-8 max-w-xl"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4, duration: 0.8 }}
+            className="flex flex-col sm:flex-row items-start sm:items-center gap-6"
           >
-            <motion.h1
-              variants={{
-                hidden: { opacity: 0, y: 20, filter: "blur(10px)" },
-                visible: {
-                  opacity: 1,
-                  y: 0,
-                  filter: "blur(0px)",
-                  transition: { duration: 0.8, ease: "easeOut" },
-                },
-              }}
-              className="font-serif text-4xl md:text-5xl lg:text-6xl text-midnight-ocean leading-[1.1]"
+            <button
+              onClick={() => navigate("/packages")}
+              className="bg-midnight-ocean text-white px-8 py-4 font-sans font-bold text-xs tracking-widest uppercase hover:bg-deep-steel-blue transition-colors duration-200 shadow-lg"
             >
-              Journeys designed with care, comfort, and clarity.
-            </motion.h1>
+              Plan Your Journey
+            </button>
 
-            <motion.p
-              variants={{
-                hidden: { opacity: 0, y: 15 },
-                visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
-              }}
-              className="font-sans text-slate-gray text-base leading-relaxed max-w-sm"
+            <Link
+              to="/packages"
+              className="group flex items-center gap-2 text-midnight-ocean font-sans font-medium text-sm tracking-wide hover:text-horizon-blue transition-colors duration-200"
             >
-              A Kolkata-based boutique travel company curating thoughtful
-              journeys across India since{" "}
-              <span className="text-soft-gold font-medium">estd.</span>.
-            </motion.p>
-
-            <motion.div
-              variants={{
-                hidden: { opacity: 0 },
-                visible: { opacity: 1, transition: { duration: 0.6 } },
-              }}
-              className="flex items-center gap-8 mt-4"
-            >
-              <button className="px-10 py-5 bg-midnight-ocean text-white font-sans font-bold text-xs tracking-widest uppercase hover:bg-deep-steel-blue transition-colors duration-200 shadow-sm">
-                Plan Your Journey
-              </button>
-
-              <a
-                href="/website/packages"
-                className="group flex items-center gap-2 text-midnight-ocean font-sans font-medium text-sm tracking-wide hover:text-horizon-blue transition-colors duration-200"
-              >
-                View Destinations{" "}
-                <ArrowRight
-                  size={16}
-                  className="transition-transform duration-200"
-                />
-              </a>
-            </motion.div>
+              View Destinations{" "}
+              <ArrowRight
+                size={16}
+                className="transition-transform duration-200 group-hover:translate-x-1"
+              />
+            </Link>
           </motion.div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Right Image Panel */}
-      <div className="w-full lg:w-[55%] h-[40vh] lg:h-auto relative order-1 lg:order-2 overflow-hidden">
-        <AnimatePresence mode="wait">
+      <div className="w-full lg:w-[55%] h-[50vh] lg:min-h-[90vh] relative order-1 lg:order-2 overflow-hidden bg-gray-100">
+        {/* Render all images and animate opacity for a seamless crossfade */}
+        {heroImages.map((src, idx) => (
           <motion.div
-            key={activeImage}
-            initial={{ scale: 1.15, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
+            key={idx}
+            initial={false}
+            animate={{
+              opacity: activeImage === idx ? 1 : 0,
+              scale: activeImage === idx ? 1 : 1.1,
+            }}
+            transition={{ duration: 1.5, ease: "easeInOut" }}
             className="absolute inset-0"
+            style={{ pointerEvents: activeImage === idx ? "auto" : "none" }}
           >
             <img
-              src={heroImages[activeImage]}
-              alt="Scenic Travel Journey"
+              src={src}
+              alt={`Himalayan Destination ${idx + 1}`}
               className="w-full h-full object-cover"
             />
+            {/* Soft gradient to blend the image edge with the white panel on desktop */}
+            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/10 to-transparent lg:w-48 z-10 hidden lg:block"></div>
           </motion.div>
-        </AnimatePresence>
+        ))}
+
+        {/* Carousel Indicators (Dots) */}
+        <div className="absolute bottom-8 right-12 z-20 flex gap-3">
+          {heroImages.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setActiveImage(idx)}
+              className={`h-2.5 rounded-full transition-all duration-300 ${
+                idx === activeImage
+                  ? "bg-white w-8 shadow-md"
+                  : "bg-white/50 hover:bg-white/80 w-2.5"
+              }`}
+              aria-label={`Go to slide ${idx + 1}`}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );

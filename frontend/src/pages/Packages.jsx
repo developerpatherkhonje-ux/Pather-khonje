@@ -263,7 +263,7 @@ const Packages = () => {
                           Book Now
                         </button>
                         <Link
-                          to={`/website/package/${pkg.id}`}
+                          to={`/package/${pkg.id}`}
                           className="text-xs font-bold tracking-[0.2em] uppercase text-midnight-ocean flex items-center gap-2 group hover:text-soft-gold transition-colors"
                         >
                           {pkg.linkText}
@@ -331,7 +331,7 @@ const Packages = () => {
               Get a free, no-obligation quote within 24 hours.
             </p>
             <Link
-              to="/website/contact"
+              to="/contact"
               className="block w-full bg-white text-midnight-ocean text-center py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-gray-100 transition-colors"
             >
               Request Custom Quote

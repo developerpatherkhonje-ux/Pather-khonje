@@ -6,7 +6,6 @@ import {
   X,
   User,
   LogOut,
-  LayoutDashboard,
   ChevronDown,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
@@ -50,17 +49,19 @@ function Navbar() {
     }, 150);
   };
 
+  // Clean URLs - Removed /website prefix
   const navItems = [
-    { name: "HOME", path: "/website/" },
-    { name: "ABOUT US", path: "/website/about" },
-    { name: "GALLERY", path: "/website/gallery" },
+    { name: "HOME", path: "/" },
+    { name: "ABOUT US", path: "/about" },
+    { name: "GALLERY", path: "/gallery" },
     { name: "HOTELS", path: null },
-    { name: "PACKAGES", path: "/website/packages" },
-    { name: "CONTACT", path: "/website/contact" },
+    { name: "PACKAGES", path: "/packages" },
+    { name: "CONTACT", path: "/contact" },
   ];
 
   const handleLogout = async () => {
     await logout();
+    setIsOpen(false);
   };
 
   return (
@@ -73,7 +74,8 @@ function Navbar() {
     >
       <div className="container mx-auto px-6 lg:px-12">
         <div className="flex items-center justify-between">
-          {/* Logo - Text Based with optional gold accent */}
+          
+          {/* Logo */}
           <Link to="/" className="flex items-center gap-3 group">
             <img
               src="/logo/Pather Khonje Logo.png"
@@ -146,38 +148,33 @@ function Navbar() {
             })}
           </div>
 
-          {/* Right Action & Auth */}
-          {/* <div className="hidden lg:flex items-center gap-6">
-            {user ? (
+          {/* User actions (Only visible if already logged in, no login button shown) */}
+          <div className="hidden lg:flex items-center gap-6">
+            {user && (
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-midnight-ocean font-medium text-sm">
                   <User size={18} />
                   <span>{user.name}</span>
                 </div>
-                {user.role === "admin" && (
-                  <Link
-                    to="/dashboard"
-                    className="text-slate-gray hover:text-midnight-ocean transition-colors"
-                  >
-                    <LayoutDashboard size={18} />
-                  </Link>
-                )}
                 <button
                   onClick={handleLogout}
                   className="text-slate-gray hover:text-red-600 transition-colors"
+                  aria-label="Logout"
                 >
                   <LogOut size={18} />
                 </button>
               </div>
-            ) : null}
-          </div> */}
+            )}
+          </div>
 
           {/* Mobile Toggle */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden text-midnight-ocean"
+            className="lg:hidden text-midnight-ocean p-2"
+            aria-label="Toggle Mobile Menu"
+            aria-expanded={isOpen}
           >
-            {isOpen ? <X size={18} /> : <Menu size={18} />}
+            {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>
@@ -189,7 +186,7 @@ function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white border-t border-gray-100"
+            className="lg:hidden bg-white border-t border-gray-100 overflow-y-auto max-h-[85vh]"
           >
             <div className="flex flex-col p-6 space-y-4">
               {navItems.map((item) => {
@@ -199,6 +196,7 @@ function Navbar() {
                       <button
                         onClick={() => setMobileHotelsOpen(!mobileHotelsOpen)}
                         className="w-full flex justify-between items-center text-sm font-sans font-bold text-midnight-ocean py-3 uppercase tracking-widest"
+                        aria-expanded={mobileHotelsOpen}
                       >
                         {item.name}
                         <ChevronDown
@@ -221,7 +219,7 @@ function Navbar() {
                               {CURATED_STAYS.map((stay) => (
                                 <Link
                                   key={stay.id}
-                                  to={`/website/hotel/${stay.id}`}
+                                  to={`/hotel/${stay.id}`}
                                   className="text-xs font-medium text-slate-700 block py-1"
                                   onClick={() => setIsOpen(false)}
                                 >
@@ -236,7 +234,7 @@ function Navbar() {
                                 {DESTINATIONS.map((dest) => (
                                   <Link
                                     key={dest.name}
-                                    to={dest.path}
+                                    to={dest.path.replace("/website", "")}
                                     className="text-xs font-medium text-slate-700 block py-1"
                                     onClick={() => setIsOpen(false)}
                                   >
@@ -263,25 +261,27 @@ function Navbar() {
                 );
               })}
 
-              {user ? (
-                <div className="pt-4 space-y-3">
+              {/* Mobile User Actions (Only visible if logged in) */}
+              {user && (
+                <div className="pt-4 space-y-3 border-t border-gray-100">
                   <div className="flex items-center gap-2 text-midnight-ocean font-medium">
                     <User size={18} />
                     <span>{user.name}</span>
                   </div>
                   <button
                     onClick={handleLogout}
-                    className="flex items-center gap-2 text-red-600 font-medium"
+                    className="flex items-center gap-2 text-red-600 font-medium w-full text-left"
                   >
                     <LogOut size={18} />
                     Logout
                   </button>
                 </div>
-              ) : null}
+              )}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
       {/* Mega Menu Component */}
       <HotelsMegaMenu
         isOpen={isHotelsOpen}

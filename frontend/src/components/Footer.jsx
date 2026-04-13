@@ -1,104 +1,75 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Facebook, Instagram, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
 
-function Footer() {
+const Footer = () => {
   return (
-    <footer className="bg-deep-steel-blue text-white py-20 border-t border-white/5">
-      <div className="container mx-auto px-6 md:px-8 lg:px-16">
-        <div className="flex flex-col lg:flex-row justify-between gap-16">
-          {/* Brand & Description */}
-          <div className="w-full lg:w-1/3">
-            <h3 className="font-serif text-2xl font-medium mb-6 text-white">
-              Pather Khonje
-            </h3>
-            <p className="text-slate-300 text-sm leading-relaxed max-w-xs font-sans">
-              Creating thoughtful journeys across India since 2015. Based in
-              Kolkata, serving travelers worldwide with care and clarity.
+    <footer className="bg-midnight-ocean text-white pt-16 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+          {/* Brand Info */}
+          <div>
+            <img src="/logo/Pather Khonje Logo.png" alt="Pather Khonje" className="h-16 mb-6 brightness-0 invert" />
+            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+              A Tour That Never Seen Before. Experience the raw beauty of the Himalayas with expertly crafted journeys since 2015.
             </p>
-            <div className="mt-8">
-              <p className="text-xs text-soft-gold uppercase tracking-widest font-bold">
-                Contact
-              </p>
-              <p className="text-slate-300 text-sm mt-2">
-                contact@patherkhonje.com
-              </p>
-              <p className="text-slate-300 text-sm">+91 74398 57694</p>
+            <div className="flex space-x-4">
+              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors"><Facebook size={20} /></a>
+              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors"><Instagram size={20} /></a>
+              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors"><Linkedin size={20} /></a>
             </div>
           </div>
 
-          {/* Links Columns */}
-          <div className="flex flex-wrap gap-8 lg:gap-32 w-full lg:w-auto">
-            {/* Company */}
-            <div className="flex flex-col gap-4">
-              <h4 className="font-sans font-bold text-[10px] uppercase tracking-[0.2em] text-soft-gold mb-2">
-                Company
-              </h4>
-              {["About Us", "Our Team", "Careers", "Press"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="font-sans text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
+          {/* Quick Links */}
+          <div>
+            <h4 className="text-soft-gold font-bold uppercase tracking-widest text-sm mb-6">Quick Links</h4>
+            <ul className="space-y-3 text-sm text-gray-400">
+              <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
+              <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
+              <li><Link to="/packages" className="hover:text-white transition-colors">Tour Packages</Link></li>
+              <li><Link to="/gallery" className="hover:text-white transition-colors">Gallery</Link></li>
+              <li><Link to="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
+            </ul>
+          </div>
 
-            {/* Support */}
-            <div className="flex flex-col gap-4">
-              <h4 className="font-sans font-bold text-[10px] uppercase tracking-[0.2em] text-soft-gold mb-2">
-                Support
-              </h4>
-              {["Contact", "FAQs", "Booking Policy", "Privacy"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="font-sans text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
+          {/* Support & Legal (Linked to new Policies page) */}
+          <div>
+            <h4 className="text-soft-gold font-bold uppercase tracking-widest text-sm mb-6">Support & Legal</h4>
+            <ul className="space-y-3 text-sm text-gray-400">
+              <li><Link to="/policies" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/policies" className="hover:text-white transition-colors">Booking Policy</Link></li>
+              <li><Link to="/policies" className="hover:text-white transition-colors">Terms & Conditions</Link></li>
+              <li><Link to="/policies" className="hover:text-white transition-colors">FAQs</Link></li>
+            </ul>
+          </div>
 
-            {/* Social */}
-            <div className="flex flex-col gap-4">
-              <h4 className="font-sans font-bold text-[10px] uppercase tracking-[0.2em] text-soft-gold mb-2">
-                Social
-              </h4>
-              {["Instagram", "Facebook", "LinkedIn", "Twitter"].map((item) => (
-                <a
-                  key={item}
-                  href="#"
-                  className="font-sans text-sm font-medium text-slate-300 hover:text-white transition-colors"
-                >
-                  {item}
-                </a>
-              ))}
-            </div>
+          {/* Contact Info */}
+          <div>
+            <h4 className="text-soft-gold font-bold uppercase tracking-widest text-sm mb-6">Contact Info</h4>
+            <ul className="space-y-4 text-sm text-gray-400">
+              <li className="flex items-start gap-3">
+                <MapPin size={18} className="text-soft-gold shrink-0 mt-0.5" />
+                <span>64/2/12, Biren Roy Road (East),<br />Behala, Chowrasta,<br />Kolkata - 700008</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Phone size={18} className="text-soft-gold shrink-0" />
+                <span>+91 7439857694</span>
+              </li>
+              <li className="flex items-center gap-3">
+                <Mail size={18} className="text-soft-gold shrink-0" />
+                <span>contact@patherkhonje.com</span>
+              </li>
+            </ul>
           </div>
         </div>
 
-        {/* Bottom Bar */}
-        <div className="border-t border-white/10 mt-20 pt-8 flex flex-col md:flex-row justify-between items-center text-[10px] lg:text-xs font-sans tracking-wide text-slate-400 uppercase">
-          <p>© 2025 Pather Khonje. All rights reserved.</p>
-          <div className="flex gap-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-white transition-colors">
-              Terms
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Privacy
-            </a>
-            <a href="#" className="hover:text-white transition-colors">
-              Sitemap
-            </a>
-            <a href="/auth" className="hover:text-white transition-colors">
-              Admin
-            </a>
-          </div>
+        <div className="border-t border-gray-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-gray-500">
+          <p>&copy; {new Date().getFullYear()} Pather Khonje. All rights reserved.</p>
+          <p className="font-serif italic tracking-wide text-gray-400">A Tour That Never Seen Before.</p>
         </div>
       </div>
     </footer>
   );
-}
+};
 
 export default Footer;

@@ -201,7 +201,7 @@ const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
                       filteredStays.map((stay) => (
                         <Link
                           key={stay.id}
-                          to={`/website/hotels/${stay.id}`}
+                          to={`/hotels/${stay.id}`}
                           className="group flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-[#F1F6FB]"
                           onClick={onClose}
                         >

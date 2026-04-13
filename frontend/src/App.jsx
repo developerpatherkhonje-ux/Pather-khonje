@@ -1,14 +1,18 @@
-import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-} from "react-router-dom";
+import React, { useState, useEffect, Suspense } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import Navbar from "./components/Navbar";
 import { HelmetProvider } from "react-helmet-async";
-import { Suspense } from "react";
+import { AuthProvider } from "./context/AuthContext";
+import { Toaster } from "react-hot-toast";
+import "./App.css";
+
+// Components
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer";
+import WhatsAppFloat from "./components/WhatsAppFloat";
+import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
+import LoadingScreen from "./components/LoadingScreen";
 
 // Lazy Load Pages
 const Home = React.lazy(() => import("./pages/Home"));
@@ -21,18 +25,8 @@ const Packages = React.lazy(() => import("./pages/Packages"));
 const PackageDetails = React.lazy(() => import("./pages/PackageDetails"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
-const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
+const Policies = React.lazy(() => import("./pages/Policies")); // NEW UNIFIED POLICIES PAGE
 const AuthPage = React.lazy(() => import("./pages/AuthPage"));
-import Footer from "./components/Footer";
-import WhatsAppFloat from "./components/WhatsAppFloat";
-import { AuthProvider } from "./context/AuthContext";
-import ProtectedRoute from "./components/ProtectedRoute";
-import AppRouter from "./components/AppRouter";
-import { Toaster } from "react-hot-toast";
-import ScrollToTop from "./components/ScrollToTop";
-import { useState, useEffect } from "react";
-import LoadingScreen from "./components/LoadingScreen";
-import "./App.css";
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -44,6 +38,7 @@ function App() {
 
     return () => clearTimeout(timer);
   }, []);
+
   return (
     <HelmetProvider>
       <AuthProvider>
@@ -57,21 +52,22 @@ function App() {
               <AnimatePresence mode="wait">
                 <Suspense fallback={<LoadingScreen />}>
                   <Routes>
-                    <Route path="/" element={<AppRouter />} />
-
+                    {/* Authentication Route */}
                     <Route path="/auth" element={<AuthPage />} />
 
+                    {/* Protected Dashboard Route */}
                     <Route
                       path="/dashboard/*"
                       element={
-                        // <ProtectedRoute requireAdmin={true}>
+                        <ProtectedRoute requireAdmin={true}>
                           <Dashboard />
-                        // </ProtectedRoute>
+                        </ProtectedRoute>
                       }
                     />
 
+                    {/* Main Public Website Routes */}
                     <Route
-                      path="/website/*"
+                      path="/*"
                       element={
                         <>
                           <Navbar />
@@ -80,7 +76,8 @@ function App() {
                               <Route index element={<Home />} />
                               <Route path="about" element={<About />} />
                               <Route path="gallery" element={<Gallery />} />
-
+                              <Route path="policies" element={<Policies />} />
+                              <Route path="hotels" element={<Hotels />} />
                               <Route
                                 path="hotels/:placeId"
                                 element={<HotelPlace />}
@@ -95,10 +92,6 @@ function App() {
                                 element={<PackageDetails />}
                               />
                               <Route path="contact" element={<Contact />} />
-                              <Route
-                                path="privacy-policy"
-                                element={<PrivacyPolicy />}
-                              />
                             </Routes>
                           </main>
                           <Footer />

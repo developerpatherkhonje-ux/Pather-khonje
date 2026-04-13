@@ -7,6 +7,7 @@ class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
     this.fallbackBaseURL = PROD_BASE_URL;
+    this.currentToken = null; // 🔴 NEW: In-memory token cache
 
     // Debug logging
     console.log("🔧 API Service initialized:", {
@@ -32,8 +33,14 @@ class ApiService {
     return path;
   }
 
-  // Get auth token from localStorage
+  // 🔴 NEW: Explicitly set the token in memory
+  setToken(token) {
+    this.currentToken = token;
+  }
+
+  // 🔴 UPDATED: Check memory first, then fallback to localStorage
   getToken() {
+    if (this.currentToken) return this.currentToken;
     return localStorage.getItem("token");
   }
 
@@ -77,9 +84,10 @@ class ApiService {
     try {
       let response = await doFetch(url);
 
-      if (!response.ok) {
-        // Handle token expiration
-        if (response.status === 401) {
+if (!response.ok) {
+        // Handle token expiration ONLY IF we are NOT trying to log in
+        if (response.status === 401 && !endpoint.includes('/auth/login')) {
+          this.setToken(null); 
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           window.location.href = "/auth";
@@ -326,14 +334,42 @@ class ApiService {
     const formData = new FormData();
     formData.append("image", file);
 
-    return this.request("/upload/upload-single", {
-      method: "POST",
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${this.getToken()}`,
-        // Don't set Content-Type, let browser set it with boundary
-      },
-    });
+    try {
+      // Primary: disk storage endpoint
+      return await this.request("/upload/image", {
+        method: "POST",
+        body: formData,
+        includeAuth: true,
+        headers: { "Content-Type": undefined },
+      });
+    } catch (e) {
+      // Fallback: GridFS upload via raw stream
+      const url = `${this.baseURL}/upload/gridfs`;
+      const token = this.getToken();
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+          "x-filename": file.name,
+          "Content-Type": file.type || "application/octet-stream",
+        },
+        body: file,
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.message || "GridFS upload failed");
+      }
+      const data = await response.json();
+      // Normalize to same shape as disk upload
+      return {
+        success: true,
+        message: "Uploaded via GridFS",
+        data: {
+          url: data.data.url,
+          relativeUrl: data.data.url,
+        },
+      };
+    }
   }
 
   async uploadMultipleImages(placeId, formData) {
@@ -395,49 +431,6 @@ class ApiService {
 
   async getHotelStats() {
     return this.get("/hotels/admin/stats");
-  }
-
-  // Upload API
-  async uploadImage(file) {
-    const formData = new FormData();
-    formData.append("image", file);
-
-    try {
-      // Primary: disk storage endpoint
-      return await this.request("/upload/image", {
-        method: "POST",
-        body: formData,
-        includeAuth: true,
-        headers: { "Content-Type": undefined },
-      });
-    } catch (e) {
-      // Fallback: GridFS upload via raw stream
-      const url = `${this.baseURL}/upload/gridfs`;
-      const token = this.getToken();
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-          "x-filename": file.name,
-          "Content-Type": file.type || "application/octet-stream",
-        },
-        body: file,
-      });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || "GridFS upload failed");
-      }
-      const data = await response.json();
-      // Normalize to same shape as disk upload
-      return {
-        success: true,
-        message: "Uploaded via GridFS",
-        data: {
-          url: data.data.url,
-          relativeUrl: data.data.url,
-        },
-      };
-    }
   }
 
   async uploadImages(files) {

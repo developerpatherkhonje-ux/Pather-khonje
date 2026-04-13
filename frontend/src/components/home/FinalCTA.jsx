@@ -1,9 +1,11 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 const FinalCTA = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative w-full h-[500px] flex items-center justify-center bg-white overflow-hidden">
-      {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img
           src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop"
@@ -20,7 +22,10 @@ const FinalCTA = () => {
         <h2 className="font-serif text-5xl lg:text-6xl text-white mb-10 tracking-wide max-w-3xl mx-auto">
           Let’s plan your next <br /> adventure together.
         </h2>
-        <button className="px-12 py-4 bg-white text-midnight-ocean font-sans font-bold text-xs tracking-[0.15em] uppercase hover:bg-slate-100 transition-colors shadow-2xl">
+        <button 
+          onClick={() => navigate('/contact')}
+          className="px-12 py-4 bg-white text-midnight-ocean font-sans font-bold text-xs tracking-[0.15em] uppercase hover:bg-slate-100 transition-colors shadow-2xl"
+        >
           Start Your Inquiry
         </button>
       </div>

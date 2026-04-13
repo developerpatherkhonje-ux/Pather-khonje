@@ -14,6 +14,8 @@ import {
   Check,
   ArrowRight,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import SEO from "../components/SEO";
 import { LazyLoadImage } from "react-lazy-load-image-component";
@@ -40,9 +42,9 @@ function HotelDetails() {
       id: hotelId || "1",
       name: "The Grand Mountain Resort",
       images: [
-        "https://images.squarespace-cdn.com/content/v1/675176954189cc3a0d973e74/1733392587955-MGMBWZB42PLMPUTDVUO6/Landscape+photography+course+card_2000px-60.jpg", // Editorial landscape
-        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", // Detail
-        "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80", // Interior
+        "https://images.squarespace-cdn.com/content/v1/675176954189cc3a0d973e74/1733392587955-MGMBWZB42PLMPUTDVUO6/Landscape+photography+course+card_2000px-60.jpg",
+        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
+        "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
       ],
       rating: 4.8,
       reviews: 142,
@@ -101,6 +103,23 @@ function HotelDetails() {
     }, 800);
   }, [hotelId]);
 
+  // Auto Image Slider Effect
+  useEffect(() => {
+    if (!hotel || !hotel.images) return;
+    const interval = setInterval(() => {
+      setActiveImage((prev) => (prev + 1) % hotel.images.length);
+    }, 4000); // Changes every 4 seconds
+    return () => clearInterval(interval);
+  }, [hotel]);
+
+  const nextImage = () => {
+    setActiveImage((prev) => (prev + 1) % hotel.images.length);
+  };
+
+  const prevImage = () => {
+    setActiveImage((prev) => (prev - 1 + hotel.images.length) % hotel.images.length);
+  };
+
   const handleWhatsAppBooking = (roomType = null) => {
     if (!hotel) return;
     let message = `Hi! I'm interested in booking "${hotel.name}" at ${hotel.location}.`;
@@ -139,43 +158,63 @@ function HotelDetails() {
           150,
         )}...`}
       />
-      {/* 1. IMAGE & TITLE SECTION */}
+      {/* 1. IMAGE SLIDER & TITLE SECTION */}
       <section className="pt-28 pb-12 px-6 lg:px-12 max-w-[1400px] mx-auto">
-        {/* Gallery - Calm grid, not carousel */}
+        
+        {/* Dynamic Image Slider */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="grid grid-cols-12 gap-4 h-[60vh] min-h-[500px] mb-8 rounded-xl overflow-hidden"
+          className="relative h-[60vh] min-h-[500px] mb-8 rounded-xl overflow-hidden group shadow-xl"
         >
-          <div className="col-span-8 h-full relative cursor-pointer group">
-            <LazyLoadImage
-              src={hotel.images[0]}
-              alt="Main"
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              effect="blur"
-              wrapperClassName="w-full h-full"
-            />
-          </div>
-          <div className="col-span-4 flex flex-col gap-4 h-full">
-            <div className="h-1/2 relative overflow-hidden cursor-pointer group">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeImage}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className="absolute inset-0"
+            >
               <LazyLoadImage
-                src={hotel.images[1]}
-                alt="Detail 1"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                src={hotel.images[activeImage]}
+                alt={`Hotel view ${activeImage + 1}`}
+                className="w-full h-full object-cover"
                 effect="blur"
                 wrapperClassName="w-full h-full"
               />
-            </div>
-            <div className="h-1/2 relative overflow-hidden cursor-pointer group">
-              <LazyLoadImage
-                src={hotel.images[2]}
-                alt="Detail 2"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                effect="blur"
-                wrapperClassName="w-full h-full"
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Slider Navigation Buttons */}
+          <button
+            onClick={prevImage}
+            className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/60 hover:bg-white backdrop-blur-md p-4 rounded-full text-[#0B2545] opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
+          >
+            <ChevronLeft size={24} />
+          </button>
+          <button
+            onClick={nextImage}
+            className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/60 hover:bg-white backdrop-blur-md p-4 rounded-full text-[#0B2545] opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
+          >
+            <ChevronRight size={24} />
+          </button>
+
+          {/* Slider Indicators (Dots) */}
+          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-10">
+            {hotel.images.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveImage(idx)}
+                className={`h-2.5 rounded-full transition-all duration-300 ${
+                  activeImage === idx
+                    ? "bg-white w-8 shadow-md"
+                    : "bg-white/60 hover:bg-white w-2.5"
+                }`}
+                aria-label={`Go to slide ${idx + 1}`}
               />
-            </div>
+            ))}
           </div>
         </motion.div>
 
@@ -216,7 +255,7 @@ function HotelDetails() {
       {/* 2. NAVIGATION & MAIN LAYOUT */}
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-8 flex justify-between items-center">
         <a
-          href="/website/hotels/previous-id"
+          href="#"
           className="flex items-center gap-2 text-sm font-medium text-[#3A5F8C] hover:text-[#0B2545] transition-colors uppercase tracking-widest"
         >
           <div className="p-2 rounded-full border border-[#3A5F8C]/20 hover:border-[#0B2545]">
@@ -225,7 +264,7 @@ function HotelDetails() {
           <span className="hidden md:inline">Previous Hotel</span>
         </a>
         <a
-          href="/website/hotels/next-id"
+          href="#"
           className="flex items-center gap-2 text-sm font-medium text-[#3A5F8C] hover:text-[#0B2545] transition-colors uppercase tracking-widest"
         >
           <span className="hidden md:inline">Next Hotel</span>
@@ -464,7 +503,7 @@ function HotelDetails() {
         </div>
       </div>
 
-      {/* MOBILE STICKY BOTTOM (To ensure usability on small screens) */}
+      {/* MOBILE STICKY BOTTOM */}
       <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-100 p-4 lg:hidden z-40 flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         <div>
           <span className="text-xs text-gray-500 uppercase">Starting from</span>

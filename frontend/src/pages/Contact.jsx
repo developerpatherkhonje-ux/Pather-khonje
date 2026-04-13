@@ -7,7 +7,6 @@ import {
   ArrowRight,
   Instagram,
   Facebook,
-  Globe,
 } from "lucide-react";
 import SEO from "../components/SEO";
 import { LazyLoadImage } from "react-lazy-load-image-component";
@@ -19,6 +18,8 @@ const Contact = () => {
     email: "",
     subject: "",
     message: "",
+    destination: "",
+    month: "",
   });
 
   const [status, setStatus] = useState({
@@ -195,7 +196,6 @@ const Contact = () => {
         </div>
       </section>
 
-      {/* SECTION 2: FLOATING GLASS CARDS OVER MAP */}
       {/* SECTION 2: CONTACT CARDS */}
       <section className="relative py-12 px-6 md:px-12 bg-ice-blue">
         <div className="max-w-7xl mx-auto relative z-10">
@@ -257,9 +257,8 @@ const Contact = () => {
               <p className="text-slate-600 mb-6 font-light">
                 Come have a coffee with us at our Kolkata expert center.
               </p>
-              <address className="text-base text-deep-steel-blue not-italic font-medium">
-                64/2/12, Biren Roy Road (East), <br /> Bohala Chowrasta, Kolkata
-                — 700045
+              <address className="text-base text-deep-steel-blue not-italic font-medium leading-relaxed">
+                64/2/12, Biren Roy Road (East), <br /> Behala, Chowrasta, <br /> Kolkata - 700008
               </address>
             </div>
           </motion.div>
@@ -303,7 +302,7 @@ const Contact = () => {
                       </label>
                       <input
                         type="text"
-                        name="email" /* Using email field for contact as per state, label says both */
+                        name="email"
                         value={formData.email}
                         onChange={handleChange}
                         className="w-full bg-white p-4 text-midnight-ocean focus:outline-none focus:ring-1 focus:ring-horizon-blue transition-all shadow-sm"
@@ -321,7 +320,7 @@ const Contact = () => {
                       <input
                         type="text"
                         name="destination"
-                        /* Note: State might need 'destination' added if not present, sticking to existing state or adding it */
+                        value={formData.destination}
                         onChange={handleChange}
                         className="w-full bg-white p-4 text-midnight-ocean focus:outline-none focus:ring-1 focus:ring-horizon-blue transition-all shadow-sm"
                         placeholder="Select a region"
@@ -334,7 +333,7 @@ const Contact = () => {
                       <input
                         type="text"
                         name="month"
-                        /* Note: State might need 'month' added if not present */
+                        value={formData.month}
                         onChange={handleChange}
                         className="w-full bg-white p-4 text-midnight-ocean focus:outline-none focus:ring-1 focus:ring-horizon-blue transition-all shadow-sm"
                         placeholder="e.g. October 2025"
@@ -432,28 +431,25 @@ const Contact = () => {
       {/* SECTION 5: SOLO MAP COMPONENT */}
       <section className="w-full h-[500px] bg-slate-100 mb-0">
         <iframe
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3686.4507468316338!2d88.3166774!3d22.487265499999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a027a73cbb65f43%3A0x93a537633a855e9f!2s64%2F2%2F8%2C%20Biren%20Roy%20Road%20E%2C%20Sukanta%20Pally%2C%20Barisha%2C%20Kolkata%2C%20West%20Bengal%20700008!5e0!3m2!1sen!2sin!4v1767720032563!5m2!1sen!2sin"
+          src="https://maps.google.com/maps?width=100%25&height=100%25&hl=en&q=64/2/12,%20Biren%20Roy%20Road%20(East),%20Behala,%20Chowrasta,%20Kolkata%20-%20700008+(Pather%20Khonje)&t=&z=16&ie=UTF8&iwloc=B&output=embed"
           width="100%"
           height="100%"
           style={{ border: 0 }}
           allowFullScreen=""
           loading="lazy"
-          title="Map"
-          className="grayscale hover:grayscale-0 transition-all duration-700"
-        />
+          referrerPolicy="no-referrer-when-downgrade"
+          title="Pather Khonje Office Location"
+        ></iframe>
       </section>
 
       {/* SECTION 4: SOCIAL FOOTER STRIP */}
       <div className="border-t border-slate-100 py-8">
         <div className="flex justify-center gap-8 text-slate-400">
-          <a href="#" className="hover:text-midnight-ocean transition-colors">
+          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-midnight-ocean transition-colors">
             <Instagram size={24} />
           </a>
-          <a href="#" className="hover:text-midnight-ocean transition-colors">
+          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-midnight-ocean transition-colors">
             <Facebook size={24} />
-          </a>
-          <a href="#" className="hover:text-midnight-ocean transition-colors">
-            <Globe size={24} />
           </a>
         </div>
       </div>

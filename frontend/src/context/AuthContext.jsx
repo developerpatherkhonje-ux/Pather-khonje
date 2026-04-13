@@ -19,6 +19,9 @@ export function AuthProvider({ children }) {
     const initializeAuth = async () => {
       const token = localStorage.getItem("token");
       if (token) {
+        // 🔴 NEW: Sync local storage to memory right when app boots up
+        apiService.setToken(token);
+        
         try {
           // Verify token with backend
           const response = await apiService.verifyToken();
@@ -26,12 +29,14 @@ export function AuthProvider({ children }) {
             setUser(response.data.user);
           } else {
             // Token is invalid, clear it
+            apiService.setToken(null);
             localStorage.removeItem("token");
             localStorage.removeItem("user");
           }
         } catch (error) {
           console.error("Token verification failed:", error);
           // Clear invalid token
+          apiService.setToken(null);
           localStorage.removeItem("token");
           localStorage.removeItem("user");
           // Don't redirect here as it might cause infinite loops
@@ -49,10 +54,13 @@ export function AuthProvider({ children }) {
     try {
       const response = await apiService.login(email, password, token);
       if (response.success) {
-        const { user: userData, token } = response.data;
+        const { user: userData, token: jwtToken } = response.data;
+
+        // 🔴 NEW: Tell apiService to use the new token IMMEDIATELY 
+        apiService.setToken(jwtToken);
 
         // Store token and user data
-        localStorage.setItem("token", token);
+        localStorage.setItem("token", jwtToken);
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
         return true;
@@ -71,6 +79,9 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
+      // 🔴 NEW: Clear the token out of memory
+      apiService.setToken(null);
+      
       // Clear local storage regardless of API call result
       localStorage.removeItem("token");
       localStorage.removeItem("user");
@@ -89,10 +100,13 @@ export function AuthProvider({ children }) {
       });
 
       if (response.success) {
-        const { user: userData, token } = response.data;
+        const { user: userData, token: jwtToken } = response.data;
+
+        // 🔴 NEW: Tell apiService to use the new token IMMEDIATELY 
+        apiService.setToken(jwtToken);
 
         // Store token and user data
-        localStorage.setItem("token", token);
+        localStorage.setItem("token", jwtToken);
         localStorage.setItem("user", JSON.stringify(userData));
         setUser(userData);
         return true;

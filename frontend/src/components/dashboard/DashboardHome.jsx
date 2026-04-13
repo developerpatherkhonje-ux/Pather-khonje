@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, Users, MapPin, Package, IndianRupee, Star, AlertCircle, Hotel, FileText, Receipt } from 'lucide-react';
+import { TrendingUp, Users, MapPin, Package, Star, AlertCircle, Hotel, FileText, Receipt } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import apiService from '../../services/api';
 import analyticsService from '../../services/analyticsService';
 import { formatDisplayDate } from '../../utils/dateUtils';
@@ -8,9 +9,9 @@ import { formatDisplayDate } from '../../utils/dateUtils';
 function DashboardHome() {
   const [stats, setStats] = useState([]);
   const [recentBookings, setRecentBookings] = useState([]);
-  const [upcomingTasks, setUpcomingTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDashboardData();
@@ -53,7 +54,8 @@ function DashboardHome() {
             change: `+${backendStats.users?.recentRegistrations || 0}`,
             trend: 'up',
             icon: Users,
-            color: 'bg-blue-500'
+            color: 'bg-blue-50 text-blue-600',
+            iconBg: 'bg-blue-600 text-white'
           },
           {
             label: 'Active Users',
@@ -61,7 +63,8 @@ function DashboardHome() {
             change: `${Math.round(((backendStats.users?.activeUsers || 0) / (backendStats.users?.total || 1)) * 100)}%`,
             trend: 'up',
             icon: Users,
-            color: 'bg-green-500'
+            color: 'bg-green-50 text-green-600',
+            iconBg: 'bg-green-600 text-white'
           },
           {
             label: 'Admin Users',
@@ -69,7 +72,8 @@ function DashboardHome() {
             change: `+${backendStats.users?.byRole?.manager || 0}`,
             trend: 'up',
             icon: Star,
-            color: 'bg-purple-500'
+            color: 'bg-purple-50 text-purple-600',
+            iconBg: 'bg-purple-600 text-white'
           },
           {
             label: 'Security Score',
@@ -77,12 +81,10 @@ function DashboardHome() {
             change: `${backendStats.security?.failedLogins || 0} failed`,
             trend: (backendStats.security?.failedLogins || 0) > 5 ? 'down' : 'up',
             icon: AlertCircle,
-            color: 'bg-yellow-500'
+            color: 'bg-orange-50 text-orange-600',
+            iconBg: 'bg-orange-500 text-white'
           }
         ];
-        
-        // Debug: Log the transformed stats to identify any objects
-        console.log('Transformed stats:', transformedStats);
         
         // Ensure all values are strings
         const safeStats = transformedStats.map(stat => ({
@@ -97,7 +99,7 @@ function DashboardHome() {
       const recentInvoices = analyticsData.invoices?.rawInvoices || [];
       const recentBookingsData = recentInvoices
         .sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date))
-        .slice(0, 5)
+        .slice(0, 6) // Extended to 6 to fit the new layout better
         .map(invoice => {
           // Handle customer data - it might be an object or string
           let customerName = 'Unknown Customer';
@@ -121,122 +123,25 @@ function DashboardHome() {
 
       setRecentBookings(recentBookingsData);
 
-      // Generate dynamic tasks based on admin panel data
-      const dynamicTasks = [];
-      
-      // Check for pending invoices
-      const pendingInvoices = recentInvoices.filter(inv => inv.status === 'pending' || inv.status === 'Pending');
-      if (pendingInvoices.length > 0) {
-        dynamicTasks.push({
-          task: `Review ${pendingInvoices.length} pending invoice${pendingInvoices.length > 1 ? 's' : ''}`,
-          priority: 'high',
-          dueDate: 'Today'
-        });
-      }
-
-      // Check for recent vouchers that need attention
-      const recentVouchers = analyticsData.vouchers?.rawVouchers || [];
-      const highAmountVouchers = recentVouchers.filter(v => (v.total || 0) > 50000);
-      if (highAmountVouchers.length > 0) {
-        dynamicTasks.push({
-          task: `Review ${highAmountVouchers.length} high-value payment voucher${highAmountVouchers.length > 1 ? 's' : ''}`,
-          priority: 'medium',
-          dueDate: 'Today'
-        });
-      }
-
-      // Check for packages without recent bookings
-      const packages = analyticsData.packages?.packages || [];
-      const inactivePackages = packages.filter(pkg => {
-        const packageInvoices = recentInvoices.filter(inv => 
-          inv.packageId === pkg.id || inv.packageName === pkg.name
-        );
-        return packageInvoices.length === 0;
-      });
-      
-      if (inactivePackages.length > 0) {
-        dynamicTasks.push({
-          task: `Review ${inactivePackages.length} inactive package${inactivePackages.length > 1 ? 's' : ''}`,
-          priority: 'low',
-          dueDate: 'This week'
-        });
-      }
-
-      // Add default tasks if no dynamic tasks
-      if (dynamicTasks.length === 0) {
-        dynamicTasks.push(
-          {
-            task: 'Review system performance metrics',
-            priority: 'medium',
-            dueDate: 'Today'
-          },
-          {
-            task: 'Check recent user registrations',
-            priority: 'low',
-            dueDate: 'Tomorrow'
-          }
-        );
-      }
-
-      setUpcomingTasks(dynamicTasks.slice(0, 3)); // Show max 3 tasks
-
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
       setError('Failed to load dashboard data');
       
       // Fallback to default stats if API fails
       const fallbackStats = [
-        {
-          label: 'Total Users',
-          value: '0',
-          change: '+0%',
-          trend: 'up',
-          icon: Users,
-          color: 'bg-blue-500'
-        },
-        {
-          label: 'Active Users',
-          value: '0',
-          change: '0%',
-          trend: 'up',
-          icon: Users,
-          color: 'bg-green-500'
-        },
-        {
-          label: 'Admin Users',
-          value: '0',
-          change: '+0',
-          trend: 'up',
-          icon: Star,
-          color: 'bg-purple-500'
-        },
-        {
-          label: 'Security Score',
-          value: '0%',
-          change: '0 failed',
-          trend: 'up',
-          icon: AlertCircle,
-          color: 'bg-yellow-500'
-        }
+        { label: 'Total Users', value: '0', change: '+0%', trend: 'up', icon: Users, color: 'bg-blue-50 text-blue-600', iconBg: 'bg-blue-600 text-white' },
+        { label: 'Active Users', value: '0', change: '0%', trend: 'up', icon: Users, color: 'bg-green-50 text-green-600', iconBg: 'bg-green-600 text-white' },
+        { label: 'Admin Users', value: '0', change: '+0', trend: 'up', icon: Star, color: 'bg-purple-50 text-purple-600', iconBg: 'bg-purple-600 text-white' },
+        { label: 'Security Score', value: '0%', change: '0 failed', trend: 'up', icon: AlertCircle, color: 'bg-orange-50 text-orange-600', iconBg: 'bg-orange-500 text-white' }
       ];
       
-      // Ensure all fallback values are strings
       const safeFallbackStats = fallbackStats.map(stat => ({
         ...stat,
         value: String(stat.value)
       }));
       
       setStats(safeFallbackStats);
-
-      // Fallback recent bookings
       setRecentBookings([]);
-      setUpcomingTasks([
-        {
-          task: 'System maintenance required',
-          priority: 'high',
-          dueDate: 'Today'
-        }
-      ]);
     } finally {
       setLoading(false);
     }
@@ -245,21 +150,21 @@ function DashboardHome() {
   if (loading) {
     return (
       <div className="space-y-8">
-        <div className="bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-2xl p-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome Back!</h1>
-          <p className="text-sky-100">Loading dashboard data...</p>
+        <div className="bg-gradient-to-r from-midnight-ocean to-deep-steel-blue text-white rounded-2xl p-8 shadow-lg">
+          <h1 className="text-3xl font-serif mb-2">Corporate Overview</h1>
+          <p className="text-white/80 font-light">Syncing with secure servers...</p>
         </div>
         
         {/* Loading skeleton for stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, index) => (
-            <div key={index} className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 animate-pulse">
+            <div key={index} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
-                <div className="w-16 h-4 bg-gray-300 rounded"></div>
+                <div className="w-12 h-12 bg-gray-200 rounded-lg"></div>
+                <div className="w-16 h-4 bg-gray-200 rounded"></div>
               </div>
-              <div className="w-20 h-8 bg-gray-300 rounded mb-2"></div>
-              <div className="w-24 h-4 bg-gray-300 rounded"></div>
+              <div className="w-20 h-8 bg-gray-200 rounded mb-2"></div>
+              <div className="w-24 h-4 bg-gray-200 rounded"></div>
             </div>
           ))}
         </div>
@@ -268,19 +173,20 @@ function DashboardHome() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-8">
       {/* Welcome Section */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-r from-sky-600 to-blue-600 text-white rounded-2xl p-8"
+        className="bg-gradient-to-r from-midnight-ocean to-deep-steel-blue text-white rounded-2xl p-8 shadow-lg"
       >
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome Back!</h1>
-            <p className="text-sky-100">Here's what's happening with your travel business today.</p>
+            <h1 className="text-3xl font-serif mb-2">Corporate Overview</h1>
+            <p className="text-white/80 font-light">Here's what's happening with your travel business today.</p>
             {error && (
-              <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg">
+              <div className="mt-4 p-3 bg-red-500/20 border border-red-500/30 rounded-lg flex items-center gap-2">
+                <AlertCircle size={16} className="text-red-200"/>
                 <p className="text-red-100 text-sm">{error}</p>
               </div>
             )}
@@ -291,170 +197,123 @@ function DashboardHome() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => {
-          // Debug: Log each stat to identify problematic objects
-          if (typeof stat.value === 'object') {
-            console.error('Found object in stat.value:', stat, 'at index:', index);
-          }
           return (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100"
+            className="bg-white rounded-xl p-6 shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100"
           >
             <div className="flex items-center justify-between mb-4">
-              <div className={`p-3 rounded-lg ${stat.color}`}>
+              <div className={`p-3 rounded-lg ${stat.iconBg}`}>
                 <stat.icon className="h-6 w-6 text-white" />
               </div>
-              <div className={`flex items-center text-sm font-medium ${
-                stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
-              }`}>
-                <TrendingUp className="h-4 w-4 mr-1" />
+              <div className={`flex items-center px-2 py-1 rounded-md text-xs font-semibold ${stat.color}`}>
+                {stat.trend === 'up' ? <TrendingUp className="h-3 w-3 mr-1" /> : <AlertCircle className="h-3 w-3 mr-1" />}
                 {stat.change}
               </div>
             </div>
             <h3 className="text-2xl font-bold text-gray-900 mb-1">
-              {typeof stat.value === 'string' ? stat.value : 
-               typeof stat.value === 'object' ? JSON.stringify(stat.value) : 
-               String(stat.value || '0')}
+              {typeof stat.value === 'string' ? stat.value : String(stat.value || '0')}
             </h3>
-            <p className="text-gray-600">{stat.label}</p>
+            <p className="text-gray-500 text-sm font-medium">{stat.label}</p>
           </motion.div>
           );
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Bookings */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-2xl p-6 shadow-lg"
-        >
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Bookings</h2>
-          <div className="space-y-4">
-            {recentBookings.map((booking) => (
-              <div key={booking.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h3 className="font-semibold text-gray-900">
-                    {typeof booking.customer === 'string' ? booking.customer : 'Unknown Customer'}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    {typeof booking.type === 'string' ? booking.type : 'Booking'} • 
-                    {typeof booking.date === 'string' ? booking.date : 'Unknown Date'}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    ID: {typeof booking.id === 'string' ? booking.id : 'Unknown'}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-semibold text-gray-900">
-                    {typeof booking.amount === 'string' ? booking.amount : '₹0'}
-                  </p>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                    (typeof booking.status === 'string' && booking.status === 'Confirmed')
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {typeof booking.status === 'string' ? booking.status : 'Unknown'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-          <button 
-            onClick={() => window.location.href = '/dashboard/invoices'}
-            className="w-full mt-4 text-sky-600 hover:text-sky-700 font-medium py-2"
-          >
-            View All Bookings →
-          </button>
-        </motion.div>
-
-        {/* Tasks & Reminders */}
+      {/* Layout Grid: Quick Actions & Recent Bookings */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        {/* Quick Actions (1/3 width) */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-2xl p-6 shadow-lg"
+          className="bg-white p-6 rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100"
         >
-          <h2 className="text-xl font-bold text-gray-900 mb-6">Upcoming Tasks</h2>
-          <div className="space-y-4">
-            {upcomingTasks.map((task, index) => (
-              <div key={index} className="flex items-start space-x-3 p-4 bg-gray-50 rounded-lg">
-                <div className={`w-3 h-3 rounded-full mt-2 ${
-                  task.priority === 'high' ? 'bg-red-500' :
-                  task.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                }`}></div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{task.task}</p>
-                  <p className="text-sm text-gray-600">Due: {task.dueDate}</p>
-                </div>
-                <span className={`px-2 py-1 rounded text-xs font-medium ${
-                  task.priority === 'high' ? 'bg-red-100 text-red-800' :
-                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
-                }`}>
-                  {task.priority}
-                </span>
-              </div>
+          <h2 className="text-xl font-serif text-midnight-ocean mb-6">Quick Actions</h2>
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { name: 'Hotel Invoice', color: 'bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-600 hover:text-white', icon: Hotel, action: () => navigate('/dashboard/invoices/hotel') },
+              { name: 'Tour Invoice', color: 'bg-emerald-50 text-emerald-700 border-emerald-100 hover:bg-emerald-600 hover:text-white', icon: Package, action: () => navigate('/dashboard/invoices/tour') },
+              { name: 'Payment Voucher', color: 'bg-purple-50 text-purple-700 border-purple-100 hover:bg-purple-600 hover:text-white', icon: Receipt, action: () => navigate('/dashboard/vouchers/Payment') },
+              { name: 'Add Place', color: 'bg-orange-50 text-orange-700 border-orange-100 hover:bg-orange-500 hover:text-white', icon: MapPin, action: () => navigate('/dashboard/places') },
+              { name: 'Enquiries', color: 'bg-sky-50 text-sky-700 border-sky-100 hover:bg-sky-500 hover:text-white', icon: FileText, action: () => navigate('/dashboard/enquiries') },
+              { name: 'Analytics', color: 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-700 hover:text-white', icon: TrendingUp, action: () => navigate('/dashboard/analytics') }
+            ].map((action) => (
+              <button
+                key={action.name}
+                onClick={action.action}
+                className={`border p-4 rounded-xl transition-all duration-300 text-center flex flex-col items-center justify-center gap-3 group ${action.color}`}
+              >
+                <action.icon size={24} className="transition-transform group-hover:scale-110" />
+                <span className="text-[10px] font-bold uppercase tracking-widest leading-tight">{action.name}</span>
+              </button>
             ))}
           </div>
-          <button 
-            onClick={() => window.location.href = '/dashboard/vouchers'}
-            className="w-full mt-4 text-sky-600 hover:text-sky-700 font-medium py-2"
-          >
-            Manage Tasks +
-          </button>
+        </motion.div>
+
+        {/* Recent Bookings Table (2/3 width) */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="lg:col-span-2 bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] border border-gray-100 overflow-hidden flex flex-col"
+        >
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <h2 className="text-xl font-serif text-midnight-ocean">Recent Invoices Generated</h2>
+            <button 
+              onClick={() => navigate('/dashboard/invoices')}
+              className="text-xs font-bold text-sky-600 hover:text-sky-800 uppercase tracking-widest transition-colors"
+            >
+              View All →
+            </button>
+          </div>
+          
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-white border-b border-gray-100 text-gray-400 text-[10px] uppercase tracking-widest">
+                  <th className="p-4 font-semibold">Client</th>
+                  <th className="p-4 font-semibold">Type</th>
+                  <th className="p-4 font-semibold">Date</th>
+                  <th className="p-4 font-semibold text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {recentBookings.length > 0 ? (
+                  recentBookings.map((booking, idx) => (
+                    <tr key={idx} className="hover:bg-gray-50/50 transition-colors group cursor-pointer" onClick={() => navigate('/dashboard/invoices')}>
+                      <td className="p-4">
+                        <div className="font-medium text-midnight-ocean">{booking.customer}</div>
+                        <div className="text-xs text-gray-400">{booking.id}</div>
+                      </td>
+                      <td className="p-4">
+                        <span className={`inline-flex px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-widest ${
+                          typeof booking.type === 'string' && booking.type.includes('Hotel') ? 'bg-blue-50 text-blue-600' : 'bg-emerald-50 text-emerald-600'
+                        }`}>
+                          {typeof booking.type === 'string' ? booking.type : 'Booking'}
+                        </span>
+                      </td>
+                      <td className="p-4 text-sm text-gray-500">{typeof booking.date === 'string' ? booking.date : 'Unknown Date'}</td>
+                      <td className="p-4 font-semibold text-midnight-ocean text-right">{typeof booking.amount === 'string' ? booking.amount : '₹0'}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="p-12 text-center text-gray-500">
+                      <Receipt className="w-10 h-10 mx-auto text-gray-300 mb-3" />
+                      <p>No recent invoices found</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </motion.div>
       </div>
-
-      {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-white rounded-2xl p-6 shadow-lg"
-      >
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { 
-              name: 'New Hotel Booking', 
-              color: 'bg-blue-500', 
-              icon: Hotel,
-              action: () => window.location.href = '/dashboard/invoices/hotel'
-            },
-            { 
-              name: 'New Tour Package', 
-              color: 'bg-green-500', 
-              icon: Package,
-              action: () => window.location.href = '/dashboard/invoices/tour'
-            },
-            { 
-              name: 'Add New Place', 
-              color: 'bg-purple-500', 
-              icon: MapPin,
-              action: () => window.location.href = '/dashboard/places'
-            },
-            { 
-              name: 'View Analytics', 
-              color: 'bg-orange-500', 
-              icon: FileText,
-              action: () => window.location.href = '/dashboard/analytics'
-            }
-          ].map((action) => (
-            <button
-              key={action.name}
-              onClick={action.action}
-              className={`${action.color} text-white p-4 rounded-xl hover:opacity-90 transition-all duration-300 text-center`}
-            >
-              <action.icon className="h-8 w-8 mx-auto mb-2" />
-              <p className="text-sm font-medium">{action.name}</p>
-            </button>
-          ))}
-        </div>
-      </motion.div>
     </div>
   );
 }
