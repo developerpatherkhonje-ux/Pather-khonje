@@ -28,7 +28,7 @@ jobs:
             set -e
 
             # Navigate to the repository directory on the EC2 instance
-            cd ${{ secrets.EC2_APP_DIR }}
+            cd Pather-khonje
 
             # Pull the latest code (reset to remote state to avoid merge conflicts)
             git fetch origin main
