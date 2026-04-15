@@ -1,0 +1,98 @@
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+
+jobs:
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            # Navigate to the repository directory on the EC2 instance
+            cd ${{ secrets.EC2_APP_DIR }}
+
+            # Pull the latest code
+            git pull origin main
+
+            # Write .env file for the backend from GitHub secrets
+            cat > backend/.env <<'ENVEOF'
+            # Database Configuration
+            MONGODB_URI=${{ secrets.MONGODB_URI }}
+            CLOUD_NAME=${{ secrets.CLOUD_NAME }}
+            CLOUDINARY_URL=${{ secrets.CLOUDINARY_URL }}
+            CLOUD_API_KEY=${{ secrets.CLOUD_API_KEY }}
+            CLOUD_API_SECRET=${{ secrets.CLOUD_API_SECRET }}
+
+            # JWT Configuration
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+
+            # Security Configuration
+            BCRYPT_ROUNDS=${{ secrets.BCRYPT_ROUNDS }}
+            SESSION_SECRET=${{ secrets.SESSION_SECRET }}
+            COOKIE_SECRET=${{ secrets.COOKIE_SECRET }}
+
+            # Server Configuration
+            PORT=${{ secrets.PORT }}
+            NODE_ENV=production
+            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+            LOG_LEVEL=${{ secrets.LOG_LEVEL }}
+
+            # Admin Configuration
+            ADMIN_EMAIL=${{ secrets.ADMIN_EMAIL }}
+            ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+            ADMIN_NAME=${{ secrets.ADMIN_NAME }}
+
+            # Additional Admin Users
+            MANAGER_EMAIL=${{ secrets.MANAGER_EMAIL }}
+            MANAGER_PASSWORD=${{ secrets.MANAGER_PASSWORD }}
+            MANAGER_NAME=${{ secrets.MANAGER_NAME }}
+
+            PROPRIETOR_EMAIL=${{ secrets.PROPRIETOR_EMAIL }}
+            PROPRIETOR_PASSWORD=${{ secrets.PROPRIETOR_PASSWORD }}
+            PROPRIETOR_NAME=${{ secrets.PROPRIETOR_NAME }}
+
+            # Account Security
+            MAX_LOGIN_ATTEMPTS=${{ secrets.MAX_LOGIN_ATTEMPTS }}
+            LOCKOUT_TIME_MS=${{ secrets.LOCKOUT_TIME_MS }}
+            PASSWORD_MIN_LENGTH=${{ secrets.PASSWORD_MIN_LENGTH }}
+            PASSWORD_REQUIRE_UPPERCASE=${{ secrets.PASSWORD_REQUIRE_UPPERCASE }}
+            PASSWORD_REQUIRE_LOWERCASE=${{ secrets.PASSWORD_REQUIRE_LOWERCASE }}
+            PASSWORD_REQUIRE_NUMBERS=${{ secrets.PASSWORD_REQUIRE_NUMBERS }}
+            PASSWORD_REQUIRE_SYMBOLS=${{ secrets.PASSWORD_REQUIRE_SYMBOLS }}
+
+            # Frontend Build Variables
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_APP_NAME=${{ secrets.VITE_APP_NAME }}
+            VITE_APP_VERSION=${{ secrets.VITE_APP_VERSION }}
+
+            # Turnstile
+            TURNSTILE_SECRET_KEY=${{ secrets.TURNSTILE_SECRET_KEY }}
+            ENVEOF
+
+            # Install production dependencies
+            cd backend
+            npm install --omit=dev
+
+            # Restart the app with PM2 (zero-downtime reload)
+            pm2 reload pather-khonje-backend --update-env || pm2 start server.js --name pather-khonje-backend
+
+            # Save PM2 process list so it survives reboots
+            pm2 save
