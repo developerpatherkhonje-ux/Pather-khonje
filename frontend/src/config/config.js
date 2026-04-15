@@ -7,11 +7,11 @@ const getApiBaseUrl = () => {
   
   // Check if we're on the custom domain
   if (window.location.hostname === 'www.patherkhonje.com' || window.location.hostname === 'patherkhonje.com') {
-    return 'https://pather-khonje.onrender.com/api';
+    return "https://api.patherkhonje.com";
   }
   
   // Default to Vercel environment
-  return import.meta.env.VITE_API_URL || 'https://pather-khonje.onrender.com/api';
+  return import.meta.env.VITE_API_URL || "https://api.patherkhonje.com";
 };
 
 export const config = {
