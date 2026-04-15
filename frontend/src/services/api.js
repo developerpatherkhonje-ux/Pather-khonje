@@ -1,7 +1,7 @@
 import { config } from "../config/config.js";
 
-const API_BASE_URL = "https://api.patherkhonje.com";
-const PROD_BASE_URL = "https://api.patherkhonje.com";
+const API_BASE_URL = "https://api.patherkhonje.com/api";
+const PROD_BASE_URL = "https://api.patherkhonje.com/api";
 
 class ApiService {
   constructor() {
