@@ -11,6 +11,8 @@ jobs:
   deploy:
     name: Deploy to EC2
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -28,10 +30,13 @@ jobs:
             # Navigate to the repository directory on the EC2 instance
             cd ${{ secrets.EC2_APP_DIR }}
 
-            # Pull the latest code
-            git pull origin main
+            # Pull the latest code (reset to remote state to avoid merge conflicts)
+            git fetch origin main
+            git reset --hard origin/main
 
             # Write .env file for the backend from GitHub secrets
+            touch backend/.env
+            chmod 600 backend/.env
             cat > backend/.env <<'ENVEOF'
             # Database Configuration
             MONGODB_URI=${{ secrets.MONGODB_URI }}
@@ -87,9 +92,15 @@ jobs:
             TURNSTILE_SECRET_KEY=${{ secrets.TURNSTILE_SECRET_KEY }}
             ENVEOF
 
-            # Install production dependencies
+            # Install production dependencies reproducibly
             cd backend
-            npm install --omit=dev
+            npm ci --omit=dev
+
+            # Validate entry point exists before (re)starting PM2
+            if [ ! -f server.js ]; then
+              echo "ERROR: server.js not found in backend directory" >&2
+              exit 1
+            fi
 
             # Restart the app with PM2 (zero-downtime reload)
             pm2 reload pather-khonje-backend --update-env || pm2 start server.js --name pather-khonje-backend
