@@ -148,10 +148,12 @@ function Navbar() {
             })}
           </div>
 
-          {/* User actions (Only visible if already logged in, no login button shown) */}
           <div className="hidden lg:flex items-center gap-6">
-            {user && (
+            {user ? (
               <div className="flex items-center gap-4">
+                <Link to="/dashboard" className="text-xs font-sans font-bold tracking-widest text-midnight-ocean hover:text-horizon-blue transition-colors">
+                  DASHBOARD
+                </Link>
                 <div className="flex items-center gap-2 text-midnight-ocean font-medium text-sm">
                   <User size={18} />
                   <span>{user.name}</span>
@@ -164,6 +166,13 @@ function Navbar() {
                   <LogOut size={18} />
                 </button>
               </div>
+            ) : (
+              <Link
+                to="/auth"
+                className="bg-midnight-ocean text-white px-6 py-2.5 rounded-md text-xs font-bold uppercase tracking-widest hover:bg-deep-steel-blue transition-colors shadow-sm"
+              >
+                Corporate Login
+              </Link>
             )}
           </div>
 
@@ -261,22 +270,39 @@ function Navbar() {
                 );
               })}
 
-              {/* Mobile User Actions (Only visible if logged in) */}
-              {user && (
-                <div className="pt-4 space-y-3 border-t border-gray-100">
-                  <div className="flex items-center gap-2 text-midnight-ocean font-medium">
-                    <User size={18} />
-                    <span>{user.name}</span>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center gap-2 text-red-600 font-medium w-full text-left"
+              {/* Mobile User Actions */}
+              <div className="pt-4 space-y-4 border-t border-gray-100">
+                {user ? (
+                  <>
+                    <Link
+                      to="/dashboard"
+                      onClick={() => setIsOpen(false)}
+                      className="text-sm font-sans font-bold text-midnight-ocean uppercase tracking-widest block"
+                    >
+                      DASHBOARD
+                    </Link>
+                    <div className="flex items-center gap-2 text-midnight-ocean font-medium">
+                      <User size={18} />
+                      <span>{user.name}</span>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center gap-2 text-red-600 font-medium w-full text-left"
+                    >
+                      <LogOut size={18} />
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <Link
+                    to="/auth"
+                    onClick={() => setIsOpen(false)}
+                    className="block w-full bg-midnight-ocean text-white text-center py-3 rounded-md text-sm font-bold uppercase tracking-widest hover:bg-deep-steel-blue transition-colors"
                   >
-                    <LogOut size={18} />
-                    Logout
-                  </button>
-                </div>
-              )}
+                    Corporate Login
+                  </Link>
+                )}
+              </div>
             </div>
           </motion.div>
         )}
