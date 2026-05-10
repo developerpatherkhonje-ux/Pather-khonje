@@ -1,22 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
 
 const Footer = () => {
+  const [imageError, setImageError] = useState(false);
+
   return (
     <footer className="bg-midnight-ocean text-white pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+          
           {/* Brand Info */}
           <div>
-            <img src="/logo/Pather Khonje Logo.png" alt="Pather Khonje" className="h-16 mb-6 brightness-0 invert" />
+            {!imageError ? (
+              <img 
+                // Using URL encoding (%20) for spaces ensures maximum browser/server compatibility
+                src="/logo/Pather%20Khonje%20Logo.png" 
+                alt="Pather Khonje" 
+                className="h-16 mb-6 object-contain" 
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <h2 className="text-3xl font-serif font-bold text-white mb-6 tracking-wider">
+                PATHER KHONJE
+              </h2>
+            )}
+            
             <p className="text-gray-400 text-sm leading-relaxed mb-6">
               A Tour That Never Seen Before. Experience the raw beauty of the Himalayas with expertly crafted journeys since 2015.
             </p>
             <div className="flex space-x-4">
-              <a href="https://facebook.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors"><Facebook size={20} /></a>
-              <a href="https://instagram.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors"><Instagram size={20} /></a>
-              <a href="https://linkedin.com" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors"><Linkedin size={20} /></a>
+              <a href="https://www.facebook.com/patherkhonjetours" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                <Facebook size={20} />
+              </a>
+              <a href="https://www.instagram.com/pather_khonje/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                <Instagram size={20} />
+              </a>
+              <a href="https://www.linkedin.com/company/patherkhonje/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
+                <Linkedin size={20} />
+              </a>
             </div>
           </div>
 
@@ -32,7 +54,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          {/* Support & Legal (Linked to new Policies page) */}
+          {/* Support & Legal */}
           <div>
             <h4 className="text-soft-gold font-bold uppercase tracking-widest text-sm mb-6">Support & Legal</h4>
             <ul className="space-y-3 text-sm text-gray-400">
