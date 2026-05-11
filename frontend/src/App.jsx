@@ -4,7 +4,7 @@ import { AnimatePresence } from "framer-motion";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./context/AuthContext";
 import { Toaster } from "react-hot-toast";
-import "./App.css";
+import "./App.css"; 
 
 // Components
 import Navbar from "./components/Navbar";
