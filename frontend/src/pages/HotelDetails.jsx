@@ -105,18 +105,22 @@ function HotelDetails() {
 
   // Auto Image Slider Effect
   useEffect(() => {
-    if (!hotel || !hotel.images) return;
+    if (!hotel || !hotel.images || hotel.images.length <= 1) return;
+    
     const interval = setInterval(() => {
       setActiveImage((prev) => (prev + 1) % hotel.images.length);
     }, 4000); // Changes every 4 seconds
+    
     return () => clearInterval(interval);
   }, [hotel]);
 
   const nextImage = () => {
+    if (!hotel || !hotel.images) return;
     setActiveImage((prev) => (prev + 1) % hotel.images.length);
   };
 
   const prevImage = () => {
+    if (!hotel || !hotel.images) return;
     setActiveImage((prev) => (prev - 1 + hotel.images.length) % hotel.images.length);
   };
 
@@ -131,6 +135,12 @@ function HotelDetails() {
       `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
       "_blank",
     );
+  };
+
+  // Helper to securely get the image URL whether it's a string or an object from the DB
+  const getImageUrl = (img) => {
+    if (!img) return "";
+    return typeof img === "object" ? img.url : img;
   };
 
   if (loading) {
@@ -149,6 +159,8 @@ function HotelDetails() {
 
   if (!hotel) return null;
 
+  const hasMultipleImages = hotel.images && hotel.images.length > 1;
+
   return (
     <div className="min-h-screen bg-[#FAFBFD] font-sans text-[#0B2545] pb-24">
       <SEO
@@ -166,7 +178,7 @@ function HotelDetails() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="relative h-[60vh] min-h-[500px] mb-8 rounded-xl overflow-hidden group shadow-xl"
+          className="relative h-[60vh] min-h-[500px] mb-8 rounded-xl overflow-hidden group shadow-xl bg-gray-100"
         >
           <AnimatePresence mode="wait">
             <motion.div
@@ -178,7 +190,7 @@ function HotelDetails() {
               className="absolute inset-0"
             >
               <LazyLoadImage
-                src={hotel.images[activeImage]}
+                src={getImageUrl(hotel.images[activeImage] || hotel.image)}
                 alt={`Hotel view ${activeImage + 1}`}
                 className="w-full h-full object-cover"
                 effect="blur"
@@ -187,35 +199,39 @@ function HotelDetails() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Slider Navigation Buttons */}
-          <button
-            onClick={prevImage}
-            className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/60 hover:bg-white backdrop-blur-md p-4 rounded-full text-[#0B2545] opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
-          >
-            <ChevronLeft size={24} />
-          </button>
-          <button
-            onClick={nextImage}
-            className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/60 hover:bg-white backdrop-blur-md p-4 rounded-full text-[#0B2545] opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg"
-          >
-            <ChevronRight size={24} />
-          </button>
-
-          {/* Slider Indicators (Dots) */}
-          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-10">
-            {hotel.images.map((_, idx) => (
+          {/* Slider Navigation Buttons - Only show if there are multiple images */}
+          {hasMultipleImages && (
+            <>
               <button
-                key={idx}
-                onClick={() => setActiveImage(idx)}
-                className={`h-2.5 rounded-full transition-all duration-300 ${
-                  activeImage === idx
-                    ? "bg-white w-8 shadow-md"
-                    : "bg-white/60 hover:bg-white w-2.5"
-                }`}
-                aria-label={`Go to slide ${idx + 1}`}
-              />
-            ))}
-          </div>
+                onClick={prevImage}
+                className="absolute left-6 top-1/2 -translate-y-1/2 bg-white/60 hover:bg-white backdrop-blur-md p-4 rounded-full text-[#0B2545] opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg z-10"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-6 top-1/2 -translate-y-1/2 bg-white/60 hover:bg-white backdrop-blur-md p-4 rounded-full text-[#0B2545] opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-lg z-10"
+              >
+                <ChevronRight size={24} />
+              </button>
+
+              {/* Slider Indicators (Dots) */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-10">
+                {hotel.images.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setActiveImage(idx)}
+                    className={`h-2.5 rounded-full transition-all duration-300 ${
+                      activeImage === idx
+                        ? "bg-white w-8 shadow-md"
+                        : "bg-white/60 hover:bg-white w-2.5"
+                    }`}
+                    aria-label={`Go to slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </motion.div>
 
         {/* Title Block */}
@@ -231,22 +247,23 @@ function HotelDetails() {
           <div className="flex items-center gap-6 text-sm font-medium tracking-widest uppercase">
             <div className="flex items-center gap-2">
               <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((i) => (
+                {[...Array(Math.floor(hotel.rating || 5))].map((_, i) => (
                   <Star
                     key={i}
                     size={15}
                     className="text-[#C7A14A]"
                     strokeWidth={1.5}
+                    fill="#C7A14A"
                   />
                 ))}
               </div>
               <span className="text-[#3A5F8C] pt-0.5 font-semibold text-xs tracking-wider">
-                5.0 (204 REVIEWS)
+                {hotel.rating || "5.0"} ({hotel.reviews || 0} REVIEWS)
               </span>
             </div>
             <span className="w-[1px] h-4 bg-gray-300"></span>
             <span className="text-[#3A5F8C] pt-0.5 font-semibold text-xs tracking-wider">
-              {hotel.location.toUpperCase()}
+              {hotel.location?.toUpperCase()}
             </span>
           </div>
         </motion.div>
@@ -307,7 +324,7 @@ function HotelDetails() {
                 Amenities
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-8">
-                {hotel.amenities.map((amenity, idx) => (
+                {hotel.amenities?.map((amenity, idx) => (
                   <div
                     key={idx}
                     className="flex items-center gap-3 text-[#3A5F8C] group"
@@ -325,71 +342,73 @@ function HotelDetails() {
           </section>
 
           {/* 6. ROOM TYPES (EDITORIAL BLOCKS) */}
-          <section>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <h3 className="font-serif text-3xl mb-10 text-[#0B2545]">
-                Accommodations
-              </h3>
-              <div className="flex flex-col border-t border-[#F1F6FB]">
-                {hotel.roomTypes.map((room, idx) => (
-                  <div
-                    key={idx}
-                    className="group py-12 border-b border-[#F1F6FB] flex flex-col md:flex-row gap-8 items-start md:items-center justify-between transition-colors hover:bg-white/50"
-                  >
-                    <div className="flex-1 space-y-4">
-                      <div className="flex justify-between items-baseline md:block">
-                        <h4 className="font-serif text-2xl text-[#0B2545] mb-2">
-                          {room.type}
-                        </h4>
-                        <span className="md:hidden font-inter font-semibold text-[#3A5F8C]">
-                          ₹{room.price.toLocaleString()}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-500 leading-relaxed max-w-md font-light">
-                        {room.description}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mt-4">
-                        {room.features.map((f) => (
-                          <span
-                            key={f}
-                            className="text-[10px] uppercase tracking-widest px-3 py-1 bg-[#F1F6FB] text-[#3A5F8C] rounded-sm"
-                          >
-                            {f}
+          {hotel.roomTypes && hotel.roomTypes.length > 0 && (
+            <section>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                <h3 className="font-serif text-3xl mb-10 text-[#0B2545]">
+                  Accommodations
+                </h3>
+                <div className="flex flex-col border-t border-[#F1F6FB]">
+                  {hotel.roomTypes.map((room, idx) => (
+                    <div
+                      key={idx}
+                      className="group py-12 border-b border-[#F1F6FB] flex flex-col md:flex-row gap-8 items-start md:items-center justify-between transition-colors hover:bg-white/50"
+                    >
+                      <div className="flex-1 space-y-4">
+                        <div className="flex justify-between items-baseline md:block">
+                          <h4 className="font-serif text-2xl text-[#0B2545] mb-2">
+                            {room.type}
+                          </h4>
+                          <span className="md:hidden font-inter font-semibold text-[#3A5F8C]">
+                            ₹{room.price?.toLocaleString()}
                           </span>
-                        ))}
+                        </div>
+                        <p className="text-sm text-gray-500 leading-relaxed max-w-md font-light">
+                          {room.description}
+                        </p>
+                        <div className="flex flex-wrap gap-2 mt-4">
+                          {room.features?.map((f) => (
+                            <span
+                              key={f}
+                              className="text-[10px] uppercase tracking-widest px-3 py-1 bg-[#F1F6FB] text-[#3A5F8C] rounded-sm"
+                            >
+                              {f}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="flex flex-col items-end gap-6 min-w-[180px]">
-                      <div className="text-right hidden md:block">
-                        <div className="font-serif text-2xl text-[#3A5F8C]">
-                          ₹{room.price.toLocaleString()}
+                      <div className="flex flex-col items-end gap-6 min-w-[180px]">
+                        <div className="text-right hidden md:block">
+                          <div className="font-serif text-2xl text-[#3A5F8C]">
+                            ₹{room.price?.toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-400 uppercase tracking-widest mt-1">
+                            Per Night
+                          </div>
                         </div>
-                        <div className="text-xs text-gray-400 uppercase tracking-widest mt-1">
-                          Per Night
-                        </div>
+                        <button
+                          onClick={() => handleWhatsAppBooking(room.type)}
+                          className="group/btn flex items-center gap-3 px-6 py-3 bg-white border border-[#0B2545] text-[#0B2545] text-xs font-bold uppercase tracking-widest hover:bg-[#0B2545] hover:text-white transition-all duration-300 w-full md:w-auto justify-center"
+                        >
+                          Book Room
+                          <ArrowRight
+                            size={14}
+                            className="group-hover/btn:translate-x-1 transition-transform"
+                          />
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleWhatsAppBooking(room.type)}
-                        className="group/btn flex items-center gap-3 px-6 py-3 bg-white border border-[#0B2545] text-[#0B2545] text-xs font-bold uppercase tracking-widest hover:bg-[#0B2545] hover:text-white transition-all duration-300 w-full md:w-auto justify-center"
-                      >
-                        Book Room
-                        <ArrowRight
-                          size={14}
-                          className="group-hover/btn:translate-x-1 transition-transform"
-                        />
-                      </button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </section>
+                  ))}
+                </div>
+              </motion.div>
+            </section>
+          )}
 
           {/* 8. CONFIDENCE STRIP */}
           <section className="bg-[#E8F0F9]/30 p-12 rounded-xl text-center space-y-6">
@@ -425,7 +444,7 @@ function HotelDetails() {
                   Starting From
                 </span>
                 <div className="font-serif text-4xl text-[#0B2545]">
-                  {hotel.priceRange.split("–")[0]}
+                  {hotel.priceRange?.split("–")[0] || hotel.priceRange}
                   <span className="text-lg text-gray-400 font-sans font-light">
                     {" "}
                     / night
@@ -508,7 +527,7 @@ function HotelDetails() {
         <div>
           <span className="text-xs text-gray-500 uppercase">Starting from</span>
           <div className="font-serif text-xl text-[#0B2545]">
-            {hotel.priceRange.split("–")[0]}
+            {hotel.priceRange?.split("–")[0] || hotel.priceRange}
           </div>
         </div>
         <button

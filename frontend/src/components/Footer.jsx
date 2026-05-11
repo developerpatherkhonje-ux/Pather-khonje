@@ -30,7 +30,7 @@ const Footer = () => {
               A Tour That Never Seen Before. Experience the raw beauty of the Himalayas with expertly crafted journeys since 2015.
             </p>
             <div className="flex space-x-4">
-              <a href="https://www.facebook.com/patherkhonjetours" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
+              <a href="https://www.facebook.com/p/Pather-Khoje-Tour-And-Travels-100068680706541/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <Facebook size={20} />
               </a>
               <a href="https://www.instagram.com/pather_khonje/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
