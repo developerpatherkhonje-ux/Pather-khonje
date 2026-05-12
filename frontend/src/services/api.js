@@ -1,6 +1,6 @@
 import { config } from "../config/config.js";
 
-// Now correctly reads from your .env file!
+// 🔴 FIX: Now correctly reads from your .env file!
 // If you are on localhost, it will use http://localhost:5000/api
 // If VITE_API_URL is missing, it falls back to your live server.
 const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.patherkhonje.com/api";
@@ -171,10 +171,11 @@ class ApiService {
   }
 
   // Auth specific methods
-  async login(email, password, token) {
+  // 🔴 FIX: Removed 'token' completely from parameters and payload
+  async login(email, password) {
     return this.post(
       "/auth/login",
-      { email, password, token },
+      { email, password },
       { includeAuth: false },
     );
   }

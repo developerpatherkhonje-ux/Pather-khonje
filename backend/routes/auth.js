@@ -226,7 +226,7 @@ router.post(
         message: "Registration failed. Please try again.",
       });
     }
-  }
+  },
 );
 
 // @route   POST /api/auth/login
@@ -238,42 +238,7 @@ router.post(
   handleValidationErrors,
   async (req, res) => {
     try {
-      const { email, password, token: captchaToken } = req.body; 
-
-      // Verify Turnstile Token
-      if (!captchaToken) {
-        return res.status(400).json({
-          success: false,
-          message: "Captcha token is missing",
-        });
-      }
-
-      const verificationUrl =
-        "https://challenges.cloudflare.com/turnstile/v0/siteverify";
-      const formData = new URLSearchParams();
-      formData.append("secret", config.SECURITY.turnstileSecretKey);
-      formData.append("response", captchaToken);
-      formData.append("remoteip", req.ip);
-
-      const verificationResponse = await fetch(verificationUrl, {
-        method: "POST",
-        body: formData,
-      });
-
-      const verificationResult = await verificationResponse.json();
-
-      if (!verificationResult.success) {
-        logger.security.loginFailure(
-          email,
-          "Captcha validation failed",
-          req.ip,
-          req.get("User-Agent"),
-        );
-        return res.status(400).json({
-          success: false,
-          message: "Captcha validation failed. Please try again.",
-        });
-      }
+      const { email, password } = req.body; // CAPTCHA TOKEN REMOVED HERE
 
       // Find user and include password for comparison
       const user = await User.findByEmail(email).select("+password");
@@ -383,7 +348,7 @@ router.post(
         message: "Login failed. Please try again.",
       });
     }
-  }
+  },
 );
 
 // @route   POST /api/auth/refresh
@@ -511,7 +476,7 @@ router.put(
         message: "Profile update failed",
       });
     }
-  }
+  },
 );
 
 // @route   PUT /api/auth/password
@@ -600,7 +565,7 @@ router.put(
         message: "Password update failed",
       });
     }
-  }
+  },
 );
 
 // @route   POST /api/auth/logout

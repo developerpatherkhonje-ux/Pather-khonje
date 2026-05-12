@@ -1,8 +1,7 @@
 import React, { useState } from "react";
-import { Turnstile } from "@marsidev/react-turnstile";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Lock, Mail, Eye, EyeOff, Shield } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 const AuthPage = () => {
@@ -10,19 +9,11 @@ const AuthPage = () => {
     email: "",
     password: "",
   });
-  const [turnstileToken, setTurnstileToken] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
-
-  // --- SMART CAPTCHA BYPASS FOR LOCALHOST ---
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  // Uses Cloudflare's dummy test key locally, and your real key in production
-  const captchaSiteKey = isLocalhost 
-    ? "1x00000000000000000000AA" 
-    : "0x4AAAAAADNvml0wWfk5gqsD";
 
   const handleChange = (e) => {
     setFormData({
@@ -46,18 +37,12 @@ const AuthPage = () => {
       setIsLoading(false);
       return;
     }
-    if (!turnstileToken) {
-      setError("Please complete the captcha");
-      setIsLoading(false);
-      return;
-    }
 
     try {
-      // Send email, password, AND token
+      // Sending ONLY email and password to the backend
       const success = await login(
         formData.email.trim(),
-        formData.password,
-        turnstileToken
+        formData.password
       );
       
       if (success) {
@@ -147,27 +132,9 @@ const AuthPage = () => {
               </div>
             </div>
 
-            {/* Turnstile Captcha */}
-            <div className="flex justify-center flex-col items-center gap-2">
-              <Turnstile
-                siteKey={captchaSiteKey}
-                onSuccess={(token) => setTurnstileToken(token)}
-                onError={() => setError("Captcha validation failed")}
-                options={{
-                  theme: "light",
-                  size: "normal",
-                }}
-              />
-              {isLocalhost && (
-                <span className="text-[10px] text-green-600 font-bold tracking-widest uppercase">
-                  (Localhost Test Mode Active)
-                </span>
-              )}
-            </div>
-
             <button
               type="submit"
-              disabled={isLoading || !turnstileToken}
+              disabled={isLoading}
               className="w-full bg-sky-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-sky-700 transition-all disabled:opacity-50"
             >
               {isLoading ? "Signing In..." : "Sign In"}

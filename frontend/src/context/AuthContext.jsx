@@ -49,9 +49,11 @@ export function AuthProvider({ children }) {
     initializeAuth();
   }, []);
 
-  const login = async (email, password, captchaToken) => {
+  // 🔴 REMOVED 'token' parameter from here!
+  const login = async (email, password) => {
     try {
-      const response = await apiService.login(email, password, captchaToken);
+      // 🔴 REMOVED 'token' being passed to the apiService!
+      const response = await apiService.login(email, password);
       
       if (response.success) {
         const { user: userData, token: jwtToken } = response.data;
