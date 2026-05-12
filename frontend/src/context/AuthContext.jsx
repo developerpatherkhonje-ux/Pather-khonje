@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
     const initializeAuth = async () => {
       const token = localStorage.getItem("token");
       if (token) {
-        // 🔴 NEW: Sync local storage to memory right when app boots up
+        // Sync local storage to memory right when app boots up
         apiService.setToken(token);
         
         try {
@@ -39,7 +39,6 @@ export function AuthProvider({ children }) {
           apiService.setToken(null);
           localStorage.removeItem("token");
           localStorage.removeItem("user");
-          // Don't redirect here as it might cause infinite loops
           // Set user to null to prevent context errors
           setUser(null);
         }
@@ -50,13 +49,14 @@ export function AuthProvider({ children }) {
     initializeAuth();
   }, []);
 
-  const login = async (email, password, token) => {
+  const login = async (email, password, captchaToken) => {
     try {
-      const response = await apiService.login(email, password, token);
+      const response = await apiService.login(email, password, captchaToken);
+      
       if (response.success) {
         const { user: userData, token: jwtToken } = response.data;
 
-        // 🔴 NEW: Tell apiService to use the new token IMMEDIATELY 
+        // Tell apiService to use the new token IMMEDIATELY 
         apiService.setToken(jwtToken);
 
         // Store token and user data
@@ -79,7 +79,7 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
-      // 🔴 NEW: Clear the token out of memory
+      // Clear the token out of memory
       apiService.setToken(null);
       
       // Clear local storage regardless of API call result
@@ -102,7 +102,7 @@ export function AuthProvider({ children }) {
       if (response.success) {
         const { user: userData, token: jwtToken } = response.data;
 
-        // 🔴 NEW: Tell apiService to use the new token IMMEDIATELY 
+        // Tell apiService to use the new token IMMEDIATELY 
         apiService.setToken(jwtToken);
 
         // Store token and user data

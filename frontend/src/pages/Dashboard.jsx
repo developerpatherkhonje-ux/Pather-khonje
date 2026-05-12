@@ -81,7 +81,7 @@ function Dashboard() {
             className="fixed lg:static inset-y-0 left-0 w-64 bg-midnight-ocean text-white z-40 flex flex-col h-full shadow-2xl lg:shadow-none mt-16 lg:mt-0"
           >
             <div className="p-6 hidden lg:flex items-center gap-3 border-b border-white/10">
-              <img src="/logo/Pather Khonje Logo.png" alt="Logo" className="h-10 brightness-0 invert" />
+              <img src="/logo/Pather Khonje Logo.png" alt="Logo" className="h-20 " />
               <span className="font-serif text-lg tracking-widest font-bold">Corporate</span>
             </div>
 

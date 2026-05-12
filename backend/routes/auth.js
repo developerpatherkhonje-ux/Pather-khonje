@@ -226,7 +226,7 @@ router.post(
         message: "Registration failed. Please try again.",
       });
     }
-  },
+  }
 );
 
 // @route   POST /api/auth/login
@@ -238,7 +238,7 @@ router.post(
   handleValidationErrors,
   async (req, res) => {
     try {
-      const { email, password, token: captchaToken } = req.body;
+      const { email, password, token: captchaToken } = req.body; 
 
       // Verify Turnstile Token
       if (!captchaToken) {
@@ -383,7 +383,7 @@ router.post(
         message: "Login failed. Please try again.",
       });
     }
-  },
+  }
 );
 
 // @route   POST /api/auth/refresh
@@ -511,7 +511,7 @@ router.put(
         message: "Profile update failed",
       });
     }
-  },
+  }
 );
 
 // @route   PUT /api/auth/password
@@ -600,7 +600,7 @@ router.put(
         message: "Password update failed",
       });
     }
-  },
+  }
 );
 
 // @route   POST /api/auth/logout

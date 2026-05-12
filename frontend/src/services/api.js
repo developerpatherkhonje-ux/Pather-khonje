@@ -1,13 +1,16 @@
 import { config } from "../config/config.js";
 
-const API_BASE_URL = "https://api.patherkhonje.com/api";
+// Now correctly reads from your .env file!
+// If you are on localhost, it will use http://localhost:5000/api
+// If VITE_API_URL is missing, it falls back to your live server.
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.patherkhonje.com/api";
 const PROD_BASE_URL = "https://api.patherkhonje.com/api";
 
 class ApiService {
   constructor() {
     this.baseURL = API_BASE_URL;
     this.fallbackBaseURL = PROD_BASE_URL;
-    this.currentToken = null; // 🔴 NEW: In-memory token cache
+    this.currentToken = null; // In-memory token cache
 
     // Debug logging
     console.log("🔧 API Service initialized:", {
@@ -33,12 +36,12 @@ class ApiService {
     return path;
   }
 
-  // 🔴 NEW: Explicitly set the token in memory
+  // Explicitly set the token in memory
   setToken(token) {
     this.currentToken = token;
   }
 
-  // 🔴 UPDATED: Check memory first, then fallback to localStorage
+  // Check memory first, then fallback to localStorage
   getToken() {
     if (this.currentToken) return this.currentToken;
     return localStorage.getItem("token");
@@ -64,7 +67,7 @@ class ApiService {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     const baseHeaders = this.getHeaders(options.includeAuth !== false);
-    const config = {
+    const fetchConfig = {
       ...options,
       headers: {
         ...baseHeaders,
@@ -74,17 +77,17 @@ class ApiService {
 
     // Remove Content-Type header for FormData to let browser set boundary
     if (options.body instanceof FormData) {
-      delete config.headers["Content-Type"];
+      delete fetchConfig.headers["Content-Type"];
     }
 
     const doFetch = async (fullUrl) => {
-      return fetch(fullUrl, config);
+      return fetch(fullUrl, fetchConfig);
     };
 
     try {
       let response = await doFetch(url);
 
-if (!response.ok) {
+      if (!response.ok) {
         // Handle token expiration ONLY IF we are NOT trying to log in
         if (response.status === 401 && !endpoint.includes('/auth/login')) {
           this.setToken(null); 
@@ -283,7 +286,7 @@ if (!response.ok) {
       link.click();
       link.remove();
     } catch (err) {
-      if (this.baseURL.includes("localhost")) {
+      if (this.baseURL.includes("localhost") || this.baseURL.includes("127.0.0.1")) {
         const fallbackUrl = `${this.fallbackBaseURL}/invoices/${id}/pdf`;
         const response = await fetch(fallbackUrl, fetchOpts);
         if (!response.ok) throw new Error("Failed to download invoice PDF");
@@ -609,7 +612,7 @@ if (!response.ok) {
       link.click();
       link.remove();
     } catch (err) {
-      if (this.baseURL.includes("localhost")) {
+      if (this.baseURL.includes("localhost") || this.baseURL.includes("127.0.0.1")) {
         const fallbackUrl = `${this.fallbackBaseURL}/payment-vouchers/${id}/pdf`;
         const response = await fetch(fallbackUrl, fetchOpts);
         if (!response.ok) throw new Error("Failed to download voucher PDF");

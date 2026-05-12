@@ -38,27 +38,19 @@ const tourTerms = [
 
 export async function generateTourInvoicePdf(invoice, fileName = 'tour_invoice') {
     try {
+        // Pre-load images to guarantee they show up
         let logoDataURL = '';
-        try { logoDataURL = await loadImageAsBase64('/assets/logo.png'); } catch (e) {
-            try { logoDataURL = await loadImageAsBase64('/logo/Pather Khonje Logo.png'); } catch (err) {}
-        }
+        let stampDataURL = '';
+        try { logoDataURL = await loadImageAsBase64('/logo/Pather Khonje Logo.png'); } catch (e) {}
+        try { stampDataURL = await loadImageAsBase64('/assets/stamp.png'); } catch (e) {}
 
         const wrapper = document.createElement('div');
         wrapper.style.position = 'absolute';
         wrapper.style.left = '-9999px';
         wrapper.style.top = '0';
 
-        // --- PAGE 1 ---
-        const page1 = document.createElement('div');
-        page1.style.width = '794px';
-        page1.style.height = '1122px';
-        page1.style.backgroundColor = 'white';
-        page1.style.boxSizing = 'border-box';
-        page1.style.display = 'flex';
-        page1.style.flexDirection = 'column';
-        page1.style.fontFamily = 'Arial, sans-serif';
-        
-        page1.innerHTML = `
+        // Reusable Header Component
+        const headerHTML = `
             <div style="background-color: #ffffff; padding: 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0B2545;">
                 <div style="display: flex; align-items: center; gap: 20px;">
                     ${logoDataURL ? `<img src="${logoDataURL}" style="width: 120px; height: auto; object-fit: contain;" />` : ''}
@@ -74,7 +66,6 @@ export async function generateTourInvoicePdf(invoice, fileName = 'tour_invoice')
                     <div style="color: #0284c7;">${companyInfo.website}</div>
                 </div>
             </div>
-
             <div style="background-color: #f8fafc; padding: 20px 40px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <h2 style="margin: 0; font-size: 24px; color: #16a34a; text-transform: uppercase; letter-spacing: 2px;">Tour Invoice</h2>
@@ -85,9 +76,22 @@ export async function generateTourInvoicePdf(invoice, fileName = 'tour_invoice')
                     <div style="font-size: 16px; color: #0B2545; font-weight: bold;">${formatDate(invoice.date || new Date())}</div>
                 </div>
             </div>
+        `;
 
-            <div style="padding: 20px 40px; flex: 1; display: flex; flex-direction: column;">
-                <div style="margin-bottom: 20px;">
+        // --- PAGE 1: ALL TOUR DETAILS ---
+        const page1 = document.createElement('div');
+        page1.style.width = '794px';
+        page1.style.height = '1122px';
+        page1.style.backgroundColor = 'white';
+        page1.style.boxSizing = 'border-box';
+        page1.style.display = 'flex';
+        page1.style.flexDirection = 'column';
+        page1.style.fontFamily = 'Arial, sans-serif';
+        
+        page1.innerHTML = `
+            ${headerHTML}
+            <div style="padding: 30px 40px; flex: 1; display: flex; flex-direction: column;">
+                <div style="margin-bottom: 25px;">
                     <div style="font-size: 12px; font-weight: bold; color: #16a34a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Billed To</div>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: #f0fdf4; padding: 15px; border-left: 4px solid #16a34a; border-radius: 4px; font-size: 14px;">
                         <div><strong style="color: #475569;">Name:</strong> <span style="color: #0B2545; font-weight: bold;">${invoice.customer?.name || 'N/A'}</span></div>
@@ -101,51 +105,72 @@ export async function generateTourInvoicePdf(invoice, fileName = 'tour_invoice')
                 ${generateHotelDetails(invoice)}
                 ${generateTransportDetails(invoice)}
 
-                <div style="margin-top: auto;">
-                    ${generateTourPaymentSummary(invoice)}
-                </div>
-            </div>
-
-            <div style="padding: 0 40px 30px 40px; display: flex; justify-content: space-between; align-items: flex-end;">
-                <div style="font-size: 12px; color: #94a3b8;">
-                    <p style="margin: 0;">Thank you for choosing Pather Khonje.</p>
-                    <p style="margin: 4px 0 0 0;">© ${new Date().getFullYear()} Pather Khonje. All rights reserved.</p>
-                </div>
-                <div style="text-align: center;">
-                    <img src="/assets/stamp.png" onerror="this.style.display='none'" alt="Company Stamp" style="width: 120px; height: 120px; opacity: 0.9;" />
-                    <div style="margin-top: -30px; font-size: 12px; color: #0B2545; font-weight: bold; border-top: 1px solid #0B2545; padding-top: 4px; width: 160px; position: relative; z-index: 10;">Authorized Signatory</div>
+                <div style="margin-top: auto; padding-top: 20px; text-align: right; font-size: 12px; color: #94a3b8; font-style: italic; border-top: 1px solid #e2e8f0;">
+                    Financial Summary & Signatures continued on Page 2...
                 </div>
             </div>
         `;
 
-        // --- PAGE 2 ---
+        // --- PAGE 2: FINANCIAL SUMMARY, STAMP & TERMS ---
         const page2 = document.createElement('div');
         page2.style.width = '794px';
         page2.style.height = '1122px';
-        page2.style.backgroundColor = '#f8fafc';
+        page2.style.backgroundColor = 'white';
         page2.style.boxSizing = 'border-box';
-        page2.style.padding = '60px 40px';
-        page2.style.position = 'relative';
+        page2.style.display = 'flex';
+        page2.style.flexDirection = 'column';
         page2.style.fontFamily = 'Arial, sans-serif';
 
         page2.innerHTML = `
-            <div style="border-bottom: 2px solid #C7A14A; padding-bottom: 15px; margin-bottom: 30px;">
-                <h2 style="margin: 0; font-size: 24px; color: #0B2545; text-transform: uppercase; letter-spacing: 2px;">Terms & Conditions</h2>
-                <p style="margin: 5px 0 0 0; color: #64748b; font-size: 14px;">Please read these terms carefully before proceeding with your booking.</p>
-            </div>
-            
-            <div style="font-size: 13px; color: #334155; line-height: 1.8; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-                ${tourTerms.map(term => `<div style="margin-bottom: 12px;">${term}</div>`).join('')}
-            </div>
+            ${headerHTML}
+            <div style="padding: 40px; flex: 1; display: flex; flex-direction: column;">
+                
+                <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
+                    <div style="background: #16a34a; color: white; padding: 12px 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 14px;">
+                        Financial Summary
+                    </div>
+                    <div style="display: flex; background: white;">
+                        
+                        <div style="width: 40%; padding: 25px 20px; border-right: 1px solid #e2e8f0; background: #f8fafc;">
+                            <div style="font-size: 12px; color: #64748b; text-transform: uppercase; font-weight: bold; margin-bottom: 8px;">Payment Method</div>
+                            <div style="font-size: 18px; color: #0B2545; font-weight: bold;">${invoice.paymentMethod || 'Online / Bank Transfer'}</div>
+                            
+                            <div style="margin-top: 25px; font-size: 11px; color: #94a3b8; line-height: 1.6;">
+                                All payments are securely processed. Please retain this official invoice for your records.
+                            </div>
+                        </div>
+                        
+                        <div style="width: 60%; padding: 20px 25px;">
+                            ${generateTourPaymentCalculations(invoice)}
+                        </div>
+                    </div>
+                </div>
 
-            ${logoDataURL ? `<div style="position: absolute; bottom: 60px; right: 40px; opacity: 0.05;"><img src="${logoDataURL}" style="width: 250px;" /></div>` : ''}
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 50px; padding-right: 20px;">
+                    <div style="text-align: center; width: 200px;">
+                        ${stampDataURL 
+                            ? `<img src="${stampDataURL}" alt="Company Stamp" style="width: 140px; height: auto; opacity: 0.9; margin-bottom: 5px;" />` 
+                            : `<div style="height: 100px;"></div>`
+                        }
+                        <div style="font-size: 13px; color: #0B2545; font-weight: bold; border-top: 2px solid #0B2545; padding-top: 8px;">Authorized Signatory</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: auto; border-top: 2px solid #C7A14A; padding-top: 20px;">
+                    <h2 style="margin: 0 0 15px 0; font-size: 16px; color: #0B2545; text-transform: uppercase; letter-spacing: 1px;">Terms & Conditions</h2>
+                    <div style="font-size: 12px; color: #475569; line-height: 1.6; display: grid; grid-template-columns: 1fr 1fr; gap: x 15px;">
+                        ${tourTerms.map(term => `<div style="margin-bottom: 8px;">${term}</div>`).join('')}
+                    </div>
+                </div>
+            </div>
+            ${logoDataURL ? `<div style="position: absolute; bottom: 80px; right: 40px; opacity: 0.03; pointer-events: none;"><img src="${logoDataURL}" style="width: 300px;" /></div>` : ''}
         `;
 
         wrapper.appendChild(page1);
         wrapper.appendChild(page2);
         document.body.appendChild(wrapper);
 
-        // Render PDF - Size Optimization Applied (JPEG with 0.8 compression)
+        // Render PDF explicitly into two pages
         const pdf = new jsPDF('p', 'mm', 'a4');
         const imgWidth = 210;
         const pageHeight = 297;
@@ -153,13 +178,11 @@ export async function generateTourInvoicePdf(invoice, fileName = 'tour_invoice')
         const canvasOptions = { scale: 1.5, useCORS: true, logging: false };
 
         const canvas1 = await html2canvas(page1, canvasOptions);
-        const imgData1 = canvas1.toDataURL('image/jpeg', 0.8);
-        pdf.addImage(imgData1, 'JPEG', 0, 0, imgWidth, pageHeight, undefined, 'FAST');
+        pdf.addImage(canvas1.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, imgWidth, pageHeight, undefined, 'FAST');
         
         const canvas2 = await html2canvas(page2, canvasOptions);
-        const imgData2 = canvas2.toDataURL('image/jpeg', 0.8);
         pdf.addPage();
-        pdf.addImage(imgData2, 'JPEG', 0, 0, imgWidth, pageHeight, undefined, 'FAST');
+        pdf.addImage(canvas2.toDataURL('image/jpeg', 0.8), 'JPEG', 0, 0, imgWidth, pageHeight, undefined, 'FAST');
 
         const safeFileName = (invoice.invoiceNumber || 'tour_invoice').replace(/[^a-zA-Z0-9]/g, '_');
         pdf.save(`${safeFileName}.pdf`);
@@ -172,26 +195,34 @@ export async function generateTourInvoicePdf(invoice, fileName = 'tour_invoice')
 
 const generateTourPackageDetails = (invoice) => {
     if (!invoice.tourDetails) return '';
+    
+    // Auto-calculate Days and Nights properly
+    const days = parseInt(invoice.tourDetails.totalDays || invoice.tourDetails.days || 0);
+    let nights = parseInt(invoice.tourDetails.totalNights || invoice.tourDetails.nights || 0);
+    if (nights === 0 && days > 1) {
+        nights = days - 1; // Automatically assigns nights if missing
+    }
+
     return `
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 20px;">
             <div style="font-size: 12px; font-weight: bold; color: #16a34a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Tour Overview</div>
             <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <thead>
                     <tr style="background: #3A5F8C; color: white;">
-                        <th style="padding: 8px; text-align: left;">Package Name</th>
-                        <th style="padding: 8px; text-align: center;">Start Date</th>
-                        <th style="padding: 8px; text-align: center;">End Date</th>
-                        <th style="padding: 8px; text-align: center;">Days / Nights</th>
-                        <th style="padding: 8px; text-align: center;">Pax</th>
+                        <th style="padding: 10px; text-align: left;">Package Name</th>
+                        <th style="padding: 10px; text-align: center;">Start Date</th>
+                        <th style="padding: 10px; text-align: center;">End Date</th>
+                        <th style="padding: 10px; text-align: center;">Days / Nights</th>
+                        <th style="padding: 10px; text-align: center;">Pax</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr style="background: white; border: 1px solid #e2e8f0;">
-                        <td style="padding: 10px; font-weight: bold; color: #0B2545;">${invoice.tourDetails.packageName || 'N/A'}</td>
-                        <td style="padding: 10px; text-align: center;">${formatDate(invoice.tourDetails.startDate) || 'N/A'}</td>
-                        <td style="padding: 10px; text-align: center;">${formatDate(invoice.tourDetails.endDate) || 'N/A'}</td>
-                        <td style="padding: 10px; text-align: center;">${invoice.tourDetails.totalDays || invoice.tourDetails.days || 0}D / ${invoice.tourDetails.totalNights || 0}N</td>
-                        <td style="padding: 10px; text-align: center; font-weight: bold;">${invoice.tourDetails.pax || 'N/A'}</td>
+                        <td style="padding: 12px 10px; font-weight: bold; color: #0B2545;">${invoice.tourDetails.packageName || 'N/A'}</td>
+                        <td style="padding: 12px 10px; text-align: center;">${formatDate(invoice.tourDetails.startDate) || 'N/A'}</td>
+                        <td style="padding: 12px 10px; text-align: center;">${formatDate(invoice.tourDetails.endDate) || 'N/A'}</td>
+                        <td style="padding: 12px 10px; text-align: center; font-weight: bold;">${days}D / ${nights}N</td>
+                        <td style="padding: 12px 10px; text-align: center; font-weight: bold;">${invoice.tourDetails.pax || 'N/A'}</td>
                     </tr>
                 </tbody>
             </table>
@@ -199,15 +230,15 @@ const generateTourPackageDetails = (invoice) => {
             ${(invoice.tourDetails.inclusions || invoice.tourDetails.exclusions) ? `
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
                     ${invoice.tourDetails.inclusions ? `
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                        <div style="background: #f8fafc; padding: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
                             <strong style="color: #16a34a; font-size: 12px;">Inclusions:</strong>
-                            <div style="font-size: 11px; color: #475569; margin-top: 4px;">${invoice.tourDetails.inclusions.split('\n').map(i => `<div>• ${i.trim()}</div>`).join('')}</div>
+                            <div style="font-size: 12px; color: #475569; margin-top: 6px; line-height: 1.5;">${invoice.tourDetails.inclusions.split('\n').map(i => `<div>• ${i.trim()}</div>`).join('')}</div>
                         </div>
                     ` : '<div></div>'}
                     ${invoice.tourDetails.exclusions ? `
-                        <div style="background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0;">
+                        <div style="background: #f8fafc; padding: 12px; border-radius: 4px; border: 1px solid #e2e8f0;">
                             <strong style="color: #dc2626; font-size: 12px;">Exclusions:</strong>
-                            <div style="font-size: 11px; color: #475569; margin-top: 4px;">${invoice.tourDetails.exclusions.split('\n').map(i => `<div>• ${i.trim()}</div>`).join('')}</div>
+                            <div style="font-size: 12px; color: #475569; margin-top: 6px; line-height: 1.5;">${invoice.tourDetails.exclusions.split('\n').map(i => `<div>• ${i.trim()}</div>`).join('')}</div>
                         </div>
                     ` : ''}
                 </div>
@@ -221,26 +252,26 @@ const generateHotelDetails = (invoice) => {
     if (hotels.length === 0) return '';
 
     return `
-        <div style="margin-bottom: 15px;">
+        <div style="margin-bottom: 20px;">
             <div style="font-size: 12px; font-weight: bold; color: #16a34a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Accommodation</div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <thead>
                     <tr style="background: #f1f5f9; color: #475569;">
-                        <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Hotel Name</th>
-                        <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Place</th>
-                        <th style="padding: 8px; text-align: center; border: 1px solid #e2e8f0;">Check-in</th>
-                        <th style="padding: 8px; text-align: center; border: 1px solid #e2e8f0;">Check-out</th>
-                        <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Room Type</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0;">Hotel Name</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0;">Place</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #e2e8f0;">Check-in</th>
+                        <th style="padding: 10px; text-align: center; border: 1px solid #e2e8f0;">Check-out</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0;">Room Type</th>
                     </tr>
                 </thead>
                 <tbody>
                     ${hotels.map(hotel => `
                         <tr style="background: white;">
-                            <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">${hotel.hotelName || hotel.name || 'N/A'}</td>
-                            <td style="padding: 8px; border: 1px solid #e2e8f0;">${hotel.place || 'N/A'}</td>
-                            <td style="padding: 8px; text-align: center; border: 1px solid #e2e8f0;">${formatDate(hotel.checkIn) || 'N/A'}</td>
-                            <td style="padding: 8px; text-align: center; border: 1px solid #e2e8f0;">${formatDate(hotel.checkOut) || 'N/A'}</td>
-                            <td style="padding: 8px; border: 1px solid #e2e8f0;">${hotel.roomType || 'N/A'}</td>
+                            <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">${hotel.hotelName || hotel.name || 'N/A'}</td>
+                            <td style="padding: 10px; border: 1px solid #e2e8f0;">${hotel.place || 'N/A'}</td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #e2e8f0;">${formatDate(hotel.checkIn) || 'N/A'}</td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #e2e8f0;">${formatDate(hotel.checkOut) || 'N/A'}</td>
+                            <td style="padding: 10px; border: 1px solid #e2e8f0;">${hotel.roomType || 'N/A'}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -251,104 +282,109 @@ const generateHotelDetails = (invoice) => {
 
 const generateTransportDetails = (invoice) => {
     if (!invoice.transportDetails) return '';
-    
     const includedDetails = invoice.transportDetails?.includedTransportDetails || invoice.tourDetails?.includedTransportDetails || '';
     
     return `
         <div style="margin-bottom: 20px;">
             <div style="font-size: 12px; font-weight: bold; color: #16a34a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Logistics</div>
-            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
                 <thead>
                     <tr style="background: #f1f5f9; color: #475569;">
-                        <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Transport Mode</th>
-                        <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Fooding</th>
-                        <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Pickup</th>
-                        <th style="padding: 8px; text-align: left; border: 1px solid #e2e8f0;">Drop</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0;">Transport Mode</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0;">Fooding</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0;">Pickup</th>
+                        <th style="padding: 10px; text-align: left; border: 1px solid #e2e8f0;">Drop</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr style="background: white;">
-                        <td style="padding: 8px; border: 1px solid #e2e8f0; font-weight: bold;">${invoice.transportDetails?.modeOfTransport || invoice.tourDetails?.modeOfTransport || invoice.tourDetails?.transport || 'N/A'}</td>
-                        <td style="padding: 8px; border: 1px solid #e2e8f0;">${invoice.transportDetails?.fooding || invoice.tourDetails?.fooding || 'N/A'}</td>
-                        <td style="padding: 8px; border: 1px solid #e2e8f0;">${invoice.transportDetails?.pickupPoint || invoice.tourDetails?.pickupPoint || invoice.tourDetails?.pickup || 'N/A'}</td>
-                        <td style="padding: 8px; border: 1px solid #e2e8f0;">${invoice.transportDetails?.dropPoint || invoice.tourDetails?.dropPoint || invoice.tourDetails?.drop || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #e2e8f0; font-weight: bold;">${invoice.transportDetails?.modeOfTransport || invoice.tourDetails?.modeOfTransport || invoice.tourDetails?.transport || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #e2e8f0;">${invoice.transportDetails?.fooding || invoice.tourDetails?.fooding || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #e2e8f0;">${invoice.transportDetails?.pickupPoint || invoice.tourDetails?.pickupPoint || invoice.tourDetails?.pickup || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #e2e8f0;">${invoice.transportDetails?.dropPoint || invoice.tourDetails?.dropPoint || invoice.tourDetails?.drop || 'N/A'}</td>
                     </tr>
                 </tbody>
             </table>
             
             ${includedDetails && includedDetails.trim() !== '' ? `
-                <div style="background: #f8fafc; padding: 10px; border-radius: 4px; border: 1px solid #e2e8f0; border-top: none; margin-top: -1px;">
-                    <strong style="color: #16a34a; font-size: 11px; text-transform: uppercase;">Included Transport Details:</strong>
-                    <div style="font-size: 11px; color: #475569; margin-top: 4px; line-height: 1.5;">${includedDetails}</div>
+                <div style="background: #f8fafc; padding: 12px; border-radius: 4px; border: 1px solid #e2e8f0; border-top: none; margin-top: -1px;">
+                    <strong style="color: #16a34a; font-size: 12px; text-transform: uppercase;">Included Transport Details:</strong>
+                    <div style="font-size: 12px; color: #475569; margin-top: 6px; line-height: 1.5;">${includedDetails}</div>
                 </div>
             ` : ''}
         </div>
     `;
 };
 
-const generateTourPaymentSummary = (invoice) => {
-    const subtotal = invoice.subtotal || 0;
-    const discount = invoice.discount || 0;
-    const gstAmount = invoice.tax || 0;
-    const total = invoice.total || subtotal;
-    const advancePaid = invoice.advancePaid || 0;
+// Extracted just the table calculations to inject into the right side of the split layout on Page 2
+const generateTourPaymentCalculations = (invoice) => {
+    const subtotal = Number(invoice.subtotal) || Number(invoice.total) || 0;
+    const discount = Number(invoice.discount) || 0;
+    const gstAmount = Number(invoice.tax) || 0;
+    const total = Number(invoice.total) || subtotal;
+    const advancePaid = Number(invoice.advancePaid) || 0;
     const dueAmount = Math.max(0, total - advancePaid);
     
-    let adultPrice = Number(invoice.tourDetails?.adultPrice || 0);
-    let childPrice = Number(invoice.tourDetails?.childPrice || 0);
-    let adults = Number(invoice.tourDetails?.adults || 0);
-    let children = Number(invoice.tourDetails?.children || 0);
-    
-    if ((adultPrice === 0 && childPrice === 0) && subtotal > 0) {
-        adults = 1; children = 0; adultPrice = subtotal; childPrice = 0;
-    }
+    let adultPrice = Number(invoice.tourDetails?.adultPrice) || 0;
+    let childPrice = Number(invoice.tourDetails?.childPrice) || 0;
+    let adults = Number(invoice.tourDetails?.adults) || 0;
+    let children = Number(invoice.tourDetails?.children) || 0;
     
     const adultTotal = adultPrice * adults;
     const childTotal = childPrice * children;
     
+    // Only show the Adult/Child breakdown if the prices exist (to avoid "2 x ₹0 = ₹0")
+    const showBreakdown = (adultTotal > 0 || childTotal > 0);
+    
     return `
-        <div style="display: flex; justify-content: flex-end;">
-            <div style="width: 350px;">
-                <div style="font-size: 12px; font-weight: bold; color: #16a34a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Financial Summary</div>
-                <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-                    <tbody>
-                        <tr>
-                            <td style="padding: 6px 0; color: #475569;">Adults (${adults} × ₹${adultPrice.toLocaleString('en-IN')})</td>
-                            <td style="padding: 6px 0; text-align: right; font-weight: bold;">₹${adultTotal.toLocaleString('en-IN')}</td>
-                        </tr>
-                        ${children > 0 ? `
-                        <tr>
-                            <td style="padding: 6px 0; color: #475569;">Children (${children} × ₹${childPrice.toLocaleString('en-IN')})</td>
-                            <td style="padding: 6px 0; text-align: right; font-weight: bold;">₹${childTotal.toLocaleString('en-IN')}</td>
-                        </tr>` : ''}
-                        <tr>
-                            <td style="padding: 6px 0; color: #475569; border-top: 1px dashed #e2e8f0; margin-top: 4px;">Subtotal</td>
-                            <td style="padding: 6px 0; text-align: right; border-top: 1px dashed #e2e8f0; margin-top: 4px;">₹${subtotal.toLocaleString('en-IN')}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 0; color: #475569;">GST (${invoice.gstPercent || 0}%)</td>
-                            <td style="padding: 6px 0; text-align: right;">₹${gstAmount.toLocaleString('en-IN')}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 0; color: #475569; border-bottom: 1px solid #e2e8f0;">Discount</td>
-                            <td style="padding: 6px 0; text-align: right; color: #dc2626; border-bottom: 1px solid #e2e8f0;">-₹${discount.toLocaleString('en-IN')}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 10px 0; color: #0B2545; font-weight: bold; font-size: 15px;">Total Amount</td>
-                            <td style="padding: 10px 0; text-align: right; color: #0B2545; font-weight: bold; font-size: 15px;">₹${total.toLocaleString('en-IN')}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 6px 0; color: #16a34a;">Advance Paid</td>
-                            <td style="padding: 6px 0; text-align: right; color: #16a34a; font-weight: bold;">₹${advancePaid.toLocaleString('en-IN')}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding: 12px 15px; background: #3A5F8C; color: white; font-weight: bold; border-radius: 4px 0 0 4px; margin-top: 8px; display: inline-block;">DUE BALANCE</td>
-                            <td style="padding: 12px 15px; background: #3A5F8C; color: white; font-weight: bold; text-align: right; border-radius: 0 4px 4px 0; margin-top: 8px;">₹${dueAmount.toLocaleString('en-IN')}</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div style="text-align: right; margin-top: 10px; font-size: 11px; color: #64748b;">Payment Method: <strong>${invoice.paymentMethod || 'Cash'}</strong></div>
-            </div>
-        </div>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <tbody>
+                ${showBreakdown ? `
+                    <tr>
+                        <td style="padding: 5px 0; color: #475569;">Adults (${adults} × ₹${adultPrice.toLocaleString('en-IN')})</td>
+                        <td style="padding: 5px 0; text-align: right; font-weight: bold;">₹${adultTotal.toLocaleString('en-IN')}</td>
+                    </tr>
+                    ${children > 0 ? `
+                    <tr>
+                        <td style="padding: 5px 0; color: #475569;">Children (${children} × ₹${childPrice.toLocaleString('en-IN')})</td>
+                        <td style="padding: 5px 0; text-align: right; font-weight: bold;">₹${childTotal.toLocaleString('en-IN')}</td>
+                    </tr>` : ''}
+                    <tr>
+                        <td style="padding: 6px 0; color: #475569; border-top: 1px dashed #e2e8f0; margin-top: 4px;">Package Subtotal</td>
+                        <td style="padding: 6px 0; text-align: right; border-top: 1px dashed #e2e8f0; margin-top: 4px;">₹${subtotal.toLocaleString('en-IN')}</td>
+                    </tr>
+                ` : `
+                    <tr>
+                        <td style="padding: 5px 0; color: #475569;">Package Subtotal</td>
+                        <td style="padding: 5px 0; text-align: right; font-weight: bold;">₹${subtotal.toLocaleString('en-IN')}</td>
+                    </tr>
+                `}
+                
+                <tr>
+                    <td style="padding: 5px 0; color: #475569;">GST (${invoice.gstPercent || 0}%)</td>
+                    <td style="padding: 5px 0; text-align: right;">₹${gstAmount.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0; color: #475569; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">Discount</td>
+                    <td style="padding: 5px 0; text-align: right; color: #dc2626; border-bottom: 1px solid #e2e8f0; padding-bottom: 12px;">-₹${discount.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 12px 0; color: #0B2545; font-weight: bold; font-size: 16px;">Total Amount</td>
+                    <td style="padding: 12px 0; text-align: right; color: #0B2545; font-weight: bold; font-size: 16px;">₹${total.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 5px 0; color: #16a34a;">Advance Paid</td>
+                    <td style="padding: 5px 0; text-align: right; color: #16a34a; font-weight: bold;">₹${advancePaid.toLocaleString('en-IN')}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 15px 0 0 0;">
+                        <div style="background: #3A5F8C; color: white; font-weight: bold; padding: 10px 15px; border-radius: 4px; display: inline-block; font-size: 13px;">DUE BALANCE</div>
+                    </td>
+                    <td style="padding: 15px 0 0 0; text-align: right;">
+                        <div style="color: #3A5F8C; font-weight: bold; font-size: 20px;">₹${dueAmount.toLocaleString('en-IN')}</div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
     `;
 };
