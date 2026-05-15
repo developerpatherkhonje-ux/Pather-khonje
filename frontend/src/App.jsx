@@ -25,7 +25,7 @@ const Packages = React.lazy(() => import("./pages/Packages"));
 const PackageDetails = React.lazy(() => import("./pages/PackageDetails"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
-const Policies = React.lazy(() => import("./pages/Policies")); // NEW UNIFIED POLICIES PAGE
+const Policies = React.lazy(() => import("./pages/Policies"));
 const AuthPage = React.lazy(() => import("./pages/AuthPage"));
 
 function App() {
@@ -82,13 +82,15 @@ function App() {
                                 path="hotels/:placeId"
                                 element={<HotelPlace />}
                               />
+                              {/* UPDATED: Now expects a 'slug' instead of 'hotelId' */}
                               <Route
-                                path="hotel/:hotelId"
+                                path="hotel/:slug"
                                 element={<HotelDetails />}
                               />
                               <Route path="packages" element={<Packages />} />
+                              {/* UPDATED: Now expects a 'slug' instead of 'packageId' */}
                               <Route
-                                path="package/:packageId"
+                                path="package/:slug"
                                 element={<PackageDetails />}
                               />
                               <Route path="contact" element={<Contact />} />

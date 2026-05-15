@@ -231,8 +231,6 @@ function HotelPlace() {
           <div className="w-full h-full bg-[#0B2545]" />
         )}
 
-        {/* REMOVED BACK NAVIGATION */}
-
         <div className="absolute inset-0 z-20 flex flex-col justify-center items-center text-center px-4 pt-16">
           <motion.div
             initial={{ y: 20, opacity: 0 }}
@@ -356,6 +354,14 @@ function HotelPlace() {
 
                   {/* Actions */}
                   <div className="flex gap-4 w-full md:w-auto">
+                    {/* UPDATED: Added Explore Details Link with SEO slug */}
+                    <Link
+                      to={`/hotel/${hotel.slug || hotel.id}`}
+                      className="flex-1 md:flex-none px-6 py-3 border border-[#0B2545] text-[#0B2545] text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-[#0B2545] hover:text-white transition-all duration-300 rounded-sm flex items-center justify-center text-center"
+                    >
+                      Explore Details
+                    </Link>
+                    
                     <button
                       onClick={() => handleWhatsAppBooking(hotel)}
                       className="flex-1 md:flex-none px-6 py-3 bg-[#0B2545] text-white text-[11px] font-bold uppercase tracking-[0.1em] hover:bg-[#153459] transition-all duration-300 shadow-sm flex items-center justify-center gap-2 group/btn rounded-sm"

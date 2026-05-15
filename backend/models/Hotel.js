@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+// Import slugify to create SEO URLs
+const slugify = require("slugify");
 
 const hotelSchema = new mongoose.Schema(
   {
@@ -8,6 +10,12 @@ const hotelSchema = new mongoose.Schema(
       trim: true,
       minlength: [2, "Hotel name must be at least 2 characters"],
       maxlength: [200, "Hotel name cannot exceed 200 characters"],
+    },
+    // SEO Friendly URL field added here!
+    slug: {
+      type: String,
+      unique: true,
+      index: true,
     },
     placeId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -146,6 +154,16 @@ hotelSchema.index({ isActive: 1 });
 hotelSchema.index({ rating: -1 });
 hotelSchema.index({ createdAt: -1 });
 
+// Middleware to automatically create slug before saving
+hotelSchema.pre('save', function(next) {
+  if (!this.isModified('name')) {
+    return next();
+  }
+  // Creates a slug like "grand-mountain-resort" and adds a unique string to prevent duplicates
+  this.slug = slugify(this.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+  next();
+});
+
 // Static methods
 hotelSchema.statics.getHotelStats = async function () {
   const totalHotels = await this.countDocuments();
@@ -178,6 +196,7 @@ hotelSchema.methods.getPublicProfile = function () {
   return {
     id: this._id,
     name: this.name,
+    slug: this.slug, // Included slug in public profile
     placeId: this.placeId,
     description: this.description,
     image: this.image,

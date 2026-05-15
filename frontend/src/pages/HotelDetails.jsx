@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Star,
@@ -17,6 +17,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import apiService from "../services/api"; // ADDED API IMPORT
 import SEO from "../components/SEO";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
@@ -31,102 +32,84 @@ const COLORS = {
 };
 
 function HotelDetails() {
-  const { hotelId } = useParams();
+  // Grab the 'slug' from the URL (which handles both IDs and SEO words)
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  
   const [hotel, setHotel] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeImage, setActiveImage] = useState(0);
+  const [allImages, setAllImages] = useState([]);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Mock data - retaining original data structure but enhancing content for design demo
-    const mockHotel = {
-      id: hotelId || "1",
-      name: "The Grand Mountain Resort",
-      images: [
-        "https://images.squarespace-cdn.com/content/v1/675176954189cc3a0d973e74/1733392587955-MGMBWZB42PLMPUTDVUO6/Landscape+photography+course+card_2000px-60.jpg",
-        "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-        "https://images.unsplash.com/photo-1590490360182-c33d57733427?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-      ],
-      rating: 4.8,
-      reviews: 142,
-      location: "Darjeeling, West Bengal",
-      amenities: [
-        "Free High-Speed Wifi",
-        "Private Parking",
-        "Gourmet Restaurant",
-        "Mountain View Spa",
-        "Heated Pool",
-        "24/7 Butler",
-      ],
-      checkIn: "02:00 PM",
-      checkOut: "11:00 AM",
-      priceRange: "₹5,000 – ₹12,000",
-      description:
-        "Perched amidst the clouds, The Grand Mountain Resort offers an escape into the sublime. With architecture that whispers of colonial heritage and interiors that embrace modern luxury, every corner is designed for silence, comfort, and awe. Wake up to the Kanchenjunga, dine under the stars, and let the mountain air rejuvenate your soul.",
-      roomTypes: [
-        {
-          type: "Deluxe Valley View",
-          price: 5000,
-          description:
-            "A cozy sanctuary with sweeping views of the valley, featuring warm timber flooring and a private balcony.",
-          features: [
-            "King Size Bed",
-            "Private Balcony",
-            "Rain Shower",
-            "Work Desk",
-          ],
-        },
-        {
-          type: "Premium Mountain Suite",
-          price: 8000,
-          description:
-            "Generous living space designed for indulgence, offering panoramic mountain vistas and a separate lounge area.",
-          features: ["Panoramic View", "Separate Lounge", "Bathtub", "Minibar"],
-        },
-        {
-          type: "Royal Heritage Suite",
-          price: 12000,
-          description:
-            "The epitome of luxury. Experience colonial grandeur with a master bedroom, dining area, and personalized butler service.",
-          features: [
-            "2 Bedrooms",
-            "Private Terrace",
-            "Dining Area",
-            "Butler Service",
-          ],
-        },
-      ],
+    const fetchHotelData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        // FETCH THE REAL HOTEL FROM YOUR DATABASE
+        const response = await apiService.getHotel(slug);
+        
+        if (response.success && response.data.hotel) {
+          const realHotel = response.data.hotel;
+          setHotel(realHotel);
+          
+          // Combine images for the carousel
+          let combinedImages = [];
+          if (realHotel.image && typeof realHotel.image === "string") {
+            combinedImages.push(apiService.toAbsoluteUrl(realHotel.image));
+          }
+          if (realHotel.images && Array.isArray(realHotel.images)) {
+            const extractedImages = realHotel.images
+              .map(img => typeof img === 'object' ? img.url || img.secure_url : img)
+              .filter(url => url)
+              .map(url => apiService.toAbsoluteUrl(url));
+            combinedImages = [...combinedImages, ...extractedImages];
+          }
+          
+          // Remove duplicates and set
+          setAllImages([...new Set(combinedImages)]);
+        } else {
+          setError("Hotel not found");
+        }
+      } catch (err) {
+        console.error("Failed to fetch hotel details:", err);
+        setError("Failed to load hotel details.");
+      } finally {
+        setLoading(false);
+      }
     };
 
-    setTimeout(() => {
-      setHotel(mockHotel);
-      setLoading(false);
-    }, 800);
-  }, [hotelId]);
+    if (slug) {
+      fetchHotelData();
+    }
+  }, [slug]);
 
   // Auto Image Slider Effect
   useEffect(() => {
-    if (!hotel || !hotel.images || hotel.images.length <= 1) return;
+    if (allImages.length <= 1) return;
     
     const interval = setInterval(() => {
-      setActiveImage((prev) => (prev + 1) % hotel.images.length);
-    }, 4000); // Changes every 4 seconds
+      setActiveImage((prev) => (prev + 1) % allImages.length);
+    }, 4000); 
     
     return () => clearInterval(interval);
-  }, [hotel]);
+  }, [allImages]);
 
   const nextImage = () => {
-    if (!hotel || !hotel.images) return;
-    setActiveImage((prev) => (prev + 1) % hotel.images.length);
+    if (allImages.length <= 1) return;
+    setActiveImage((prev) => (prev + 1) % allImages.length);
   };
 
   const prevImage = () => {
-    if (!hotel || !hotel.images) return;
-    setActiveImage((prev) => (prev - 1 + hotel.images.length) % hotel.images.length);
+    if (allImages.length <= 1) return;
+    setActiveImage((prev) => (prev - 1 + allImages.length) % allImages.length);
   };
 
   const handleWhatsAppBooking = (roomType = null) => {
     if (!hotel) return;
-    let message = `Hi! I'm interested in booking "${hotel.name}" at ${hotel.location}.`;
+    let message = `Hi! I'm interested in booking "${hotel.name}".`;
     if (roomType) {
       message += ` I am looking at the ${roomType}.`;
     }
@@ -137,38 +120,43 @@ function HotelDetails() {
     );
   };
 
-  // Helper to securely get the image URL whether it's a string or an object from the DB
-  const getImageUrl = (img) => {
-    if (!img) return "";
-    return typeof img === "object" ? img.url : img;
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAFBFD] flex items-center justify-center">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-[#0B2545] font-serif text-2xl tracking-wide"
+          className="text-[#0B2545] font-serif text-2xl tracking-wide flex flex-col items-center gap-4"
         >
-          Loading...
+          <div className="w-10 h-10 border-t-2 border-[#0B2545] rounded-full animate-spin"></div>
+          Loading Hotel...
         </motion.div>
       </div>
     );
   }
 
-  if (!hotel) return null;
+  if (error || !hotel) {
+    return (
+      <div className="min-h-screen bg-[#FAFBFD] flex flex-col items-center justify-center text-center p-6">
+        <h2 className="font-serif text-4xl text-[#0B2545] mb-4">Hotel Not Found</h2>
+        <p className="text-[#3A5F8C] mb-8">{error || "The hotel you are looking for does not exist or has been removed."}</p>
+        <button 
+          onClick={() => navigate('/hotels')}
+          className="px-8 py-3 bg-[#0B2545] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#3A5F8C] transition-colors"
+        >
+          Back to Hotels
+        </button>
+      </div>
+    );
+  }
 
-  const hasMultipleImages = hotel.images && hotel.images.length > 1;
+  const hasMultipleImages = allImages.length > 1;
 
   return (
     <div className="min-h-screen bg-[#FAFBFD] font-sans text-[#0B2545] pb-24">
       <SEO
         title={hotel.name}
-        description={`Stay at ${hotel.name}. ${hotel.description.substring(
-          0,
-          150,
-        )}...`}
+        description={hotel.description ? `${hotel.name}. ${hotel.description.substring(0, 150)}...` : `Book your stay at ${hotel.name}`}
       />
       {/* 1. IMAGE SLIDER & TITLE SECTION */}
       <section className="pt-28 pb-12 px-6 lg:px-12 max-w-[1400px] mx-auto">
@@ -190,8 +178,8 @@ function HotelDetails() {
               className="absolute inset-0"
             >
               <LazyLoadImage
-                src={getImageUrl(hotel.images[activeImage] || hotel.image)}
-                alt={`Hotel view ${activeImage + 1}`}
+                src={allImages[activeImage] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070"}
+                alt={`${hotel.name} view ${activeImage + 1}`}
                 className="w-full h-full object-cover"
                 effect="blur"
                 wrapperClassName="w-full h-full"
@@ -199,7 +187,7 @@ function HotelDetails() {
             </motion.div>
           </AnimatePresence>
 
-          {/* Slider Navigation Buttons - Only show if there are multiple images */}
+          {/* Slider Navigation Buttons */}
           {hasMultipleImages && (
             <>
               <button
@@ -217,7 +205,7 @@ function HotelDetails() {
 
               {/* Slider Indicators (Dots) */}
               <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-3 z-10">
-                {hotel.images.map((_, idx) => (
+                {allImages.map((_, idx) => (
                   <button
                     key={idx}
                     onClick={() => setActiveImage(idx)}
@@ -262,86 +250,82 @@ function HotelDetails() {
               </span>
             </div>
             <span className="w-[1px] h-4 bg-gray-300"></span>
-            <span className="text-[#3A5F8C] pt-0.5 font-semibold text-xs tracking-wider">
-              {hotel.location?.toUpperCase()}
+            <span className="text-[#3A5F8C] pt-0.5 font-semibold text-xs tracking-wider flex items-center gap-1">
+              <MapPin size={12}/> {hotel.address || hotel.location || "Premium Location"}
             </span>
           </div>
         </motion.div>
       </section>
 
-      {/* 2. NAVIGATION & MAIN LAYOUT */}
+      {/* 2. NAVIGATION BUTTONS */}
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-8 flex justify-between items-center">
-        <a
-          href="#"
+        <button
+          onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-sm font-medium text-[#3A5F8C] hover:text-[#0B2545] transition-colors uppercase tracking-widest"
         >
           <div className="p-2 rounded-full border border-[#3A5F8C]/20 hover:border-[#0B2545]">
             <ArrowRight size={14} className="rotate-180" />
           </div>
-          <span className="hidden md:inline">Previous Hotel</span>
-        </a>
-        <a
-          href="#"
-          className="flex items-center gap-2 text-sm font-medium text-[#3A5F8C] hover:text-[#0B2545] transition-colors uppercase tracking-widest"
-        >
-          <span className="hidden md:inline">Next Hotel</span>
-          <div className="p-2 rounded-full border border-[#3A5F8C]/20 hover:border-[#0B2545]">
-            <ArrowRight size={14} />
-          </div>
-        </a>
+          <span className="hidden md:inline">Back to Hotels</span>
+        </button>
       </div>
 
       {/* 3. MAIN CONTENT GRID */}
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 grid grid-cols-1 lg:grid-cols-12 gap-16">
         {/* LEFT COLUMN: PRIMARY CONTENT (70%) */}
         <div className="lg:col-span-8 space-y-20">
+          
           {/* 4. ABOUT THIS HOTEL */}
-          <section>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <h3 className="font-serif text-3xl mb-8 text-[#0B2545]">
-                The Experience
-              </h3>
-              <p className="font-inter text-lg leading-loose text-gray-600 font-light max-w-prose">
-                {hotel.description}
-              </p>
-            </motion.div>
-          </section>
+          {hotel.description && (
+            <section>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                <h3 className="font-serif text-3xl mb-8 text-[#0B2545]">
+                  The Experience
+                </h3>
+                <p className="font-inter text-lg leading-loose text-gray-600 font-light max-w-prose whitespace-pre-line">
+                  {hotel.description}
+                </p>
+              </motion.div>
+            </section>
+          )}
 
           {/* 5. AMENITIES */}
-          <section>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6 }}
-            >
-              <h3 className="font-serif text-3xl mb-8 text-[#0B2545]">
-                Amenities
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-8">
-                {hotel.amenities?.map((amenity, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-3 text-[#3A5F8C] group"
-                  >
-                    <div className="p-2 rounded-lg border border-gray-100 group-hover:border-[#3A5F8C]/30 transition-colors">
-                      <Check size={16} strokeWidth={1.5} />
+          {hotel.amenities && hotel.amenities.length > 0 && (
+            <section>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+              >
+                <h3 className="font-serif text-3xl mb-8 text-[#0B2545]">
+                  Amenities
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-8">
+                  {hotel.amenities.map((amenity, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 text-[#3A5F8C] group"
+                    >
+                      <div className="p-2 rounded-lg border border-gray-100 group-hover:border-[#3A5F8C]/30 transition-colors">
+                        <Check size={16} strokeWidth={1.5} />
+                      </div>
+                      <span className="text-sm font-inter font-medium tracking-wide text-[#0B2545] group-hover:text-[#3A5F8C] transition-colors">
+                        {amenity}
+                      </span>
                     </div>
-                    <span className="text-sm font-inter font-medium tracking-wide text-[#0B2545] group-hover:text-[#3A5F8C] transition-colors">
-                      {amenity}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          </section>
+                  ))}
+                </div>
+              </motion.div>
+            </section>
+          )}
 
-          {/* 6. ROOM TYPES (EDITORIAL BLOCKS) */}
+          {/* 6. ROOM TYPES */}
           {hotel.roomTypes && hotel.roomTypes.length > 0 && (
             <section>
               <motion.div
@@ -369,7 +353,7 @@ function HotelDetails() {
                           </span>
                         </div>
                         <p className="text-sm text-gray-500 leading-relaxed max-w-md font-light">
-                          {room.description}
+                          {room.description || "Enjoy premium comfort and excellent room service during your stay."}
                         </p>
                         <div className="flex flex-wrap gap-2 mt-4">
                           {room.features?.map((f) => (
@@ -410,7 +394,7 @@ function HotelDetails() {
             </section>
           )}
 
-          {/* 8. CONFIDENCE STRIP */}
+          {/* 7. CONFIDENCE STRIP */}
           <section className="bg-[#E8F0F9]/30 p-12 rounded-xl text-center space-y-6">
             <Shield
               className="w-8 h-8 text-[#3A5F8C] mx-auto opacity-80"
@@ -436,7 +420,7 @@ function HotelDetails() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.5, duration: 0.6 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
               className="p-8 border border-[#F1F6FB] bg-white rounded-lg shadow-[0_4px_20px_rgba(0,0,0,0.02)]"
             >
               <div className="mb-6">
@@ -444,7 +428,7 @@ function HotelDetails() {
                   Starting From
                 </span>
                 <div className="font-serif text-4xl text-[#0B2545]">
-                  {hotel.priceRange?.split("–")[0] || hotel.priceRange}
+                  {hotel.priceRange ? hotel.priceRange.split("–")[0].split("-")[0].trim() : "Ask Price"}
                   <span className="text-lg text-gray-400 font-sans font-light">
                     {" "}
                     / night
@@ -478,7 +462,7 @@ function HotelDetails() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.6, duration: 0.6 }}
+              transition={{ delay: 0.4, duration: 0.6 }}
               className="bg-[#F1F6FB] p-8 rounded-lg space-y-6"
             >
               <div className="grid grid-cols-2 gap-4">
@@ -487,7 +471,7 @@ function HotelDetails() {
                     Check-in
                   </p>
                   <p className="font-serif text-xl text-[#0B2545]">
-                    {hotel.checkIn}
+                    {hotel.checkIn || "02:00 PM"}
                   </p>
                 </div>
                 <div>
@@ -495,7 +479,7 @@ function HotelDetails() {
                     Check-out
                   </p>
                   <p className="font-serif text-xl text-[#0B2545]">
-                    {hotel.checkOut}
+                    {hotel.checkOut || "11:00 AM"}
                   </p>
                 </div>
               </div>
@@ -527,7 +511,7 @@ function HotelDetails() {
         <div>
           <span className="text-xs text-gray-500 uppercase">Starting from</span>
           <div className="font-serif text-xl text-[#0B2545]">
-            {hotel.priceRange?.split("–")[0] || hotel.priceRange}
+            {hotel.priceRange ? hotel.priceRange.split("–")[0].split("-")[0].trim() : "Ask Price"}
           </div>
         </div>
         <button

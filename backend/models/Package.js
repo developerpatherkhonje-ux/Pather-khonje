@@ -1,4 +1,6 @@
 const mongoose = require("mongoose");
+// Import slugify
+const slugify = require("slugify");
 
 const packageSchema = new mongoose.Schema(
   {
@@ -8,6 +10,12 @@ const packageSchema = new mongoose.Schema(
       trim: true,
       minlength: [2, "Name must be at least 2 characters"],
       maxlength: [200, "Name cannot exceed 200 characters"],
+      index: true,
+    },
+    // SEO Friendly URL field added here!
+    slug: {
+      type: String,
+      unique: true,
       index: true,
     },
     image: {
@@ -87,10 +95,20 @@ const packageSchema = new mongoose.Schema(
 
 packageSchema.index({ createdAt: -1 });
 
+// Middleware to automatically create slug before saving
+packageSchema.pre('save', function(next) {
+  if (!this.isModified('name')) {
+    return next();
+  }
+  this.slug = slugify(this.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+  next();
+});
+
 packageSchema.methods.getPublicProfile = function () {
   return {
     id: this._id,
     name: this.name,
+    slug: this.slug, // Included slug in public profile
     image: this.image,
     description: this.description,
     duration: this.duration,

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const slugify = require('slugify');
 
 const placeSchema = new mongoose.Schema({
   name: {
@@ -8,6 +9,12 @@ const placeSchema = new mongoose.Schema({
     unique: true,
     minlength: [2, 'Place name must be at least 2 characters'],
     maxlength: [100, 'Place name cannot exceed 100 characters']
+  },
+  // 🔴 FIX: If this is missing, Mongoose will refuse to save slugs!
+  slug: {
+    type: String,
+    unique: true,
+    index: true
   },
   description: {
     type: String,
@@ -76,20 +83,26 @@ const placeSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Virtual for hotels relationship
 placeSchema.virtual('hotels', {
   ref: 'Hotel',
   localField: '_id',
   foreignField: 'placeId'
 });
 
-// Indexes
 placeSchema.index({ name: 1 });
 placeSchema.index({ isActive: 1 });
 placeSchema.index({ rating: -1 });
 placeSchema.index({ createdAt: -1 });
 
-// Static methods
+// Middleware to automatically create slug for new places
+placeSchema.pre('save', function(next) {
+  if (!this.isModified('name')) {
+    return next();
+  }
+  this.slug = slugify(this.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+  next();
+});
+
 placeSchema.statics.getPlaceStats = async function() {
   const totalPlaces = await this.countDocuments();
   const activePlaces = await this.countDocuments({ isActive: true });
@@ -112,7 +125,6 @@ placeSchema.statics.findByPlaceId = async function(placeId) {
   return this.findById(placeId).populate('hotels');
 };
 
-// Instance methods
 placeSchema.methods.updateHotelsCount = async function() {
   const Hotel = mongoose.model('Hotel');
   const count = await Hotel.countDocuments({ placeId: this._id, isActive: true });
@@ -121,10 +133,12 @@ placeSchema.methods.updateHotelsCount = async function() {
   return count;
 };
 
+// 🔴 FIX: Make sure the slug is sent to the frontend!
 placeSchema.methods.getPublicProfile = function() {
   return {
     id: this._id,
     name: this.name,
+    slug: this.slug, 
     description: this.description,
     image: this.image,
     images: this.images || [],
@@ -137,4 +151,3 @@ placeSchema.methods.getPublicProfile = function() {
 };
 
 module.exports = mongoose.model('Place', placeSchema);
-

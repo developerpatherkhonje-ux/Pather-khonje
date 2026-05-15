@@ -1,4 +1,6 @@
 const express = require('express');
+const mongoose = require('mongoose'); // ADDED: Needed for ID vs Slug check
+const slugify = require('slugify'); // ADDED: Needed to generate SEO strings
 const { body, validationResult } = require('express-validator');
 const Place = require('../models/Place');
 const Hotel = require('../models/Hotel');
@@ -65,8 +67,9 @@ const handleValidationErrors = (req, res, next) => {
 // @access  Public
 router.get('/', async (req, res) => {
   try {
+    // UPDATED: Added 'slug' to the select fields so frontend can build SEO links
     const places = await Place.find({ isActive: true })
-      .select('name description image rating hotelsCount createdAt')
+      .select('name slug description image rating hotelsCount createdAt')
       .sort({ createdAt: -1 });
     
     res.json({
@@ -86,14 +89,20 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/places/:id
-// @desc    Get place by ID with hotels
+// @route   GET /api/places/:idOrSlug
+// @desc    Get place by ID or Slug with hotels
 // @access  Public
-router.get('/:id', async (req, res) => {
+router.get('/:idOrSlug', async (req, res) => {
   try {
-    const placeId = req.params.id;
+    const param = req.params.idOrSlug;
+    let place;
     
-    const place = await Place.findById(placeId).populate('hotels');
+    // UPDATED: Smart check for Mongo ID vs SEO Slug
+    if (mongoose.Types.ObjectId.isValid(param)) {
+      place = await Place.findById(param).populate('hotels');
+    } else {
+      place = await Place.findOne({ slug: param, isActive: true }).populate('hotels');
+    }
     
     if (!place || !place.isActive) {
       return res.status(404).json({
@@ -119,15 +128,21 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// @route   GET /api/places/:id/hotels
+// @route   GET /api/places/:idOrSlug/hotels
 // @desc    Get hotels for a specific place
 // @access  Public
-router.get('/:id/hotels', async (req, res) => {
+router.get('/:idOrSlug/hotels', async (req, res) => {
   try {
-    const placeId = req.params.id;
+    const param = req.params.idOrSlug;
+    let place;
     
-    // Check if place exists
-    const place = await Place.findById(placeId);
+    // UPDATED: Smart check for Mongo ID vs SEO Slug
+    if (mongoose.Types.ObjectId.isValid(param)) {
+      place = await Place.findById(param);
+    } else {
+      place = await Place.findOne({ slug: param, isActive: true });
+    }
+
     if (!place || !place.isActive) {
       return res.status(404).json({
         success: false,
@@ -135,8 +150,8 @@ router.get('/:id/hotels', async (req, res) => {
       });
     }
     
-    // Get hotels for this place
-    const hotels = await Hotel.findByPlaceId(placeId);
+    // Get hotels for this place using the resolved internal _id
+    const hotels = await Hotel.findByPlaceId(place._id);
     
     res.json({
       success: true,
@@ -241,7 +256,7 @@ router.put('/:id', authenticateToken, requireAdmin, placeValidation, handleValid
       });
     }
     
-    // Check if name is being changed and if it's already taken
+    // UPDATED: Check if name is being changed or if slug is completely missing!
     if (updates.name && updates.name !== existingPlace.name) {
       const nameExists = await Place.findOne({ 
         name: { $regex: new RegExp(`^${updates.name}$`, 'i') },
@@ -253,6 +268,11 @@ router.put('/:id', authenticateToken, requireAdmin, placeValidation, handleValid
           message: 'Place with this name already exists'
         });
       }
+      // Generate new slug for new name
+      updates.slug = slugify(updates.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+    } else if (!existingPlace.slug) {
+      // Force generate slug if it's missing entirely!
+      updates.slug = slugify(existingPlace.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
     }
     
     // Update place

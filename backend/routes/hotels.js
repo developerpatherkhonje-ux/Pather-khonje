@@ -1,4 +1,6 @@
 const express = require("express");
+const mongoose = require("mongoose"); // ADDED: Needed for ID vs Slug check
+const slugify = require("slugify"); // ADDED: Needed to generate SEO strings
 const { body, validationResult } = require("express-validator");
 const Hotel = require("../models/Hotel");
 const Place = require("../models/Place");
@@ -118,11 +120,11 @@ router.get("/", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // Select cardImage as well
+    // UPDATED: Added 'slug' so the frontend gets the SEO URL
     const hotels = await Hotel.find({ isActive: true })
       .populate("placeId", "name")
       .select(
-        "name placeId description image cardImage images address rating reviews amenities priceRange createdAt",
+        "name slug placeId description image cardImage images address rating reviews amenities priceRange createdAt",
       )
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -161,14 +163,20 @@ router.get("/", async (req, res) => {
   }
 });
 
-// @route   GET /api/hotels/:id
-// @desc    Get hotel by ID
+// @route   GET /api/hotels/:idOrSlug
+// @desc    Get hotel by ID or SEO slug
 // @access  Public
-router.get("/:id", async (req, res) => {
+router.get("/:idOrSlug", async (req, res) => {
   try {
-    const hotelId = req.params.id;
+    const param = req.params.idOrSlug;
+    let hotel;
 
-    const hotel = await Hotel.findByHotelId(hotelId);
+    // UPDATED: Smart check for Mongo ID vs SEO Slug
+    if (mongoose.Types.ObjectId.isValid(param)) {
+      hotel = await Hotel.findById(param).populate("placeId", "name");
+    } else {
+      hotel = await Hotel.findOne({ slug: param, isActive: true }).populate("placeId", "name");
+    }
 
     if (!hotel || !hotel.isActive) {
       return res.status(404).json({
@@ -193,15 +201,21 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// @route   GET /api/hotels/place/:placeId
+// @route   GET /api/hotels/place/:placeIdOrSlug
 // @desc    Get hotels for a specific place
 // @access  Public
-router.get("/place/:placeId", async (req, res) => {
+router.get("/place/:placeIdOrSlug", async (req, res) => {
   try {
-    const placeId = req.params.placeId;
+    const param = req.params.placeIdOrSlug;
+    let place;
 
-    // Check if place exists
-    const place = await Place.findById(placeId);
+    // UPDATED: Check if param is ID or Slug!
+    if (mongoose.Types.ObjectId.isValid(param)) {
+      place = await Place.findById(param);
+    } else {
+      place = await Place.findOne({ slug: param, isActive: true });
+    }
+
     if (!place || !place.isActive) {
       return res.status(404).json({
         success: false,
@@ -209,8 +223,8 @@ router.get("/place/:placeId", async (req, res) => {
       });
     }
 
-    // Get hotels for this place
-    const hotels = await Hotel.findByPlaceId(placeId);
+    // Get hotels for this place using its real _id
+    const hotels = await Hotel.findByPlaceId(place._id);
 
     res.json({
       success: true,
@@ -254,20 +268,6 @@ router.post(
       } = req.body;
       const adminId = req.user._id;
 
-      console.log("Hotel creation request:", {
-        name,
-        placeId,
-        description,
-        images,
-        cardImage,
-        address,
-        rating,
-        amenities,
-        priceRange,
-        roomTypes,
-        adminId,
-      });
-
       // Check if place exists
       const place = await Place.findById(placeId);
       if (!place || !place.isActive) {
@@ -292,9 +292,9 @@ router.post(
       // Normalize images into Cloudinary object structure
       const normalizedImageObjects = ImageService.normalizeImages(
         images,
-      ).filter((img) => img && img.url && img.public_id); // ensure Cloudinary objects only
+      ).filter((img) => img && img.url && img.public_id);
 
-      // Determine primary image URL (prefer explicit image field when provided). Allow empty during creation.
+      // Determine primary image URL
       const primaryImageUrl =
         typeof req.body.image === "string" && req.body.image.trim()
           ? req.body.image.trim()
@@ -303,7 +303,7 @@ router.post(
       const finalCardImage =
         typeof cardImage === "string" && cardImage.trim()
           ? cardImage.trim()
-          : primaryImageUrl; // fallback to primary
+          : primaryImageUrl;
 
       // Create new hotel
       const hotel = new Hotel({
@@ -315,7 +315,6 @@ router.post(
             : "A beautiful hotel offering excellent accommodation and services",
         image: primaryImageUrl || "",
         cardImage: finalCardImage || "",
-
         images: normalizedImageObjects,
         address,
         rating: rating || 4.0,
@@ -389,7 +388,7 @@ router.post(
         message: "Failed to create hotel",
       });
     }
-  },
+  }
 );
 
 // @route   PUT /api/hotels/:id
@@ -430,7 +429,7 @@ router.put(
         }
       }
 
-      // Check if name is being changed and if it's already taken in the same place
+      // UPDATED: Force slug generation on update if name changed OR if slug is missing entirely!
       if (updates.name && updates.name !== existingHotel.name) {
         const nameExists = await Hotel.findOne({
           name: { $regex: new RegExp(`^${updates.name}$`, "i") },
@@ -443,6 +442,11 @@ router.put(
             message: "Hotel with this name already exists in this place",
           });
         }
+        // Generate new slug for new name
+        updates.slug = slugify(updates.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+      } else if (!existingHotel.slug) {
+        // If the old hotel doesn't have a slug, force generate it now using the existing name!
+        updates.slug = slugify(existingHotel.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
       }
 
       // Update hotel
@@ -502,7 +506,7 @@ router.put(
         message: "Failed to update hotel",
       });
     }
-  },
+  }
 );
 
 // @route   DELETE /api/hotels/:id
@@ -612,7 +616,7 @@ router.get(
         message: "Failed to get hotel statistics",
       });
     }
-  },
+  }
 );
 
 // @route   POST /api/hotels/:id/images
@@ -640,19 +644,6 @@ router.post(
     try {
       const hotelId = req.params.id;
       const adminId = req.user._id;
-
-      console.log("Hotel image upload request:", {
-        hotelId,
-        adminId,
-        filesCount: req.files ? req.files.length : 0,
-        files: req.files
-          ? req.files.map((f) => ({
-              name: f.originalname,
-              size: f.size,
-              mimetype: f.mimetype,
-            }))
-          : [],
-      });
 
       // Check if hotel exists
       const hotel = await Hotel.findById(hotelId);
@@ -688,25 +679,12 @@ router.post(
         });
       }
 
-      console.log("Successfully uploaded images:", uploadedImages.length);
-      console.log(
-        "Uploaded images:",
-        uploadedImages.map((img) => ({
-          public_id: img.public_id,
-          url: img.url,
-        })),
-      );
-
       // Add images to hotel and set primary image if missing
       hotel.images = [...(hotel.images || []), ...uploadedImages];
       if (!hotel.image && hotel.images.length > 0) {
         hotel.image = hotel.images[0].url;
       }
       await hotel.save();
-      console.log(
-        "Hotel updated with new images. Total images:",
-        hotel.images.length,
-      );
 
       res.json({
         success: true,
@@ -718,18 +696,12 @@ router.post(
       });
     } catch (error) {
       console.error("Upload hotel images error:", error.message);
-      console.error("Full error:", error);
-      logger.error("Upload hotel images error", {
-        error: error.message,
-        userId: req.user._id,
-      });
-
       res.status(500).json({
         success: false,
         message: "Failed to upload images: " + error.message,
       });
     }
-  },
+  }
 );
 
 // @route   DELETE /api/hotels/:id/images/:imageId
@@ -772,7 +744,6 @@ router.delete(
         await deleteImage(imageId);
       } catch (cloudinaryError) {
         console.error("Error deleting from Cloudinary:", cloudinaryError);
-        // Continue with database deletion even if Cloudinary fails
       }
 
       // Remove from hotel
@@ -794,12 +765,6 @@ router.delete(
         success: true,
       });
 
-      logger.info("Hotel image deleted", {
-        hotelId,
-        deletedBy: adminId,
-        imageId,
-      });
-
       res.json({
         success: true,
         message: "Image deleted successfully",
@@ -815,7 +780,7 @@ router.delete(
         message: "Failed to delete image",
       });
     }
-  },
+  }
 );
 
 module.exports = router;

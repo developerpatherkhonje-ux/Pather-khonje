@@ -7,7 +7,8 @@ import "react-lazy-load-image-component/src/effects/blur.css";
 
 const destinations = [
   {
-    image: "https://images.unsplash.com/photo-1544634076-a900ce0dcbfb?q=80&w=2070",
+    // UPDATED: Fresh working Darjeeling Image
+    image: "https://images.unsplash.com/photo-1698753864905-a447aa362ec9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8ZGFyamVlbGluZ3xlbnwwfHwwfHx8MA%3D%3D",
     name: "Darjeeling",
     label: "Queen of the Hills",
     path: "/hotels/darjeeling"
@@ -25,7 +26,8 @@ const destinations = [
     path: "/hotels/ladakh"
   },
   {
-    image: "https://images.unsplash.com/photo-1605649487212-4d48bfceb477?q=80&w=2070",
+    // UPDATED: Fresh working Manali Image
+    image: "https://images.unsplash.com/photo-1516406742981-2b7d67ec4ae8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     name: "Manali",
     label: "Valley of Gods",
     path: "/hotels/manali"

@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose"); // ADDED THIS
 const { body, validationResult } = require("express-validator");
 const Package = require("../models/Package");
 const {
@@ -77,10 +78,19 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Public: get package by id
-router.get("/:id", async (req, res) => {
+// Public: get package by id or slug
+router.get("/:idOrSlug", async (req, res) => {
   try {
-    const pkg = await Package.findById(req.params.id);
+    const param = req.params.idOrSlug;
+    let pkg;
+
+    // Checks if the string is a valid MongoDB ID, otherwise assumes it's a slug
+    if (mongoose.Types.ObjectId.isValid(param)) {
+      pkg = await Package.findById(param);
+    } else {
+      pkg = await Package.findOne({ slug: param, isActive: true });
+    }
+
     if (!pkg) {
       return res
         .status(404)
@@ -88,7 +98,7 @@ router.get("/:id", async (req, res) => {
     }
     res.json({ success: true, data: { package: pkg.getPublicProfile() } });
   } catch (e) {
-    logger.error("Get package by id error", { error: e.message });
+    logger.error("Get package by id or slug error", { error: e.message });
     res.status(500).json({ success: false, message: "Failed to get package" });
   }
 });
@@ -103,7 +113,6 @@ router.post(
   async (req, res) => {
     try {
       const payload = { ...req.body };
-      // Normalize numeric fields
       if (payload.price !== undefined) payload.price = Number(payload.price);
       if (
         payload.rating !== undefined &&

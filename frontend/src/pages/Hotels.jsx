@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
-import apiService from "../services/api"; // Retaining API service for fetching hotels/places
+import apiService from "../services/api"; 
 import { Clock, MapPin, ArrowRight, Star, Globe, Shield } from "lucide-react";
 import SEO from "../components/SEO";
 import { LazyLoadImage } from "react-lazy-load-image-component";
@@ -9,73 +9,19 @@ import "react-lazy-load-image-component/src/effects/blur.css";
 
 const Hotels = () => {
   // State for API data
-  // DUMMY DATA FOR UI TESTING
-  const DUMMY_PLACES = [
-    {
-      id: "dummy-goa",
-      name: "Goa Coastal Paradise",
-      description:
-        "Famous for its pristine beaches, Portuguese heritage, and vibrant nightlife. Experience the perfect blend of relaxation and adventure.",
-      image: {
-        url: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-      },
-      hotelsCount: 15,
-      rating: 4.9,
-      tag: "BEACHES",
-    },
-    {
-      id: "dummy-manali",
-      name: "Majestic Manali",
-      description:
-        "Nestled in the Himalayas, Manali offers breathtaking views, snow-capped mountains, and a cozy retreat from the city bustle.",
-      image: {
-        url: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-      },
-      hotelsCount: 8,
-      rating: 4.7,
-      tag: "HILL STATIONS",
-    },
-    {
-      id: "dummy-udaipur",
-      name: "Royal Udaipur",
-      description:
-        "The City of Lakes. Discover the grandeur of Rajputana architecture, shimmering lakes, and heritage luxury at its finest.",
-      image: {
-        url: "https://images.unsplash.com/photo-1599661046289-e31897846e41?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-      },
-      hotelsCount: 10,
-      rating: 4.9,
-      tag: "HERITAGE",
-    },
-    {
-      id: "dummy-kerala",
-      name: "Kerala Backwaters",
-      description:
-        "God's Own Country. Cruise through tranquil backwaters, explore tea plantations, and rejuvenate with traditional Ayurveda.",
-      image: {
-        url: "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80",
-      },
-      hotelsCount: 12,
-      rating: 4.8,
-      tag: "NATURE",
-    },
-  ];
-
-  // State for API data - Initialized with DUMMY_PLACES for now
-  const [places, setPlaces] = useState(DUMMY_PLACES);
-  const [loading, setLoading] = useState(false);
+  const [places, setPlaces] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeCategory, setActiveCategory] = useState("ALL DESTINATIONS");
- 
-  // Fetch Logic - Commented out for now
-  /*
+
+  // FETCH REAL DATA FROM THE DATABASE
   useEffect(() => {
     const fetchPlaces = async () => {
       try {
         setLoading(true);
         const response = await apiService.getPlaces();
         if (response.success) {
-          // Sort alphabetically or by importance
+          // Sort alphabetically
           const sortedPlaces = (response.data.places || []).sort((a, b) =>
             (a.name || "").localeCompare(b.name || "", "en", {
               sensitivity: "base",
@@ -92,7 +38,6 @@ const Hotels = () => {
     };
     fetchPlaces();
   }, []);
-  */
 
   const categories = [
     { id: "ALL DESTINATIONS", name: "ALL DESTINATIONS" },
@@ -216,7 +161,7 @@ const Hotels = () => {
                   variants={containerVariants}
                   className="bg-white p-0 md:p-12 shadow-sm border border-gray-100 flex flex-col gap-10"
                 >
-                  {/* Alternating Layout: Even index = Image Right, Odd index = Image Left (Matches packages logic) */}
+                  {/* Alternating Layout: Even index = Image Right, Odd index = Image Left */}
                   <div
                     className={`flex flex-col ${
                       index % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
@@ -234,23 +179,14 @@ const Hotels = () => {
                           </h2>
                           <div className="flex items-center gap-2">
                             <span className="inline-block bg-blue-50 text-midnight-ocean text-xs font-bold px-3 py-1 uppercase tracking-widest">
-                              {place.hotelsCount || "Multiple"} Stays
+                              {place.hotelsCount || "0"} Stays
                             </span>
                             <div className="flex items-center gap-1 text-soft-gold">
                               <Star className="w-3 h-3 fill-soft-gold" />
                               <span className="text-xs font-bold">
-                                {place.rating || "4.8"}
+                                {place.rating || "4.5"}
                               </span>
                             </div>
-                          </div>
-                        </div>
-                        {/* Optional Price placeholder if available, else hidden */}
-                        <div className="text-right hidden md:block">
-                          <div className="text-xs text-gray-400 uppercase tracking-widest mb-1">
-                            Starting From
-                          </div>
-                          <div className="text-2xl font-serif text-midnight-ocean">
-                            ₹4,999
                           </div>
                         </div>
                       </motion.div>
@@ -287,8 +223,9 @@ const Hotels = () => {
                         variants={itemVariants}
                         className="flex items-center gap-6 mt-auto"
                       >
+                        {/* 🔴 THE FIX: Using place.slug so the URL is beautiful! */}
                         <Link
-                          to={`/hotels/${place.id}`}
+                          to={`/hotels/${place.slug || place.id}`}
                           className="bg-midnight-ocean text-white px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-deep-steel-blue transition-all duration-300 text-center"
                         >
                           Explore Hotels
@@ -302,11 +239,10 @@ const Hotels = () => {
                       className="w-full lg:w-1/2 relative min-h-[400px]"
                     >
                       <div className="absolute inset-0 overflow-hidden shadow-2xl group">
-                        {/* If API image url exists use it, else generic placeholder */}
+                        {/* Pulling the absolute URL from your API */}
                         <LazyLoadImage
                           src={
-                            place.image?.url ||
-                            place.image ||
+                            apiService.toAbsoluteUrl(place.image?.url || place.image) ||
                             "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80"
                           }
                           alt={place.name}
@@ -325,7 +261,7 @@ const Hotels = () => {
         </div>
       </section>
 
-      {/* 4. DESIGN YOUR OWN JOURNEY (Reused) */}
+      {/* 4. DESIGN YOUR OWN JOURNEY */}
       <section className="bg-midnight-ocean py-24 text-white">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-16">
           <div className="max-w-2xl">

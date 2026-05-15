@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Instagram, Linkedin, MapPin, Phone, Mail } from 'lucide-react';
+import { Facebook, Instagram, MapPin, Phone, Mail } from 'lucide-react'; // Removed Linkedin import
 
 const Footer = () => {
   const [imageError, setImageError] = useState(false);
@@ -14,7 +14,6 @@ const Footer = () => {
           <div>
             {!imageError ? (
               <img 
-                // Using URL encoding (%20) for spaces ensures maximum browser/server compatibility
                 src="/logo/Pather%20Khonje%20Logo.png" 
                 alt="Pather Khonje" 
                 className="h-16 mb-6 object-contain" 
@@ -30,15 +29,15 @@ const Footer = () => {
               A Tour That Never Seen Before. Experience the raw beauty of the Himalayas with expertly crafted journeys since 2015.
             </p>
             <div className="flex space-x-4">
-              <a href="https://www.facebook.com/p/Pather-Khoje-Tour-And-Travels-100068680706541/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
+              {/* Updated Facebook Link */}
+              <a href="https://www.facebook.com/profile.php?id=61577923149985" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <Facebook size={20} />
               </a>
-              <a href="https://www.instagram.com/pather_khonje/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
+              {/* Updated Instagram Link */}
+              <a href="https://www.instagram.com/patherkhonje?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
                 <Instagram size={20} />
               </a>
-              <a href="https://www.linkedin.com/company/patherkhonje/" target="_blank" rel="noreferrer" className="text-gray-400 hover:text-white transition-colors">
-                <Linkedin size={20} />
-              </a>
+              {/* LinkedIn completely removed from here */}
             </div>
           </div>
 

@@ -30,13 +30,13 @@ const Packages = () => {
           const mappedPackages = (response.data.packages || []).map(
             (pkg, index) => ({
               id: pkg.id,
+              slug: pkg.slug, // ADDED SLUG HERE
               name: pkg.name,
               price: `₹${pkg.price?.toLocaleString()}`,
               priceUnit: "(per person)",
-              nights: pkg.duration, // Assuming backend sends "X Nights / Y Days" or similar string
+              nights: pkg.duration,
               tag: pkg.duration,
               description: pkg.description,
-              // Backend lacks structured itinerary. Using description as a single day overview or generic placeholder.
               itinerary: [
                 {
                   day: "Overview",
@@ -51,7 +51,7 @@ const Packages = () => {
                 "Accommodation",
                 "Meals",
                 "Transfers",
-              ], // Using highlights as inclusions/features
+              ],
               image: apiService.toAbsoluteUrl(pkg.image),
               imagePosition: index % 2 === 0 ? "right" : "left",
               linkText: "View Details",
@@ -69,7 +69,6 @@ const Packages = () => {
     fetchPackages();
   }, []);
 
-  // Animation Variants
   const containerVariants = {
     hidden: {},
     visible: {
@@ -117,7 +116,6 @@ const Packages = () => {
               Handpicked journeys crafted for memories, comfort, and peace of
               mind
             </p>
-            {/* <div className="w-20 h-1 bg-white/60 mx-auto rounded-full" /> */}
           </motion.div>
         </div>
       </section>
@@ -152,7 +150,7 @@ const Packages = () => {
         </div>
       </section>
 
-      {/* 3. PACKAGES LIST (Cards) */}
+      {/* 3. PACKAGES LIST */}
       <section className="py-20 px-4">
         <div className="max-w-7xl mx-auto space-y-24">
           {loading ? (
@@ -262,8 +260,9 @@ const Packages = () => {
                         <button className="bg-midnight-ocean text-white px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-deep-steel-blue transition-all duration-300">
                           Book Now
                         </button>
+                        {/* THE FIX IS HERE: Uses slug first, falls back to ID */}
                         <Link
-                          to={`/package/${pkg.id}`}
+                          to={`/package/${pkg.slug || pkg.id}`}
                           className="text-xs font-bold tracking-[0.2em] uppercase text-midnight-ocean flex items-center gap-2 group hover:text-soft-gold transition-colors"
                         >
                           {pkg.linkText}

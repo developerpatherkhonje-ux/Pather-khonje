@@ -171,7 +171,6 @@ class ApiService {
   }
 
   // Auth specific methods
-  // 🔴 FIX: Removed 'token' completely from parameters and payload
   async login(email, password) {
     return this.post(
       "/auth/login",
@@ -364,7 +363,6 @@ class ApiService {
         throw new Error(data.message || "GridFS upload failed");
       }
       const data = await response.json();
-      // Normalize to same shape as disk upload
       return {
         success: true,
         message: "Uploaded via GridFS",
@@ -382,7 +380,6 @@ class ApiService {
       body: formData,
       headers: {
         Authorization: `Bearer ${this.getToken()}`,
-        // Don't set Content-Type, let browser set it with boundary
       },
     });
   }
@@ -393,7 +390,6 @@ class ApiService {
       body: formData,
       headers: {
         Authorization: `Bearer ${this.getToken()}`,
-        // Don't set Content-Type, let browser set it with boundary
       },
     });
   }
@@ -411,6 +407,11 @@ class ApiService {
     return this.get(`/hotels?page=${page}&limit=${limit}`, {
       includeAuth: false,
     });
+  }
+
+  // 🔴 ADDED: Fetch a single hotel by ID or SEO Slug
+  async getHotel(idOrSlug) {
+    return this.get(`/hotels/${idOrSlug}`, { includeAuth: false });
   }
 
   async getHotelById(hotelId) {
@@ -448,7 +449,6 @@ class ApiService {
       body: formData,
       includeAuth: true,
       headers: {
-        // Don't set Content-Type, let browser set it with boundary
         "Content-Type": undefined,
       },
     });
@@ -503,7 +503,6 @@ class ApiService {
         headers: { "Content-Type": undefined },
       });
     } catch (e) {
-      // Fallback to uploading one by one via GridFS
       const results = [];
       for (const file of files) {
         const r = await this.uploadHotelImage(file);
@@ -525,9 +524,16 @@ class ApiService {
   async listPackages() {
     return this.get("/packages", { includeAuth: false });
   }
+  
+  // 🔴 ADDED: Fetch a single package by ID or SEO Slug
+  async getPackage(idOrSlug) {
+    return this.get(`/packages/${idOrSlug}`, { includeAuth: false });
+  }
+
   async getPackageById(id) {
     return this.get(`/packages/${id}`, { includeAuth: false });
   }
+  
   async createPackage(pkg) {
     return this.post("/packages", pkg);
   }

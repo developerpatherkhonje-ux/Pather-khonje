@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Star, Map, Compass, Users } from "lucide-react";
+import { Star, Map, Users } from "lucide-react";
 import SEO from "../components/SEO";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
@@ -67,9 +67,9 @@ const timelineData = [
 
 const teamData = [
   {
-    name: "Soma Shah",
+    name: "Soma Shah Mitra", // UPDATED NAME
     role: "Proprietor & Founder",
-    img: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=1976&auto=format&fit=crop",
+    img: "/images/soma-shah-mitra.png", // UPDATED: Path to local image file
   },
 ];
 
@@ -127,7 +127,6 @@ const About = () => {
             variants={fadeInLeft}
             className="w-full lg:w-1/2 relative"
           >
-            {/* Elegant Image Frame */}
             <div className="absolute inset-0 border border-soft-gold/40 translate-x-6 translate-y-6 rounded-sm"></div>
             <div className="relative h-[600px] overflow-hidden rounded-sm shadow-2xl z-10 group">
               <LazyLoadImage
@@ -181,7 +180,6 @@ const About = () => {
 
       {/* 3. TIMELINE */}
       <section className="py-32 bg-midnight-ocean relative overflow-hidden">
-        {/* Subtle background pattern/glow */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-deep-steel-blue/40 via-midnight-ocean to-midnight-ocean z-0"></div>
         
         <div className="container mx-auto px-6 md:px-12 lg:px-24 relative z-10">
@@ -205,7 +203,6 @@ const About = () => {
                 variants={fadeUp}
                 className="relative group"
               >
-                {/* Connecting Line (Desktop) */}
                 {idx !== timelineData.length - 1 && (
                   <div className="hidden lg:block absolute top-4 left-6 w-full h-[1px] bg-white/10"></div>
                 )}
@@ -375,7 +372,6 @@ const About = () => {
       {/* 6. STATS COLLAGE */}
       <section className="py-32 bg-white px-6 md:px-12 lg:px-24 overflow-hidden">
         <div className="container mx-auto flex flex-col lg:flex-row gap-20 items-center">
-          {/* Stats Left */}
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -414,7 +410,6 @@ const About = () => {
             </motion.div>
           </motion.div>
 
-          {/* Collage Right - High End Editorial Layout */}
           <div className="w-full lg:w-2/3 relative h-[600px] md:h-[700px]">
             <motion.div
               initial={{ opacity: 0, y: 50 }}
@@ -490,7 +485,6 @@ const About = () => {
                 transition={{ delay: 0.2 }}
                 className="w-full max-w-5xl bg-white flex flex-col md:flex-row items-center gap-12 p-8 md:p-12 lg:p-16 shadow-2xl rounded-sm relative"
               >
-                {/* Gold Accent Bar */}
                 <div className="absolute top-0 left-0 w-2 h-full bg-soft-gold"></div>
                 
                 <div className="w-full md:w-1/3 flex-shrink-0">
