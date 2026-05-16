@@ -224,11 +224,11 @@ function Navbar() {
                             className="overflow-hidden bg-gray-50/50"
                           >
                             <div className="flex flex-col py-3 space-y-3 pl-4">
-                              {/* Curated Stays Mobile Links */}
+                              {/* Curated Stays Mobile Links - UPDATED TO USE SLUG */}
                               {CURATED_STAYS.map((stay) => (
                                 <Link
                                   key={stay.id}
-                                  to={`/hotel/${stay.id}`}
+                                  to={`/hotel/${stay.slug || stay.id}`}
                                   className="text-xs font-medium text-slate-700 block py-1"
                                   onClick={() => setIsOpen(false)}
                                 >

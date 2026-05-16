@@ -1,9 +1,13 @@
 import { config } from "../config/config.js";
 
-// 🔴 FIX: Now correctly reads from your .env file!
-// If you are on localhost, it will use http://localhost:5000/api
-// If VITE_API_URL is missing, it falls back to your live server.
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.patherkhonje.com/api";
+// 💡 AUTOMATIC LOCALHOST DETECTION
+// Detects if you are developing locally and automatically points to your local backend port (usually 5000)
+const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
+const API_BASE_URL = isLocalhost 
+  ? "http://localhost:5000/api" // Forces frontend to talk to your local backend server
+  : (import.meta.env.VITE_API_URL || "https://api.patherkhonje.com/api");
+
 const PROD_BASE_URL = "https://api.patherkhonje.com/api";
 
 class ApiService {
@@ -18,6 +22,7 @@ class ApiService {
       currentDomain: config.CURRENT_DOMAIN,
       isCustomDomain: config.IS_CUSTOM_DOMAIN,
       environment: config.NODE_ENV,
+      isLocalhost: isLocalhost
     });
   }
 

@@ -67,21 +67,36 @@ const handleValidationErrors = (req, res, next) => {
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    // UPDATED: Added 'slug' to the select fields so frontend can build SEO links
-    const places = await Place.find({ isActive: true })
-      .select('name slug description image rating hotelsCount createdAt')
-      .sort({ createdAt: -1 });
+    let places = await Place.find({ isActive: true }).sort({ createdAt: -1 });
+    
+    // 🔴 SUPER-HEAL: Forces all slugs to be perfectly clean and removes old random letters
+    let dataFixed = false;
+    for (let place of places) {
+      // Generate what the perfect, clean slug SHOULD look like
+      const cleanSlug = slugify(place.name, { lower: true, strict: true });
+      
+      // If the current slug doesn't match the clean one (because it has random letters)
+      if (place.slug !== cleanSlug) {
+        place.slug = cleanSlug; // Overwrite it with the clean version
+        await place.save();
+        dataFixed = true;
+      }
+    }
+    
+    // If we scrubbed any random letters, re-fetch the clean data
+    if (dataFixed) {
+      places = await Place.find({ isActive: true }).sort({ createdAt: -1 });
+    }
     
     res.json({
       success: true,
       data: {
-        places
+        places: places.map(p => p.getPublicProfile ? p.getPublicProfile() : p)
       }
     });
     
   } catch (error) {
     logger.error('Get places error', { error: error.message });
-    
     res.status(500).json({
       success: false,
       message: 'Failed to get places'
@@ -269,10 +284,10 @@ router.put('/:id', authenticateToken, requireAdmin, placeValidation, handleValid
         });
       }
       // Generate new slug for new name
-      updates.slug = slugify(updates.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+      updates.slug = slugify(updates.name, { lower: true, strict: true });
     } else if (!existingPlace.slug) {
       // Force generate slug if it's missing entirely!
-      updates.slug = slugify(existingPlace.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+      updates.slug = slugify(existingPlace.name, { lower: true, strict: true });
     }
     
     // Update place

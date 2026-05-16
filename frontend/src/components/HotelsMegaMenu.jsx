@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
@@ -23,9 +23,8 @@ const CATEGORIES = {
   ALL: "all",
 };
 
-// Dummy Data for Curated List
+// Dummy Data for Curated List (Used by Mobile Menu)
 export const CURATED_STAYS = [
-  // Trending / Initial
   {
     id: "vizag-araku",
     name: "Vizag – Araku Escape",
@@ -60,65 +59,16 @@ export const CURATED_STAYS = [
     location: "Sikkim",
     category: CATEGORIES.HIMALAYA,
   },
-  // Additional Entries
-  {
-    id: "goa-villas",
-    name: "Luxury Goa Villas",
-    duration: "4 Nights",
-    price: "₹55,000",
-    location: "Goa",
-    category: CATEGORIES.BEACH,
-  },
-  {
-    id: "munnar-mist",
-    name: "Munnar Misty Hills",
-    duration: "3 Nights",
-    price: "₹22,000",
-    location: "Kerala",
-    category: CATEGORIES.HILLS,
-  },
-  {
-    id: "shimla-homestay",
-    name: "Shimla Heritage Stay",
-    duration: "3 Nights",
-    price: "₹28,000",
-    location: "Shimla",
-    category: CATEGORIES.HIMALAYA,
-  },
-  {
-    id: "jaipur-palace",
-    name: "Jaipur Royal Palace",
-    duration: "2 Nights",
-    price: "₹42,000",
-    location: "Rajasthan",
-    category: CATEGORIES.CULTURE,
-  },
-  {
-    id: "coorg-plantation",
-    name: "Coorg Coffee Plantation",
-    duration: "3 Nights",
-    price: "₹26,000",
-    location: "Coorg",
-    category: CATEGORIES.FAMILY,
-  },
-  {
-    id: "andaman-blue",
-    name: "Andaman Blue Waters",
-    duration: "5 Nights",
-    price: "₹65,000",
-    location: "Andaman",
-    category: CATEGORIES.BEACH,
-  },
 ];
 
 // Destination Styles
 export const DESTINATIONS = [
-  { name: "All Destinations", id: CATEGORIES.ALL },
-  { name: "Eastern Hills", id: CATEGORIES.HILLS },
-  { name: "Himalayan Stays", id: CATEGORIES.HIMALAYA },
-  { name: "Beach Destinations", id: CATEGORIES.BEACH },
-  { name: "Cultural Circuits", id: CATEGORIES.CULTURE },
-  { name: "Family-Friendly Stays", id: CATEGORIES.FAMILY },
+  { name: "All Destinations", id: CATEGORIES.ALL, path: "/hotels" },
+  { name: "Eastern Hills", id: CATEGORIES.HILLS, path: "/hotels" },
+  { name: "Himalayan Stays", id: CATEGORIES.HIMALAYA, path: "/hotels" },
+  { name: "Beach Destinations", id: CATEGORIES.BEACH, path: "/hotels" },
+  { name: "Cultural Circuits", id: CATEGORIES.CULTURE, path: "/hotels" },
+  { name: "Family-Friendly Stays", id: CATEGORIES.FAMILY, path: "/hotels" },
 ];
 
 const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
@@ -132,14 +82,15 @@ const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
         setLoading(true);
         const response = await apiService.getPlaces();
         if (response.success) {
-          // Map backend data to mega menu structure
+          // 🔴 FIX: Map backend data and explicitly grab the SLUG!
           const mappedPlaces = (response.data.places || []).map((place) => ({
             id: place.id,
+            slug: place.slug, // <--- Grabbing the SEO slug here
             name: place.name,
-            duration: "Flexible", // Default as backend doesn't have this yet
-            price: "View Details", // Default
-            location: place.name, // Using name as location for now
-            category: CATEGORIES.ALL, // Defaulting to ALL as backend lacks category/tag currently
+            duration: "Flexible", 
+            price: "View Details", 
+            location: place.name, 
+            category: CATEGORIES.ALL, 
             tag: place.hotelsCount ? `${place.hotelsCount} Stays` : null,
           }));
           setPlaces(mappedPlaces);
@@ -199,9 +150,10 @@ const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
                   <AnimatePresence mode="wait">
                     {filteredStays.length > 0 ? (
                       filteredStays.map((stay) => (
+                        // 🔴 FIX: Using stay.slug instead of stay.id for the URL!
                         <Link
                           key={stay.id}
-                          to={`/hotels/${stay.id}`}
+                          to={`/hotels/${stay.slug || stay.id}`}
                           className="group flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-[#F1F6FB]"
                           onClick={onClose}
                         >

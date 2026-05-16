@@ -99,7 +99,7 @@ placeSchema.pre('save', function(next) {
   if (!this.isModified('name')) {
     return next();
   }
-  this.slug = slugify(this.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+  this.slug = slugify(this.name, { lower: true, strict: true });
   next();
 });
 

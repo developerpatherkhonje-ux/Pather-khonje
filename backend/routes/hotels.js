@@ -1,6 +1,6 @@
 const express = require("express");
-const mongoose = require("mongoose"); // ADDED: Needed for ID vs Slug check
-const slugify = require("slugify"); // ADDED: Needed to generate SEO strings
+const mongoose = require("mongoose");
+const slugify = require("slugify"); 
 const { body, validationResult } = require("express-validator");
 const Hotel = require("../models/Hotel");
 const Place = require("../models/Place");
@@ -50,10 +50,7 @@ const hotelValidation = [
   body("images.*")
     .optional({ nullable: true })
     .custom((value) => {
-      // Allow empty arrays
       if (value === null || value === undefined) return true;
-
-      // Allow both string URLs and Cloudinary objects
       if (typeof value === "string") {
         return (
           value.startsWith("http://") ||
@@ -62,7 +59,6 @@ const hotelValidation = [
           value.startsWith("/api/upload/gridfs/")
         );
       }
-      // Allow Cloudinary objects
       if (typeof value === "object" && value !== null) {
         return value.url && value.public_id;
       }
@@ -93,7 +89,6 @@ const hotelValidation = [
     .withMessage("Room types must be an array"),
 ];
 
-// Helper function to handle validation errors
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -120,8 +115,7 @@ router.get("/", async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    // UPDATED: Added 'slug' so the frontend gets the SEO URL
-    const hotels = await Hotel.find({ isActive: true })
+    let hotels = await Hotel.find({ isActive: true })
       .populate("placeId", "name")
       .select(
         "name slug placeId description image cardImage images address rating reviews amenities priceRange createdAt",
@@ -130,14 +124,36 @@ router.get("/", async (req, res) => {
       .skip(skip)
       .limit(limit);
 
+    // 🔴 SUPER-HEAL: Forces all hotel slugs to be perfectly clean and removes old random letters
+    let dataFixed = false;
+    for (let hotel of hotels) {
+      const cleanSlug = slugify(hotel.name, { lower: true, strict: true });
+      if (hotel.slug !== cleanSlug) {
+        hotel.slug = cleanSlug; 
+        await hotel.save();
+        dataFixed = true;
+      }
+    }
+
+    // If we scrubbed any random letters, re-fetch the clean data
+    if (dataFixed) {
+      hotels = await Hotel.find({ isActive: true })
+        .populate("placeId", "name")
+        .select(
+          "name slug placeId description image cardImage images address rating reviews amenities priceRange createdAt",
+        )
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+    }
+
     const total = await Hotel.countDocuments({ isActive: true });
 
     res.json({
       success: true,
       data: {
         hotels: hotels.map((hotel) => {
-          // If no cardImage, fallback to image or first gallery image
-          const h = hotel.getPublicProfile();
+          const h = hotel.getPublicProfile ? hotel.getPublicProfile() : hotel;
           if (!h.cardImage) {
             h.cardImage =
               h.image ||
@@ -155,7 +171,6 @@ router.get("/", async (req, res) => {
     });
   } catch (error) {
     logger.error("Get hotels error", { error: error.message });
-
     res.status(500).json({
       success: false,
       message: "Failed to get hotels",
@@ -171,7 +186,6 @@ router.get("/:idOrSlug", async (req, res) => {
     const param = req.params.idOrSlug;
     let hotel;
 
-    // UPDATED: Smart check for Mongo ID vs SEO Slug
     if (mongoose.Types.ObjectId.isValid(param)) {
       hotel = await Hotel.findById(param).populate("placeId", "name");
     } else {
@@ -193,7 +207,6 @@ router.get("/:idOrSlug", async (req, res) => {
     });
   } catch (error) {
     logger.error("Get hotel error", { error: error.message });
-
     res.status(500).json({
       success: false,
       message: "Failed to get hotel",
@@ -209,7 +222,6 @@ router.get("/place/:placeIdOrSlug", async (req, res) => {
     const param = req.params.placeIdOrSlug;
     let place;
 
-    // UPDATED: Check if param is ID or Slug!
     if (mongoose.Types.ObjectId.isValid(param)) {
       place = await Place.findById(param);
     } else {
@@ -223,19 +235,32 @@ router.get("/place/:placeIdOrSlug", async (req, res) => {
       });
     }
 
-    // Get hotels for this place using its real _id
-    const hotels = await Hotel.findByPlaceId(place._id);
+    let hotels = await Hotel.findByPlaceId(place._id);
+
+    // 🔴 SUPER-HEAL: Ensure hotels inside a place also get perfectly clean slugs
+    let dataFixed = false;
+    for (let hotel of hotels) {
+      const cleanSlug = slugify(hotel.name, { lower: true, strict: true });
+      if (hotel.slug !== cleanSlug) {
+        hotel.slug = cleanSlug;
+        await hotel.save();
+        dataFixed = true;
+      }
+    }
+
+    if (dataFixed) {
+      hotels = await Hotel.findByPlaceId(place._id);
+    }
 
     res.json({
       success: true,
       data: {
-        place: place.getPublicProfile(),
-        hotels: hotels.map((hotel) => hotel.getPublicProfile()),
+        place: place.getPublicProfile ? place.getPublicProfile() : place,
+        hotels: hotels.map((hotel) => hotel.getPublicProfile ? hotel.getPublicProfile() : hotel),
       },
     });
   } catch (error) {
     logger.error("Get place hotels error", { error: error.message });
-
     res.status(500).json({
       success: false,
       message: "Failed to get place hotels",
@@ -268,7 +293,6 @@ router.post(
       } = req.body;
       const adminId = req.user._id;
 
-      // Check if place exists
       const place = await Place.findById(placeId);
       if (!place || !place.isActive) {
         return res.status(404).json({
@@ -277,7 +301,6 @@ router.post(
         });
       }
 
-      // Check if hotel already exists in this place
       const existingHotel = await Hotel.findOne({
         name: { $regex: new RegExp(`^${name}$`, "i") },
         placeId,
@@ -289,12 +312,10 @@ router.post(
         });
       }
 
-      // Normalize images into Cloudinary object structure
       const normalizedImageObjects = ImageService.normalizeImages(
         images,
       ).filter((img) => img && img.url && img.public_id);
 
-      // Determine primary image URL
       const primaryImageUrl =
         typeof req.body.image === "string" && req.body.image.trim()
           ? req.body.image.trim()
@@ -305,7 +326,6 @@ router.post(
           ? cardImage.trim()
           : primaryImageUrl;
 
-      // Create new hotel
       const hotel = new Hotel({
         name,
         placeId,
@@ -344,10 +364,8 @@ router.post(
         throw err;
       }
 
-      // Update place hotels count
       await place.updateHotelsCount();
 
-      // Log admin action
       await AuditLog.logEvent({
         action: "CREATE",
         resource: "HOTEL",
@@ -361,13 +379,6 @@ router.post(
         ipAddress: req.ip,
         userAgent: req.get("User-Agent"),
         success: true,
-      });
-
-      logger.info("Hotel created", {
-        hotelId: hotel._id,
-        name,
-        placeId,
-        createdBy: adminId,
       });
 
       res.status(201).json({
@@ -406,7 +417,6 @@ router.put(
       const updates = req.body;
       const adminId = req.user._id;
 
-      // Check if hotel exists
       const existingHotel = await Hotel.findById(hotelId);
       if (!existingHotel) {
         return res.status(404).json({
@@ -415,7 +425,6 @@ router.put(
         });
       }
 
-      // Check if place exists (if placeId is being updated)
       if (
         updates.placeId &&
         updates.placeId !== existingHotel.placeId.toString()
@@ -429,7 +438,6 @@ router.put(
         }
       }
 
-      // UPDATED: Force slug generation on update if name changed OR if slug is missing entirely!
       if (updates.name && updates.name !== existingHotel.name) {
         const nameExists = await Hotel.findOne({
           name: { $regex: new RegExp(`^${updates.name}$`, "i") },
@@ -442,14 +450,11 @@ router.put(
             message: "Hotel with this name already exists in this place",
           });
         }
-        // Generate new slug for new name
-        updates.slug = slugify(updates.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+        updates.slug = slugify(updates.name, { lower: true, strict: true });
       } else if (!existingHotel.slug) {
-        // If the old hotel doesn't have a slug, force generate it now using the existing name!
-        updates.slug = slugify(existingHotel.name, { lower: true, strict: true }) + '-' + Math.random().toString(36).substring(2, 6);
+        updates.slug = slugify(existingHotel.name, { lower: true, strict: true });
       }
 
-      // Update hotel
       const hotel = await Hotel.findByIdAndUpdate(
         hotelId,
         {
@@ -459,7 +464,6 @@ router.put(
         { new: true, runValidators: true },
       );
 
-      // Update hotels count for both old and new places if placeId changed
       if (
         updates.placeId &&
         updates.placeId !== existingHotel.placeId.toString()
@@ -471,7 +475,6 @@ router.put(
         if (newPlace) await newPlace.updateHotelsCount();
       }
 
-      // Log admin action
       await AuditLog.logEvent({
         action: "UPDATE",
         resource: "HOTEL",
@@ -485,8 +488,6 @@ router.put(
         userAgent: req.get("User-Agent"),
         success: true,
       });
-
-      logger.info("Hotel updated", { hotelId, updatedBy: adminId, updates });
 
       res.json({
         success: true,
@@ -517,7 +518,6 @@ router.delete("/:id", authenticateToken, requireAdmin, async (req, res) => {
     const hotelId = req.params.id;
     const adminId = req.user._id;
 
-    // Check if hotel exists
     const hotel = await Hotel.findById(hotelId);
     if (!hotel) {
       return res.status(404).json({
@@ -526,18 +526,13 @@ router.delete("/:id", authenticateToken, requireAdmin, async (req, res) => {
       });
     }
 
-    // Get place to update hotels count
     const place = await Place.findById(hotel.placeId);
-
-    // Delete hotel
     await Hotel.findByIdAndDelete(hotelId);
 
-    // Update place hotels count
     if (place) {
       await place.updateHotelsCount();
     }
 
-    // Log admin action
     await AuditLog.logEvent({
       action: "DELETE",
       resource: "HOTEL",
@@ -552,12 +547,6 @@ router.delete("/:id", authenticateToken, requireAdmin, async (req, res) => {
       ipAddress: req.ip,
       userAgent: req.get("User-Agent"),
       success: true,
-    });
-
-    logger.info("Hotel deleted", {
-      hotelId,
-      deletedBy: adminId,
-      hotelName: hotel.name,
     });
 
     res.json({
@@ -588,7 +577,6 @@ router.get(
     try {
       const stats = await Hotel.getHotelStats();
 
-      // Log admin action
       await AuditLog.logEvent({
         action: "READ",
         resource: "HOTEL",
@@ -645,10 +633,8 @@ router.post(
       const hotelId = req.params.id;
       const adminId = req.user._id;
 
-      // Check if hotel exists
       const hotel = await Hotel.findById(hotelId);
       if (!hotel) {
-        console.log("Hotel not found:", hotelId);
         return res.status(404).json({
           success: false,
           message: "Hotel not found",
@@ -656,14 +642,12 @@ router.post(
       }
 
       if (!req.files || req.files.length === 0) {
-        console.log("No files provided in request");
         return res.status(400).json({
           success: false,
           message: "No images provided",
         });
       }
 
-      // Process files via reusable service
       const { uploadedImages, errors } =
         await ImageService.processMultipleImages(
           req.files,
@@ -671,7 +655,6 @@ router.post(
         );
 
       if (uploadedImages.length === 0) {
-        console.log("No images were uploaded successfully");
         return res.status(500).json({
           success: false,
           message: "Failed to upload any images",
@@ -679,7 +662,6 @@ router.post(
         });
       }
 
-      // Add images to hotel and set primary image if missing
       hotel.images = [...(hotel.images || []), ...uploadedImages];
       if (!hotel.image && hotel.images.length > 0) {
         hotel.image = hotel.images[0].url;
@@ -717,7 +699,6 @@ router.delete(
       const imageId = req.params.imageId;
       const adminId = req.user._id;
 
-      // Check if hotel exists
       const hotel = await Hotel.findById(hotelId);
       if (!hotel) {
         return res.status(404).json({
@@ -726,7 +707,6 @@ router.delete(
         });
       }
 
-      // Find the image to delete
       const imageIndex = hotel.images.findIndex(
         (img) => img.public_id === imageId,
       );
@@ -737,20 +717,15 @@ router.delete(
         });
       }
 
-      const imageToDelete = hotel.images[imageIndex];
-
-      // Delete from Cloudinary
       try {
         await deleteImage(imageId);
       } catch (cloudinaryError) {
         console.error("Error deleting from Cloudinary:", cloudinaryError);
       }
 
-      // Remove from hotel
       hotel.images.splice(imageIndex, 1);
       await hotel.save();
 
-      // Log admin action
       await AuditLog.logEvent({
         action: "UPDATE",
         resource: "HOTEL",
