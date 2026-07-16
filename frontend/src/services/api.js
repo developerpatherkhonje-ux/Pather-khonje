@@ -6,7 +6,7 @@ const isLocalhost = window.location.hostname === "localhost" || window.location.
 
 const API_BASE_URL = isLocalhost 
   ? "http://localhost:5000/api" // Forces frontend to talk to your local backend server
-  : (import.meta.env.VITE_API_URL || "https://api.patherkhonje.com/api");
+  :import.meta.env.VITE_API_URL;
 
 const PROD_BASE_URL = "https://api.patherkhonje.com/api";
 
