@@ -22,6 +22,11 @@ function PlaceManagement() {
   const [selectedImages, setSelectedImages] = useState([]);
   const [uploadingImages, setUploadingImages] = useState(false);
 
+  const getImageUrl = (image) => {
+    const url = typeof image === 'string' ? image : image?.url || image?.secure_url;
+    return apiService.toAbsoluteUrl(url) || '/hotels/goa-hotel.png';
+  };
+
   useEffect(() => {
     fetchPlaces();
   }, []);
@@ -225,7 +230,7 @@ function PlaceManagement() {
       rating: place.rating
     });
     setSelectedFile(null);
-    setImagePreview(place.image);
+    setImagePreview(getImageUrl(place.image));
     setShowAddForm(true);
   };
 
@@ -397,7 +402,7 @@ function PlaceManagement() {
                   {imagePreview && (
                     <div className="relative">
                       <img
-                        src={imagePreview}
+                        src={apiService.toAbsoluteUrl(imagePreview) || imagePreview}
                         alt="Preview"
                         className="w-full h-48 object-cover rounded-lg"
                       />
@@ -498,11 +503,7 @@ function PlaceManagement() {
           >
             <div className="relative h-48 sm:h-60">
               <img
-                src={
-                  place.image && place.image.url 
-                    ? place.image.url 
-                    : place.image || '/hotels/goa-hotel.png'
-                }
+                src={getImageUrl(place.image)}
                 alt={place.name}
                 loading='lazy'
                 className="w-full h-full object-cover"
@@ -534,7 +535,7 @@ function PlaceManagement() {
                   {place.images.slice(0, 6).map((image, imgIndex) => (
                     <div key={imgIndex} className="relative group">
                       <img
-                        src={image.url || image.secure_url || image}
+                        src={getImageUrl(image)}
                         alt={`${place.name} gallery ${imgIndex + 1}`}
                         className="w-full h-16 object-cover rounded-lg"
                       />

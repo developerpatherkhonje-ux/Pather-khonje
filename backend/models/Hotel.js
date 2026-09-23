@@ -200,6 +200,7 @@ hotelSchema.methods.getPublicProfile = function () {
     placeId: this.placeId,
     description: this.description,
     image: this.image,
+    cardImage: this.cardImage,
     images: this.images || [],
     address: this.address,
     rating: this.rating,

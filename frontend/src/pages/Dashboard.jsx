@@ -16,7 +16,9 @@ import {
   Image,
   Mail,
   Globe,
-  Settings // Added Settings icon for CMS
+  Settings,
+  ClipboardList,
+  UserCog
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import DashboardHome from "../components/dashboard/DashboardHome";
@@ -33,6 +35,8 @@ import UserProfile from "../components/dashboard/UserProfile";
 import GalleryManagement from "../components/dashboard/GalleryManagement";
 import EnquiriesPanel from "../components/dashboard/EnquiriesPanel";
 import CMSManager from '../components/dashboard/CMSManager';
+import LeadManagement from "../components/dashboard/LeadManagement";
+import UserManagement from "../components/dashboard/UserManagement";
 
 function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -52,6 +56,8 @@ function Dashboard() {
     { name: "Gallery", icon: Image, path: "/dashboard/gallery" },
     { name: "Invoices", icon: FileText, path: "/dashboard/invoices" },
     { name: "Payment Vouchers", icon: Receipt, path: "/dashboard/vouchers" },
+    { name: "Lead Management", icon: ClipboardList, path: "/dashboard/leads" },
+    { name: "User Management", icon: UserCog, path: "/dashboard/users" },
     { name: "Enquiries", icon: Mail, path: "/dashboard/enquiries" },
     { name: "Analytics", icon: BarChart3, path: "/dashboard/analytics" },
     { name: "CMS Manager", icon: Settings, path: "/dashboard/cms" }, // New CMS Link
@@ -157,6 +163,8 @@ function Dashboard() {
             <Route path="/vouchers" element={<PaymentVouchers />} />
             <Route path="/vouchers/Payment" element={<PaymentVoucherPage />} />
             <Route path="/vouchers/Payment/:id" element={<PaymentVoucherPage />} />
+            <Route path="/leads" element={<LeadManagement />} />
+            <Route path="/users" element={<UserManagement />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/enquiries" element={<EnquiriesPanel />} />
             <Route path="/profile" element={<UserProfile />} />

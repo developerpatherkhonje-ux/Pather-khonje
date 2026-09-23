@@ -75,10 +75,11 @@ const teamData = [
 
 const About = () => {
   return (
-    <div className="bg-white overflow-hidden selection:bg-soft-gold selection:text-white">
+    <div className="premium-page overflow-hidden selection:bg-soft-gold selection:text-white">
       <SEO
         title="About Us"
         description="Learn about Pather Khonje, our story, philosophy, and the team dedicated to curating your perfect travel experience."
+        keywords="about Pather Khonje, travel agency Kolkata, curated travel India, Sikkim Darjeeling tours, boutique travel planner"
       />
       
       {/* 1. HERO SECTION */}
@@ -94,7 +95,7 @@ const About = () => {
             alt="Travel Landscape"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60"></div>
+          <div className="absolute inset-0 luxury-hero-overlay"></div>
         </motion.div>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center px-4 mt-16">
@@ -118,7 +119,7 @@ const About = () => {
       </section>
 
       {/* 2. ORIGIN STORY */}
-      <section className="py-32 px-6 md:px-12 lg:px-24 bg-ice-blue/20">
+      <section className="py-32 px-6 md:px-12 lg:px-24 bg-ice-blue/40">
         <div className="container mx-auto flex flex-col lg:flex-row items-center gap-20">
           <motion.div
             initial="hidden"

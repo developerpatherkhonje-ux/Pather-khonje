@@ -110,6 +110,7 @@ packageSchema.methods.getPublicProfile = function () {
     name: this.name,
     slug: this.slug, // Included slug in public profile
     image: this.image,
+    images: this.images || [],
     description: this.description,
     duration: this.duration,
     price: this.price,

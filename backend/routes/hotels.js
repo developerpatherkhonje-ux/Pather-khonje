@@ -14,9 +14,6 @@ const logger = require("../utils/logger");
 const AuditLog = require("../models/AuditLog");
 const {
   uploadMultiple,
-  uploadToCloudinary,
-  deleteImage,
-  isCloudinaryConfigured,
 } = require("../utils/cloudinary");
 const ImageService = require("../services/imageService");
 
@@ -718,9 +715,9 @@ router.delete(
       }
 
       try {
-        await deleteImage(imageId);
-      } catch (cloudinaryError) {
-        console.error("Error deleting from Cloudinary:", cloudinaryError);
+        await ImageService.deleteImage(imageId);
+      } catch (deleteError) {
+        console.error("Error deleting image file:", deleteError);
       }
 
       hotel.images.splice(imageIndex, 1);

@@ -20,12 +20,13 @@ Object.values(uploadDirs).forEach(dir => {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     let uploadPath = uploadDirs.places; // default
+    const routeContext = `${req.baseUrl || ''}${req.originalUrl || ''}${req.route?.path || ''}`;
     
-    if (req.route.path.includes('hotels')) {
+    if (routeContext.includes('hotels')) {
       uploadPath = uploadDirs.hotels;
-    } else if (req.route.path.includes('packages')) {
+    } else if (routeContext.includes('packages')) {
       uploadPath = uploadDirs.packages;
-    } else if (req.route.path.includes('gallery')) {
+    } else if (routeContext.includes('gallery')) {
       uploadPath = uploadDirs.gallery;
     }
     

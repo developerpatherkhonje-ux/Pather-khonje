@@ -12,7 +12,8 @@ const {
 } = require('../middleware/auth');
 const logger = require('../utils/logger');
 const AuditLog = require('../models/AuditLog');
-const { uploadMultiple, uploadToCloudinary, deleteImage } = require('../utils/cloudinary');
+const { uploadMultiple } = require('../utils/cloudinary');
+const ImageService = require('../services/imageService');
 
 const router = express.Router();
 
@@ -36,7 +37,8 @@ const placeValidation = [
       return typeof value === 'string' && (
         value.startsWith('http://') ||
         value.startsWith('https://') ||
-        value.startsWith('/uploads/')
+        value.startsWith('/uploads/') ||
+        value.startsWith('/api/upload/gridfs/')
       );
     })
     .withMessage('Image must be a valid URL or uploaded path'),
@@ -457,40 +459,10 @@ router.post('/:id/images', authenticateToken, requireAdmin, uploadMultiple, asyn
       });
     }
 
-    const uploadedImages = [];
-    const errors = [];
-
-    // Process each uploaded file
-    for (const file of req.files) {
-      try {
-        // Upload to Cloudinary only
-        const result = await uploadToCloudinary(file.path, 'pather-khonje/places');
-        
-        uploadedImages.push({
-          public_id: result.public_id,
-          url: result.secure_url,
-          width: result.width,
-          height: result.height,
-          format: result.format,
-          uploadedAt: new Date()
-        });
-
-        // Clean up temporary file
-        const fs = require('fs');
-        fs.unlinkSync(file.path);
-      } catch (error) {
-        console.error('Error uploading file to Cloudinary:', file.originalname, error.message);
-        errors.push({ file: file.originalname, error: error.message });
-        
-        // Clean up temporary file
-        try {
-          const fs = require('fs');
-          fs.unlinkSync(file.path);
-        } catch (unlinkError) {
-          console.error('Error cleaning up file:', unlinkError);
-        }
-      }
-    }
+    const { uploadedImages, errors } = await ImageService.processMultipleImages(
+      req.files,
+      'pather-khonje/places'
+    );
 
     if (uploadedImages.length === 0) {
       return res.status(500).json({
@@ -575,12 +547,10 @@ router.delete('/:id/images/:imageId', authenticateToken, requireAdmin, async (re
 
     const imageToDelete = place.images[imageIndex];
 
-    // Delete from Cloudinary
     try {
-      await deleteImage(imageId);
-    } catch (cloudinaryError) {
-      console.error('Error deleting from Cloudinary:', cloudinaryError);
-      // Continue with database deletion even if Cloudinary fails
+      await ImageService.deleteImage(imageId);
+    } catch (deleteError) {
+      console.error('Error deleting image file:', deleteError);
     }
 
     // Remove from place

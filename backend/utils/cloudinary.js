@@ -4,9 +4,9 @@ const path = require('path');
 
 // Configure Cloudinary
 const cloudinaryConfig = {
-  cloud_name: process.env.CLOUD_NAME || 'demo',
-  api_key: process.env.CLOUD_API_KEY || 'demo',
-  api_secret: process.env.CLOUD_API_SECRET || 'demo',
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || process.env.CLOUD_NAME || 'demo',
+  api_key: process.env.CLOUDINARY_API_KEY || process.env.CLOUD_API_KEY || 'demo',
+  api_secret: process.env.CLOUDINARY_API_SECRET || process.env.CLOUD_API_SECRET || 'demo',
 };
 
 // Check if Cloudinary is properly configured

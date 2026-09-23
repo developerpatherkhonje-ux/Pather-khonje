@@ -2,6 +2,8 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
+const Invoice = require('../models/Invoice');
+const PaymentVoucher = require('../models/PaymentVoucher');
 const { 
   authenticateToken, 
   requireAdmin,
@@ -51,6 +53,35 @@ const userUpdateValidation = [
     .withMessage('isActive must be a boolean value')
 ];
 
+const userCreateValidation = [
+  body('name')
+    .trim()
+    .isLength({ min: 2, max: 50 })
+    .withMessage('Name must be between 2 and 50 characters')
+    .matches(/^[a-zA-Z\s]+$/)
+    .withMessage('Name can only contain letters and spaces'),
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email address'),
+  body('password')
+    .isLength({ min: config.SECURITY.passwordMinLength })
+    .withMessage(`Password must be at least ${config.SECURITY.passwordMinLength} characters`),
+  body('role')
+    .optional()
+    .isIn(['user', 'manager', 'admin'])
+    .withMessage('Role must be user, manager, or admin'),
+  body('designation')
+    .optional()
+    .trim()
+    .isLength({ max: 50 })
+    .withMessage('Designation cannot exceed 50 characters'),
+  body('phone')
+    .optional({ checkFalsy: true })
+    .matches(/^[+]?[\d\s\-\(\)]{10,}$/)
+    .withMessage('Please provide a valid phone number')
+];
+
 // Helper function to handle validation errors
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
@@ -65,6 +96,127 @@ const handleValidationErrors = (req, res, next) => {
     });
   }
   next();
+};
+
+const startOfDay = (date) => {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d;
+};
+
+const endOfDay = (date) => {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d;
+};
+
+const getPeriodRange = (period = 'month', offset = 0) => {
+  const now = new Date();
+  const normalized = ['week', 'month', 'year', 'all'].includes(period) ? period : 'month';
+
+  if (normalized === 'all') {
+    return {
+      period: normalized,
+      startDate: null,
+      endDate: null,
+      previousStartDate: null,
+      previousEndDate: null,
+    };
+  }
+
+  if (normalized === 'week') {
+    const dayOfWeek = now.getDay();
+    const daysToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+    const start = startOfDay(now);
+    start.setDate(now.getDate() + daysToMonday + offset * 7);
+    const end = endOfDay(start);
+    end.setDate(start.getDate() + 6);
+    return { period: normalized, startDate: start, endDate: end };
+  }
+
+  if (normalized === 'year') {
+    const start = new Date(now.getFullYear() + offset, 0, 1);
+    const end = endOfDay(new Date(now.getFullYear() + offset, 11, 31));
+    return { period: normalized, startDate: start, endDate: end };
+  }
+
+  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+  const end = endOfDay(new Date(now.getFullYear(), now.getMonth() + offset + 1, 0));
+  return { period: normalized, startDate: start, endDate: end };
+};
+
+const buildDateFilter = (field, startDate, endDate) => {
+  if (!startDate || !endDate) return {};
+  return { [field]: { $gte: startDate, $lte: endDate } };
+};
+
+const sumNumbers = (items, selector) =>
+  items.reduce((sum, item) => sum + Number(selector(item) || 0), 0);
+
+const calculateChange = (current, previous) => {
+  if (!previous) return current > 0 ? 100 : 0;
+  return Math.round(((current - previous) / previous) * 100);
+};
+
+const buildMonthlyData = (invoices, vouchers) => {
+  const buckets = new Map();
+  const ensureBucket = (dateLike) => {
+    const d = new Date(dateLike);
+    if (Number.isNaN(d.getTime())) return null;
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (!buckets.has(key)) {
+      buckets.set(key, {
+        key,
+        month: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+        revenue: 0,
+        expenses: 0,
+        profit: 0,
+        bookings: 0,
+      });
+    }
+    return buckets.get(key);
+  };
+
+  invoices.forEach((invoice) => {
+    const bucket = ensureBucket(invoice.date || invoice.createdAt);
+    if (!bucket) return;
+    bucket.revenue += Number(invoice.total || 0);
+    bucket.bookings += 1;
+  });
+
+  vouchers.forEach((voucher) => {
+    const bucket = ensureBucket(voucher.date || voucher.createdAt);
+    if (!bucket) return;
+    bucket.expenses += Number(voucher.total || 0);
+  });
+
+  return Array.from(buckets.values())
+    .sort((a, b) => a.key.localeCompare(b.key))
+    .map((bucket) => ({
+      ...bucket,
+      profit: bucket.revenue - bucket.expenses,
+    }));
+};
+
+const buildTopPerformers = (invoices, type) => {
+  const map = new Map();
+
+  invoices
+    .filter((invoice) => invoice.type === type)
+    .forEach((invoice) => {
+      const name =
+        type === 'hotel'
+          ? invoice.hotelDetails?.hotelName || 'Unnamed Hotel'
+          : invoice.tourDetails?.packageName || 'Unnamed Package';
+      const existing = map.get(name) || { name, bookings: 0, revenue: 0 };
+      existing.bookings += 1;
+      existing.revenue += Number(invoice.total || 0);
+      map.set(name, existing);
+    });
+
+  return Array.from(map.values())
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, 5);
 };
 
 // @route   GET /api/admin/users
@@ -140,6 +292,72 @@ router.get('/users', requireAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get users'
+    });
+  }
+});
+
+// @route   POST /api/admin/users
+// @desc    Create a user from admin panel
+// @access  Admin only
+router.post('/users', requireAdmin, userCreateValidation, handleValidationErrors, async (req, res) => {
+  try {
+    const { name, email, password, role = 'user', designation = 'Customer', phone } = req.body;
+    const adminId = req.user._id;
+
+    const existingUser = await User.findByEmail(email);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: 'Email already exists'
+      });
+    }
+
+    const user = new User({
+      name,
+      email,
+      password,
+      role,
+      designation,
+      phone,
+      isActive: true,
+      metadata: {
+        createdBy: adminId,
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        source: 'api'
+      }
+    });
+
+    await user.save();
+
+    await AuditLog.logEvent({
+      action: 'CREATE',
+      resource: 'ADMIN',
+      userId: adminId,
+      targetUserId: user._id,
+      details: {
+        action: 'create_user',
+        email: user.email,
+        role: user.role
+      },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: true
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
+      data: {
+        user: user.getPublicProfile()
+      }
+    });
+  } catch (error) {
+    logger.error('Create user error', { error: error.message, userId: req.user._id });
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to create user'
     });
   }
 });
@@ -443,6 +661,171 @@ router.get('/stats', requireAdmin, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get statistics'
+    });
+  }
+});
+
+// @route   GET /api/admin/analytics
+// @desc    Get dynamic income, expense, profit, and performance analytics
+// @access  Admin only
+router.get('/analytics', requireAdmin, async (req, res) => {
+  try {
+    const period = req.query.period || 'month';
+    const currentRange = getPeriodRange(period, 0);
+    const previousRange = period === 'all' ? currentRange : getPeriodRange(period, -1);
+
+    const invoiceFilter = buildDateFilter('date', currentRange.startDate, currentRange.endDate);
+    const voucherFilter = {
+      isActive: true,
+      ...buildDateFilter('date', currentRange.startDate, currentRange.endDate),
+    };
+    const previousInvoiceFilter = buildDateFilter('date', previousRange.startDate, previousRange.endDate);
+    const previousVoucherFilter = {
+      isActive: true,
+      ...buildDateFilter('date', previousRange.startDate, previousRange.endDate),
+    };
+
+    const [invoices, vouchers, previousInvoices, previousVouchers] = await Promise.all([
+      Invoice.find(invoiceFilter).sort({ date: -1, createdAt: -1 }).lean(),
+      PaymentVoucher.find(voucherFilter).sort({ date: -1, createdAt: -1 }).lean(),
+      period === 'all' ? [] : Invoice.find(previousInvoiceFilter).lean(),
+      period === 'all' ? [] : PaymentVoucher.find(previousVoucherFilter).lean(),
+    ]);
+
+    const totalRevenue = sumNumbers(invoices, (invoice) => invoice.total);
+    const totalAdvanceReceived = sumNumbers(invoices, (invoice) => invoice.advancePaid);
+    const totalReceivable = sumNumbers(invoices, (invoice) =>
+      invoice.dueAmount !== undefined
+        ? invoice.dueAmount
+        : Math.max(Number(invoice.total || 0) - Number(invoice.advancePaid || 0), 0),
+    );
+    const paidRevenue = sumNumbers(
+      invoices.filter((invoice) => invoice.status === 'paid'),
+      (invoice) => invoice.total,
+    );
+
+    const totalExpenses = sumNumbers(vouchers, (voucher) => voucher.total);
+    const totalExpenseAdvance = sumNumbers(vouchers, (voucher) => voucher.advance);
+    const totalExpenseDue = sumNumbers(vouchers, (voucher) => voucher.due);
+    const netProfit = totalRevenue - totalExpenses;
+
+    const previousRevenue = sumNumbers(previousInvoices, (invoice) => invoice.total);
+    const previousExpenses = sumNumbers(previousVouchers, (voucher) => voucher.total);
+    const previousProfit = previousRevenue - previousExpenses;
+
+    const categoryTotals = vouchers.reduce((acc, voucher) => {
+      const category = voucher.category || 'other';
+      acc[category] = (acc[category] || 0) + Number(voucher.total || 0);
+      return acc;
+    }, {});
+
+    const paymentMethodTotals = vouchers.reduce((acc, voucher) => {
+      const method = voucher.paymentMethod || 'unknown';
+      acc[method] = (acc[method] || 0) + Number(voucher.total || 0);
+      return acc;
+    }, {});
+
+    const statusCounts = invoices.reduce((acc, invoice) => {
+      const status = invoice.status || 'pending';
+      acc[status] = (acc[status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const typeCounts = invoices.reduce((acc, invoice) => {
+      const type = invoice.type || 'unknown';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
+
+    const recentTransactions = [
+      ...invoices.map((invoice) => ({
+        type: 'revenue',
+        description: `${invoice.type === 'hotel' ? 'Hotel' : 'Tour'} Invoice - ${invoice.invoiceNumber}`,
+        amount: Number(invoice.total || 0),
+        date: invoice.date || invoice.createdAt,
+        reference: invoice.invoiceNumber,
+      })),
+      ...vouchers.map((voucher) => ({
+        type: 'expense',
+        description: `${voucher.category || 'Expense'} Voucher - ${voucher.voucherNumber}`,
+        amount: -Number(voucher.total || 0),
+        date: voucher.date || voucher.createdAt,
+        reference: voucher.voucherNumber,
+      })),
+    ]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 8);
+
+    const monthlyData = buildMonthlyData(invoices, vouchers);
+    const averageBookingValue = invoices.length > 0 ? Math.round(totalRevenue / invoices.length) : 0;
+    const profitMargin = totalRevenue > 0 ? Math.round((netProfit / totalRevenue) * 100) : 0;
+
+    await AuditLog.logEvent({
+      action: 'READ',
+      resource: 'ADMIN',
+      userId: req.user._id,
+      details: { action: 'get_analytics', period },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: true,
+    });
+
+    res.json({
+      success: true,
+      data: {
+        period: {
+          name: currentRange.period,
+          startDate: currentRange.startDate,
+          endDate: currentRange.endDate,
+        },
+        metrics: {
+          revenue: {
+            total: totalRevenue,
+            received: totalAdvanceReceived,
+            receivable: totalReceivable,
+            paidRevenue,
+            change: calculateChange(totalRevenue, previousRevenue),
+          },
+          expenses: {
+            total: totalExpenses,
+            paid: totalExpenseAdvance,
+            due: totalExpenseDue,
+            change: calculateChange(totalExpenses, previousExpenses),
+          },
+          profit: {
+            total: netProfit,
+            margin: profitMargin,
+            change: calculateChange(netProfit, previousProfit),
+          },
+          bookings: {
+            total: invoices.length,
+            averageValue: averageBookingValue,
+            change: calculateChange(invoices.length, previousInvoices.length),
+          },
+        },
+        invoices: {
+          total: invoices.length,
+          statusCounts,
+          typeCounts,
+        },
+        vouchers: {
+          total: vouchers.length,
+          categoryTotals,
+          paymentMethodTotals,
+        },
+        monthlyData,
+        topPackages: buildTopPerformers(invoices, 'tour'),
+        topHotels: buildTopPerformers(invoices, 'hotel'),
+        recentTransactions,
+        lastUpdated: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    logger.error('Get analytics error', { error: error.message, userId: req.user._id });
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get analytics',
     });
   }
 });

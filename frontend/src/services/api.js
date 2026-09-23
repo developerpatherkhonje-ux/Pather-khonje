@@ -5,8 +5,8 @@ import { config } from "../config/config.js";
 const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
 const API_BASE_URL = isLocalhost 
-  ? "http://localhost:5000/api" // Forces frontend to talk to your local backend server
-  :import.meta.env.VITE_API_URL;
+  ? (import.meta.env.VITE_API_URL || "http://localhost:5000/api")
+  : import.meta.env.VITE_API_URL;
 
 const PROD_BASE_URL = "https://api.patherkhonje.com/api";
 
@@ -222,6 +222,10 @@ class ApiService {
     return this.get(`/admin/users/${userId}`);
   }
 
+  async createUser(userData) {
+    return this.post("/admin/users", userData);
+  }
+
   async updateUser(userId, userData) {
     return this.put(`/admin/users/${userId}`, userData);
   }
@@ -245,6 +249,41 @@ class ApiService {
 
   async getAdminSecurityEvents(hours = 24) {
     return this.get(`/admin/security?hours=${hours}`);
+  }
+
+  async getAdminAnalytics(period = "month") {
+    const params = new URLSearchParams({ period });
+    return this.get(`/admin/analytics?${params.toString()}`);
+  }
+
+  async listLeads({ page = 1, limit = 50, search = "", stage = "all", queryType = "all" } = {}) {
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    if (search) params.set("search", search);
+    if (stage && stage !== "all") params.set("stage", stage);
+    if (queryType && queryType !== "all") params.set("queryType", queryType);
+    return this.get(`/leads?${params.toString()}`);
+  }
+
+  async createLead(leadData) {
+    return this.post("/leads", leadData);
+  }
+
+  async updateLead(id, leadData) {
+    return this.put(`/leads/${id}`, leadData);
+  }
+
+  async updateLeadStage(id, stage) {
+    return this.request(`/leads/${id}/stage`, {
+      method: "PATCH",
+      body: JSON.stringify({ stage }),
+    });
+  }
+
+  async deleteLead(id) {
+    return this.delete(`/leads/${id}`);
   }
 
   // Invoices API

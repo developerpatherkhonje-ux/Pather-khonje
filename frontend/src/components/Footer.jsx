@@ -6,8 +6,18 @@ const Footer = () => {
   const [imageError, setImageError] = useState(false);
 
   return (
-    <footer className="bg-midnight-ocean text-white pt-16 pb-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <footer className="bg-midnight-ocean text-white pt-20 pb-8 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(198,167,94,0.12),transparent_34%,rgba(47,111,237,0.10))]" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="mb-14 rounded-2xl border border-white/10 bg-white/5 p-6 md:p-8 backdrop-blur-xl flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <p className="section-kicker mb-3">Begin with a conversation</p>
+            <h3 className="font-serif text-3xl md:text-4xl">Your next route can be quietly extraordinary.</h3>
+          </div>
+          <Link to="/contact" className="premium-button inline-flex items-center justify-center px-7 py-4 text-xs font-bold uppercase tracking-[0.2em]">
+            Plan With Us
+          </Link>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           
           {/* Brand Info */}
@@ -25,7 +35,7 @@ const Footer = () => {
               </h2>
             )}
             
-            <p className="text-gray-400 text-sm leading-relaxed mb-6">
+            <p className="text-gray-300 text-sm leading-relaxed mb-6">
               A Tour That Never Seen Before. Experience the raw beauty of the Himalayas with expertly crafted journeys since 2015.
             </p>
             <div className="flex space-x-4">
@@ -44,7 +54,7 @@ const Footer = () => {
           {/* Quick Links */}
           <div>
             <h4 className="text-soft-gold font-bold uppercase tracking-widest text-sm mb-6">Quick Links</h4>
-            <ul className="space-y-3 text-sm text-gray-400">
+            <ul className="space-y-3 text-sm text-gray-300">
               <li><Link to="/" className="hover:text-white transition-colors">Home</Link></li>
               <li><Link to="/about" className="hover:text-white transition-colors">About Us</Link></li>
               <li><Link to="/packages" className="hover:text-white transition-colors">Tour Packages</Link></li>
@@ -56,7 +66,7 @@ const Footer = () => {
           {/* Support & Legal */}
           <div>
             <h4 className="text-soft-gold font-bold uppercase tracking-widest text-sm mb-6">Support & Legal</h4>
-            <ul className="space-y-3 text-sm text-gray-400">
+            <ul className="space-y-3 text-sm text-gray-300">
               <li><Link to="/policies" className="hover:text-white transition-colors">Privacy Policy</Link></li>
               <li><Link to="/policies" className="hover:text-white transition-colors">Booking Policy</Link></li>
               <li><Link to="/policies" className="hover:text-white transition-colors">Terms & Conditions</Link></li>
@@ -67,7 +77,7 @@ const Footer = () => {
           {/* Contact Info */}
           <div>
             <h4 className="text-soft-gold font-bold uppercase tracking-widest text-sm mb-6">Contact Info</h4>
-            <ul className="space-y-4 text-sm text-gray-400">
+            <ul className="space-y-4 text-sm text-gray-300">
               <li className="flex items-start gap-3">
                 <MapPin size={18} className="text-soft-gold shrink-0 mt-0.5" />
                 <span>64/2/12, Biren Roy Road (East),<br />Behala, Chowrasta,<br />Kolkata - 700008</span>

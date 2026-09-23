@@ -11,7 +11,7 @@ const auditLogSchema = new mongoose.Schema({
   resource: {
     type: String,
     required: true,
-    enum: ['USER', 'ADMIN', 'AUTH', 'SYSTEM', 'PLACE', 'HOTEL', 'IMAGE', 'IMAGES', 'UPLOAD']
+    enum: ['USER', 'ADMIN', 'AUTH', 'SYSTEM', 'PLACE', 'HOTEL', 'IMAGE', 'IMAGES', 'UPLOAD', 'LEAD']
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,

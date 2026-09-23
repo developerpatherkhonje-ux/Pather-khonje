@@ -1,12 +1,143 @@
 const { uploadToCloudinary, deleteImage } = require('../utils/cloudinary');
 const fs = require('fs');
 const path = require('path');
+const mongoose = require('mongoose');
+const { GridFSBucket } = mongoose.mongo;
 
 /**
  * Reusable Image Service for handling Cloudinary uploads
  * Used by both Place and Hotel models for consistent image handling
  */
 class ImageService {
+  static getLocalFolderFromCloudinaryFolder(folder = 'pather-khonje') {
+    if (folder.includes('/hotels')) return 'hotels';
+    if (folder.includes('/packages')) return 'packages';
+    if (folder.includes('/gallery')) return 'gallery';
+    return 'places';
+  }
+
+  static moveToLocalStorage(file, folder = 'pather-khonje') {
+    const localFolder = this.getLocalFolderFromCloudinaryFolder(folder);
+    const uploadDir = path.join(__dirname, '..', 'uploads', localFolder);
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
+    const finalPath = path.join(uploadDir, file.filename);
+    if (path.resolve(file.path) !== path.resolve(finalPath)) {
+      fs.renameSync(file.path, finalPath);
+    }
+
+    return {
+      public_id: `local-${localFolder}-${file.filename}`,
+      url: `/uploads/${localFolder}/${file.filename}`,
+      relativeUrl: `/uploads/${localFolder}/${file.filename}`,
+      width: null,
+      height: null,
+      format: path.extname(file.originalname).slice(1),
+      originalName: file.originalname,
+      size: file.size,
+      uploadedAt: new Date()
+    };
+  }
+
+  static uploadToGridFS(file) {
+    return new Promise((resolve, reject) => {
+      if (mongoose.connection.readyState !== 1 || !mongoose.connection.db) {
+        reject(new Error('MongoDB is not connected'));
+        return;
+      }
+
+      const bucket = new GridFSBucket(mongoose.connection.db, {
+        bucketName: 'uploads',
+      });
+      const uploadStream = bucket.openUploadStream(file.filename, {
+        contentType: file.mimetype || 'application/octet-stream',
+      });
+      const readStream = fs.createReadStream(file.path);
+
+      const cleanup = () => this.cleanupTempFile(file.path);
+
+      readStream.on('error', (error) => {
+        cleanup();
+        reject(error);
+      });
+
+      uploadStream.on('error', (error) => {
+        cleanup();
+        reject(error);
+      });
+
+      uploadStream.on('finish', (savedFile) => {
+        cleanup();
+        const url = `/api/upload/gridfs/${savedFile._id}`;
+        resolve({
+          public_id: `gridfs-${savedFile._id}`,
+          url,
+          relativeUrl: url,
+          width: null,
+          height: null,
+          format: path.extname(file.originalname).slice(1),
+          originalName: file.originalname,
+          size: savedFile.length || file.size,
+          uploadedAt: new Date()
+        });
+      });
+
+      readStream.pipe(uploadStream);
+    });
+  }
+
+  static async processImage(file, folder = 'pather-khonje') {
+    try {
+      const result = await uploadToCloudinary(file.path, folder);
+      this.cleanupTempFile(file.path);
+
+      return {
+        public_id: result.public_id,
+        url: result.secure_url,
+        width: result.width,
+        height: result.height,
+        format: result.format,
+        originalName: file.originalname,
+        size: file.size,
+        uploadedAt: new Date()
+      };
+    } catch (error) {
+      console.warn('Cloudinary upload failed, using persistent GridFS storage:', error.message);
+      try {
+        return await this.uploadToGridFS(file);
+      } catch (gridFsError) {
+        console.warn('GridFS upload failed, using local storage:', gridFsError.message);
+        return this.moveToLocalStorage(file, folder);
+      }
+    }
+  }
+
+  static async deleteImage(publicId) {
+    if (!publicId) return;
+    if (publicId.startsWith('gridfs-')) {
+      if (mongoose.connection.readyState !== 1 || !mongoose.connection.db) return;
+      const id = publicId.replace('gridfs-', '');
+      const bucket = new GridFSBucket(mongoose.connection.db, {
+        bucketName: 'uploads',
+      });
+      await bucket.delete(new mongoose.Types.ObjectId(id));
+      return;
+    }
+    if (publicId.startsWith('local-')) {
+      const [, localFolder, ...fileParts] = publicId.split('-');
+      const fileName = fileParts.join('-');
+      const localPath = path.join(__dirname, '..', 'uploads', localFolder, fileName);
+      if (fs.existsSync(localPath)) {
+        fs.unlinkSync(localPath);
+      }
+      return;
+    }
+
+    await deleteImage(publicId);
+  }
+
   /**
    * Process and upload multiple images to Cloudinary
    * @param {Array} files - Array of multer file objects
@@ -26,26 +157,13 @@ class ImageService {
       try {
         console.log('Processing file:', file.originalname, 'Size:', file.size, 'Path:', file.path);
         
-        // Upload to Cloudinary
-        const result = await uploadToCloudinary(file.path, folder);
-        console.log('Cloudinary upload successful:', result.public_id);
-        
-        uploadedImages.push({
-          public_id: result.public_id,
-          url: result.secure_url,
-          width: result.width,
-          height: result.height,
-          format: result.format,
-          uploadedAt: new Date()
-        });
-
-        // Clean up temporary file
-        this.cleanupTempFile(file.path);
+        const imageData = await this.processImage(file, folder);
+        console.log('Image upload successful:', imageData.public_id);
+        uploadedImages.push(imageData);
       } catch (error) {
         console.error('Error uploading file to Cloudinary:', file.originalname, error.message);
         errors.push({ file: file.originalname, error: error.message });
         
-        // Clean up temporary file even on error
         this.cleanupTempFile(file.path);
       }
     }
@@ -63,21 +181,9 @@ class ImageService {
     try {
       console.log('Processing single file:', file.originalname, 'Size:', file.size, 'Path:', file.path);
       
-      // Upload to Cloudinary
-      const result = await uploadToCloudinary(file.path, folder);
-      console.log('Cloudinary upload successful:', result.public_id);
-      
-      // Clean up temporary file
-      this.cleanupTempFile(file.path);
-
-      return {
-        public_id: result.public_id,
-        url: result.secure_url,
-        width: result.width,
-        height: result.height,
-        format: result.format,
-        uploadedAt: new Date()
-      };
+      const imageData = await this.processImage(file, folder);
+      console.log('Image upload successful:', imageData.public_id);
+      return imageData;
     } catch (error) {
       console.error('Error uploading single file to Cloudinary:', file.originalname, error.message);
       
@@ -95,8 +201,8 @@ class ImageService {
    */
   static async deleteCloudinaryImage(publicId) {
     try {
-      const result = await deleteImage(publicId);
-      console.log('Image deleted from Cloudinary:', publicId);
+      const result = await this.deleteImage(publicId);
+      console.log('Image deleted:', publicId);
       return result;
     } catch (error) {
       console.error('Error deleting image from Cloudinary:', publicId, error.message);
@@ -126,15 +232,14 @@ class ImageService {
         if (typeof img === 'string' && img.trim()) {
           const url = img.trim();
           const publicId = this.extractCloudinaryPublicId(url);
-          // Only accept Cloudinary URLs; otherwise, ignore (to prevent local storage fallback)
-          if (publicId) {
+          if (publicId || url.startsWith('/uploads/') || url.startsWith('/api/upload/gridfs/')) {
             return {
               url,
-              public_id: publicId,
+              public_id: publicId || `local-${path.basename(url)}`,
               uploadedAt: new Date()
             };
           }
-          return null; // Non-Cloudinary URLs are not accepted for normalization
+          return null;
         }
         
         // If it's an object with url property

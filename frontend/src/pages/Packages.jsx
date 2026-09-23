@@ -86,10 +86,11 @@ const Packages = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen font-sans">
+    <div className="premium-page min-h-screen font-sans">
       <SEO
-        title="Holiday Packages"
-        description="Explore our curated holiday packages for Sikkim, Darjeeling, and more."
+        title="Premium Holiday Packages"
+        description="Explore curated holiday packages for Sikkim, Darjeeling, hill stations, coastal escapes, heritage tours and custom family trips."
+        keywords="holiday packages India, Sikkim package, Darjeeling tour, hill station packages, custom travel packages"
       />
       {/* 1. HERO SECTION */}
       <section className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
@@ -100,7 +101,7 @@ const Packages = () => {
               "url('https://images.unsplash.com/photo-1548876995-629f48ad9a6c?fm=jpg&q=60&w=3000')",
           }}
         >
-          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-0 luxury-hero-overlay" />
         </div>
 
         <div className="relative z-10 h-full flex flex-col justify-center items-center text-center px-4 pt-10">
@@ -109,7 +110,11 @@ const Packages = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
           >
-            <h1 className="text-5xl md:text-7xl font-serif text-white mb-4 shadow-sm">
+            <div className="mx-auto mb-5 flex items-center justify-center gap-4">
+              <div className="gold-rule" />
+              <span className="section-kicker">Designed for thoughtful travelers</span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-serif text-white mb-4 drop-shadow-lg">
               Explore Our Packages
             </h1>
             <p className="text-lg md:text-xl text-white/90 font-light max-w-2xl mx-auto tracking-wide mb-8">
@@ -121,7 +126,7 @@ const Packages = () => {
       </section>
 
       {/* 2. FILTER TABS */}
-      <section className="bg-white border-b border-gray-200 sticky top-20 z-20">
+      <section className="bg-white/90 backdrop-blur-xl border-b border-white/70 sticky top-20 z-20 shadow-[0_16px_34px_rgba(10,46,77,0.06)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex overflow-x-auto gap-8 py-6 no-scrollbar items-center justify-start md:justify-center">
             {categories.map((cat) => (
@@ -166,7 +171,7 @@ const Packages = () => {
                   whileInView="visible"
                   viewport={{ once: true, margin: "-100px" }}
                   variants={containerVariants}
-                  className="bg-white p-0 md:p-12 shadow-sm border border-gray-100 flex flex-col gap-10"
+                  className="premium-card p-0 md:p-12 flex flex-col gap-10"
                 >
                   <div
                     className={`flex flex-col ${
@@ -185,7 +190,7 @@ const Packages = () => {
                           <h2 className="text-4xl font-serif text-midnight-ocean">
                             {pkg.name}
                           </h2>
-                          <span className="inline-block bg-blue-50 text-midnight-ocean text-xs font-bold px-3 py-1 uppercase tracking-widest">
+                          <span className="inline-block bg-mist-blue text-midnight-ocean text-xs font-bold px-3 py-1 uppercase tracking-widest">
                             {pkg.nights}
                           </span>
                         </div>
@@ -201,7 +206,7 @@ const Packages = () => {
 
                       <motion.div
                         variants={itemVariants}
-                        className="flex-grow space-y-6 mb-10 border-t border-b border-gray-100 py-8"
+                        className="flex-grow space-y-6 mb-10 border-t border-b border-soft-gold/20 py-8"
                       >
                         {pkg.itinerary.map((item, idx) => (
                           <div key={idx} className="flex gap-6 group">
@@ -257,7 +262,7 @@ const Packages = () => {
                         variants={itemVariants}
                         className="flex items-center gap-6 mt-auto"
                       >
-                        <button className="bg-midnight-ocean text-white px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-deep-steel-blue transition-all duration-300">
+                        <button className="premium-button px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase">
                           Book Now
                         </button>
                         {/* THE FIX IS HERE: Uses slug first, falls back to ID */}
@@ -276,7 +281,7 @@ const Packages = () => {
                       variants={itemVariants}
                       className="w-full lg:w-1/2 relative min-h-[400px]"
                     >
-                      <div className="absolute inset-0 overflow-hidden shadow-2xl">
+                      <div className="image-lift absolute inset-0">
                         <LazyLoadImage
                           src={pkg.image}
                           alt={pkg.name}
@@ -295,8 +300,9 @@ const Packages = () => {
       </section>
 
       {/* 4. DESIGN YOUR OWN JOURNEY */}
-      <section className="bg-midnight-ocean py-24 text-white">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-16">
+      <section className="bg-midnight-ocean py-24 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(198,167,94,0.14),transparent_32%,rgba(47,111,237,0.10))]" />
+        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-16 relative">
           <div className="max-w-2xl">
             <h2 className="text-5xl font-serif mb-6">
               Design Your Own Journey
@@ -324,7 +330,7 @@ const Packages = () => {
             </div>
           </div>
 
-          <div className="w-full max-w-md bg-white/5 backdrop-blur-sm border border-white/10 p-10">
+          <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/15 p-10 shadow-2xl">
             <h3 className="text-2xl font-serif mb-2">Start Planning</h3>
             <p className="text-gray-400 text-sm mb-8">
               Get a free, no-obligation quote within 24 hours.

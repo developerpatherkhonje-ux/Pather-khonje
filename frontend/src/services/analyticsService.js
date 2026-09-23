@@ -70,6 +70,20 @@ class AnalyticsService {
     this.clearCache();
   }
 
+  async getAnalyticsData(period = 'month') {
+    const cacheKey = `admin_analytics_${period}`;
+    const cached = this.getCachedData(cacheKey);
+    if (cached) return cached;
+
+    const response = await apiService.getAdminAnalytics(period);
+    if (!response.success) {
+      throw new Error(response.message || 'Failed to fetch analytics');
+    }
+
+    this.setCachedData(cacheKey, response.data);
+    return response.data;
+  }
+
   // Get period information for debugging
   getPeriodInfo(period) {
     const now = new Date();

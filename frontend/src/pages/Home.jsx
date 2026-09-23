@@ -14,8 +14,9 @@ const Home = () => {
   return (
     <div className="min-h-screen font-sans bg-white selection:bg-horizon-blue selection:text-white">
       <SEO
-        title="Home"
-        description="Pather Khonje - Discover the hidden gems of Sikkim, Darjeeling and beyond with our curated travel experiences."
+        title="Curated Travel Packages, Hotels & Custom Journeys"
+        description="Plan premium tours, handpicked hotels, and custom journeys across Sikkim, Darjeeling, Vizag, Araku and beyond with Pather Khonje."
+        keywords="Pather Khonje, Sikkim tour packages, Darjeeling hotels, Araku travel, curated travel India, custom tour planner"
       />
       <Hero />
       <TrustMetrics />

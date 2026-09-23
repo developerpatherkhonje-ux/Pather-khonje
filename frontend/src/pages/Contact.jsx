@@ -77,10 +77,11 @@ const Contact = () => {
     <div className="bg-ice-blue min-h-screen font-sans">
       <SEO
         title="Contact Us"
-        description="Get in touch with Pather Khonje to plan your unforgettable journey to Sikkim and Darjeeling."
+        description="Contact Pather Khonje for custom tours, premium hotel bookings, family trips and curated travel planning across India."
+        keywords="contact Pather Khonje, custom tour planner Kolkata, travel agency Kolkata, Sikkim travel enquiry, hotel booking assistance"
       />
       {/* SECTION 1: MODERN EDITORIAL HERO */}
-      <section className="relative w-full py-4 px-6 md:px-12 bg-ice-blue overflow-hidden">
+      <section className="relative w-full py-16 px-6 md:px-12 bg-ice-blue overflow-hidden">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
           {/* LEFT: TYPOGRAPHY */}
           <div className="lg:w-1/2 z-10 relative">
@@ -267,7 +268,7 @@ const Contact = () => {
 
       {/* SECTION 3: REQUEST A CALLBACK FORM */}
       <section className="bg-ice-blue py-20 px-6 md:px-12">
-        <div className="max-w-7xl mx-auto bg-white shadow-xl overflow-hidden">
+        <div className="max-w-7xl mx-auto premium-card overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
             {/* LEFT: FORM (Ice/Mist Blue Background) */}
             <div className="lg:col-span-7 bg-mist-blue p-10 md:p-16 flex flex-col justify-center">
@@ -445,10 +446,10 @@ const Contact = () => {
       {/* SECTION 4: SOCIAL FOOTER STRIP */}
       <div className="border-t border-slate-100 py-8">
         <div className="flex justify-center gap-8 text-slate-400">
-          <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="hover:text-midnight-ocean transition-colors">
+          <a href="https://www.instagram.com/patherkhonje?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" className="hover:text-midnight-ocean transition-colors">
             <Instagram size={24} />
           </a>
-          <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="hover:text-midnight-ocean transition-colors">
+          <a href="https://www.facebook.com/profile.php?id=61577923149985" target="_blank" rel="noopener noreferrer" className="hover:text-midnight-ocean transition-colors">
             <Facebook size={24} />
           </a>
         </div>

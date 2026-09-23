@@ -52,6 +52,10 @@ function GalleryManagement() {
     { value: 'food', label: 'Cuisine' }
   ];
 
+  const getGalleryImageUrl = (gallery) => (
+    apiService.toAbsoluteUrl(gallery?.image?.url) || '/gallery/placeholder.jpg'
+  );
+
   useEffect(() => {
     fetchGalleries();
   }, [filterCategory, searchTerm]);
@@ -98,7 +102,7 @@ function GalleryManagement() {
       category: gallery.category,
       image: null
     });
-    setImagePreview(gallery.image?.url || null);
+    setImagePreview(getGalleryImageUrl(gallery));
     setShowEditModal(true);
   };
 
@@ -389,7 +393,7 @@ function GalleryManagement() {
             >
               <div className="relative aspect-[4/3]">
                 <img
-                  src={gallery.image?.url || '/gallery/placeholder.jpg'}
+                  src={getGalleryImageUrl(gallery)}
                   alt={gallery.title}
                   className="w-full h-full object-cover"
                 />

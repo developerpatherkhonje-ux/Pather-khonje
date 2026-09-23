@@ -10,16 +10,27 @@ const logger = require("../utils/logger");
 const AuditLog = require("../models/AuditLog");
 const mongoose = require("mongoose");
 const { GridFSBucket, ObjectId } = mongoose.mongo;
+const ImageService = require("../services/imageService");
 
 const router = express.Router();
 
-// Apply authentication middleware to all routes
-router.use(authenticateToken);
+const logUpload = async (req, resource, details) => {
+  try {
+    await AuditLog.logEvent({
+      action: "UPLOAD",
+      resource,
+      userId: req.user._id,
+      details,
+      ipAddress: req.ip,
+      userAgent: req.get("User-Agent"),
+      success: true,
+    });
+  } catch (error) {
+    logger.warn("Upload audit log skipped", { error: error.message });
+  }
+};
 
-// @route   POST /api/upload/image
-// @desc    Upload single image (admin only)
-// @access  Admin only
-router.post("/image", requireAdmin, uploadSingle, async (req, res) => {
+const uploadSingleImage = async (req, res, folder, label) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -28,78 +39,34 @@ router.post("/image", requireAdmin, uploadSingle, async (req, res) => {
       });
     }
 
-    // Upload to Cloudinary
-    const result = await uploadToCloudinary(
-      req.file.path,
-      "pather-khonje/places",
-    );
-
-    // Clean up temporary file
-    const fs = require("fs");
-    fs.unlinkSync(req.file.path);
-
-    // Log admin action
-    await AuditLog.logEvent({
-      action: "UPLOAD",
-      resource: "IMAGE",
-      userId: req.user._id,
-      details: {
-        public_id: result.public_id,
-        url: result.secure_url,
-        originalName: req.file.originalname,
-        size: req.file.size,
-      },
-      ipAddress: req.ip,
-      userAgent: req.get("User-Agent"),
-      success: true,
+    const image = await ImageService.processImage(req.file, folder);
+    await logUpload(req, "IMAGE", {
+      public_id: image.public_id,
+      url: image.url,
+      originalName: req.file.originalname,
+      size: req.file.size,
     });
 
-    logger.info("Image uploaded to Cloudinary", {
-      public_id: result.public_id,
-      uploadedBy: req.user._id,
-      url: result.secure_url,
-    });
-
-    res.json({
+    return res.json({
       success: true,
-      message: "Image uploaded successfully",
-      data: {
-        public_id: result.public_id,
-        url: result.secure_url,
-        width: result.width,
-        height: result.height,
-        format: result.format,
-        originalName: req.file.originalname,
-        size: req.file.size,
-      },
+      message: `${label} image uploaded successfully`,
+      data: image,
     });
   } catch (error) {
-    logger.error("Image upload error", {
+    logger.error(`${label} image upload error`, {
       error: error.message,
       userId: req.user._id,
     });
+    if (req.file?.path) ImageService.cleanupTempFile(req.file.path);
 
-    // Clean up temporary file if it exists
-    if (req.file && req.file.path) {
-      try {
-        const fs = require("fs");
-        fs.unlinkSync(req.file.path);
-      } catch (unlinkError) {
-        console.error("Error cleaning up file:", unlinkError);
-      }
-    }
-
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to upload image to Cloudinary",
+      message: `Failed to upload ${label.toLowerCase()} image`,
     });
   }
-});
+};
 
-// @route   POST /api/upload/images
-// @desc    Upload multiple images (admin only)
-// @access  Admin only
-router.post("/images", requireAdmin, uploadMultiple, async (req, res) => {
+const uploadMultipleImages = async (req, res, folder, label) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({
@@ -108,101 +75,47 @@ router.post("/images", requireAdmin, uploadMultiple, async (req, res) => {
       });
     }
 
-    const uploadedImages = [];
-    const errors = [];
-
-    // Process each file
-    for (const file of req.files) {
-      try {
-        // Upload to Cloudinary
-        const result = await uploadToCloudinary(
-          file.path,
-          "pather-khonje/places",
-        );
-
-        uploadedImages.push({
-          public_id: result.public_id,
-          url: result.secure_url,
-          width: result.width,
-          height: result.height,
-          format: result.format,
-          originalName: file.originalname,
-          size: file.size,
-        });
-
-        // Clean up temporary file
-        const fs = require("fs");
-        fs.unlinkSync(file.path);
-      } catch (error) {
-        console.error(
-          "Error uploading file to Cloudinary:",
-          file.originalname,
-          error.message,
-        );
-        errors.push({ file: file.originalname, error: error.message });
-
-        // Clean up temporary file
-        try {
-          const fs = require("fs");
-          fs.unlinkSync(file.path);
-        } catch (unlinkError) {
-          console.error("Error cleaning up file:", unlinkError);
-        }
-      }
-    }
-
-    // Log admin action
-    await AuditLog.logEvent({
-      action: "UPLOAD",
-      resource: "IMAGES",
-      userId: req.user._id,
-      details: {
-        fileCount: req.files.length,
-        uploadedCount: uploadedImages.length,
-        errors: errors.length > 0 ? errors : undefined,
-      },
-      ipAddress: req.ip,
-      userAgent: req.get("User-Agent"),
-      success: true,
-    });
-
-    logger.info("Multiple images uploaded to Cloudinary", {
+    const { uploadedImages, errors } = await ImageService.processMultipleImages(req.files, folder);
+    await logUpload(req, "IMAGES", {
       fileCount: req.files.length,
       uploadedCount: uploadedImages.length,
-      uploadedBy: req.user._id,
+      errors: errors.length > 0 ? errors : undefined,
     });
 
-    res.json({
+    return res.json({
       success: uploadedImages.length > 0,
-      message: `${uploadedImages.length} image(s) uploaded successfully`,
+      message: `${uploadedImages.length} ${label.toLowerCase()} image(s) uploaded successfully`,
       data: {
         files: uploadedImages,
       },
       errors: errors.length > 0 ? errors : undefined,
     });
   } catch (error) {
-    logger.error("Multiple images upload error", {
+    logger.error(`Multiple ${label.toLowerCase()} images upload error`, {
       error: error.message,
       userId: req.user._id,
     });
+    (req.files || []).forEach((file) => ImageService.cleanupTempFile(file.path));
 
-    // Clean up all temporary files
-    if (req.files) {
-      req.files.forEach((file) => {
-        try {
-          const fs = require("fs");
-          fs.unlinkSync(file.path);
-        } catch (unlinkError) {
-          console.error("Error cleaning up file:", unlinkError);
-        }
-      });
-    }
-
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Failed to upload images to Cloudinary",
+      message: `Failed to upload ${label.toLowerCase()} images`,
     });
   }
+};
+
+// @route   POST /api/upload/image
+// @desc    Upload single image (admin only)
+// @access  Admin only
+router.post("/image", authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
+  return uploadSingleImage(req, res, "pather-khonje/places", "Place");
+});
+
+// @route   POST /api/upload/images
+// @desc    Upload multiple images (admin only)
+// @access  Admin only
+router.post("/images", authenticateToken, requireAdmin, uploadMultiple, async (req, res) => {
+  return uploadMultipleImages(req, res, "pather-khonje/places", "Place");
 });
 
 // ===== Hotels specific disk uploads (stored under uploads/hotels) =====
@@ -210,74 +123,8 @@ router.post("/images", requireAdmin, uploadMultiple, async (req, res) => {
 // @route   POST /api/upload/hotels/image
 // @desc    Upload single hotel image (admin only)
 // @access  Admin only
-router.post("/hotels/image", requireAdmin, uploadSingle, async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "No image file provided",
-      });
-    }
-
-    // Upload to Cloudinary
-    const result = await uploadToCloudinary(
-      req.file.path,
-      "pather-khonje/hotels",
-    );
-
-    // Clean up temporary file
-    const fs = require("fs");
-    fs.unlinkSync(req.file.path);
-
-    await AuditLog.logEvent({
-      action: "UPLOAD",
-      resource: "IMAGE",
-      userId: req.user._id,
-      details: {
-        public_id: result.public_id,
-        url: result.secure_url,
-        originalName: req.file.originalname,
-        size: req.file.size,
-      },
-      ipAddress: req.ip,
-      userAgent: req.get("User-Agent"),
-      success: true,
-    });
-
-    return res.json({
-      success: true,
-      message: "Hotel image uploaded successfully",
-      data: {
-        public_id: result.public_id,
-        url: result.secure_url,
-        width: result.width,
-        height: result.height,
-        format: result.format,
-        originalName: req.file.originalname,
-        size: req.file.size,
-      },
-    });
-  } catch (error) {
-    logger.error("Hotel image upload error", {
-      error: error.message,
-      userId: req.user._id,
-    });
-
-    // Clean up temporary file if it exists
-    if (req.file && req.file.path) {
-      try {
-        const fs = require("fs");
-        fs.unlinkSync(req.file.path);
-      } catch (unlinkError) {
-        console.error("Error cleaning up file:", unlinkError);
-      }
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to upload hotel image to Cloudinary",
-    });
-  }
+router.post("/hotels/image", authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
+  return uploadSingleImage(req, res, "pather-khonje/hotels", "Hotel");
 });
 
 // @route   POST /api/upload/hotels/images
@@ -285,105 +132,11 @@ router.post("/hotels/image", requireAdmin, uploadSingle, async (req, res) => {
 // @access  Admin only
 router.post(
   "/hotels/images",
+  authenticateToken,
   requireAdmin,
   uploadMultiple,
   async (req, res) => {
-    try {
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: "No image files provided",
-        });
-      }
-
-      const uploadedImages = [];
-      const errors = [];
-
-      // Process each file
-      for (const file of req.files) {
-        try {
-          // Upload to Cloudinary
-          const result = await uploadToCloudinary(
-            file.path,
-            "pather-khonje/hotels",
-          );
-
-          uploadedImages.push({
-            public_id: result.public_id,
-            url: result.secure_url,
-            width: result.width,
-            height: result.height,
-            format: result.format,
-            originalName: file.originalname,
-            size: file.size,
-          });
-
-          // Clean up temporary file
-          const fs = require("fs");
-          fs.unlinkSync(file.path);
-        } catch (error) {
-          console.error(
-            "Error uploading file to Cloudinary:",
-            file.originalname,
-            error.message,
-          );
-          errors.push({ file: file.originalname, error: error.message });
-
-          // Clean up temporary file
-          try {
-            const fs = require("fs");
-            fs.unlinkSync(file.path);
-          } catch (unlinkError) {
-            console.error("Error cleaning up file:", unlinkError);
-          }
-        }
-      }
-
-      await AuditLog.logEvent({
-        action: "UPLOAD",
-        resource: "IMAGES",
-        userId: req.user._id,
-        details: {
-          fileCount: req.files.length,
-          uploadedCount: uploadedImages.length,
-          errors: errors.length > 0 ? errors : undefined,
-        },
-        ipAddress: req.ip,
-        userAgent: req.get("User-Agent"),
-        success: true,
-      });
-
-      return res.json({
-        success: uploadedImages.length > 0,
-        message: `${uploadedImages.length} hotel image(s) uploaded successfully`,
-        data: {
-          files: uploadedImages,
-        },
-        errors: errors.length > 0 ? errors : undefined,
-      });
-    } catch (error) {
-      logger.error("Multiple hotel images upload error", {
-        error: error.message,
-        userId: req.user._id,
-      });
-
-      // Clean up all temporary files
-      if (req.files) {
-        req.files.forEach((file) => {
-          try {
-            const fs = require("fs");
-            fs.unlinkSync(file.path);
-          } catch (unlinkError) {
-            console.error("Error cleaning up file:", unlinkError);
-          }
-        });
-      }
-
-      return res.status(500).json({
-        success: false,
-        message: "Failed to upload hotel images to Cloudinary",
-      });
-    }
+    return uploadMultipleImages(req, res, "pather-khonje/hotels", "Hotel");
   },
 );
 
@@ -392,74 +145,8 @@ router.post(
 // @route   POST /api/upload/packages/image
 // @desc    Upload single package image (admin only)
 // @access  Admin only
-router.post("/packages/image", requireAdmin, uploadSingle, async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "No image file provided",
-      });
-    }
-
-    // Upload to Cloudinary
-    const result = await uploadToCloudinary(
-      req.file.path,
-      "pather-khonje/packages",
-    );
-
-    // Clean up temporary file
-    const fs = require("fs");
-    fs.unlinkSync(req.file.path);
-
-    await AuditLog.logEvent({
-      action: "UPLOAD",
-      resource: "IMAGE",
-      userId: req.user._id,
-      details: {
-        public_id: result.public_id,
-        url: result.secure_url,
-        originalName: req.file.originalname,
-        size: req.file.size,
-      },
-      ipAddress: req.ip,
-      userAgent: req.get("User-Agent"),
-      success: true,
-    });
-
-    return res.json({
-      success: true,
-      message: "Package image uploaded successfully",
-      data: {
-        public_id: result.public_id,
-        url: result.secure_url,
-        width: result.width,
-        height: result.height,
-        format: result.format,
-        originalName: req.file.originalname,
-        size: req.file.size,
-      },
-    });
-  } catch (error) {
-    logger.error("Package image upload error", {
-      error: error.message,
-      userId: req.user._id,
-    });
-
-    // Clean up temporary file if it exists
-    if (req.file && req.file.path) {
-      try {
-        const fs = require("fs");
-        fs.unlinkSync(req.file.path);
-      } catch (unlinkError) {
-        console.error("Error cleaning up file:", unlinkError);
-      }
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to upload package image to Cloudinary",
-    });
-  }
+router.post("/packages/image", authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
+  return uploadSingleImage(req, res, "pather-khonje/packages", "Package");
 });
 
 // @route   POST /api/upload/packages/images
@@ -467,105 +154,11 @@ router.post("/packages/image", requireAdmin, uploadSingle, async (req, res) => {
 // @access  Admin only
 router.post(
   "/packages/images",
+  authenticateToken,
   requireAdmin,
   uploadMultiple,
   async (req, res) => {
-    try {
-      if (!req.files || req.files.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: "No image files provided",
-        });
-      }
-
-      const uploadedImages = [];
-      const errors = [];
-
-      // Process each file
-      for (const file of req.files) {
-        try {
-          // Upload to Cloudinary
-          const result = await uploadToCloudinary(
-            file.path,
-            "pather-khonje/packages",
-          );
-
-          uploadedImages.push({
-            public_id: result.public_id,
-            url: result.secure_url,
-            width: result.width,
-            height: result.height,
-            format: result.format,
-            originalName: file.originalname,
-            size: file.size,
-          });
-
-          // Clean up temporary file
-          const fs = require("fs");
-          fs.unlinkSync(file.path);
-        } catch (error) {
-          console.error(
-            "Error uploading file to Cloudinary:",
-            file.originalname,
-            error.message,
-          );
-          errors.push({ file: file.originalname, error: error.message });
-
-          // Clean up temporary file
-          try {
-            const fs = require("fs");
-            fs.unlinkSync(file.path);
-          } catch (unlinkError) {
-            console.error("Error cleaning up file:", unlinkError);
-          }
-        }
-      }
-
-      await AuditLog.logEvent({
-        action: "UPLOAD",
-        resource: "IMAGES",
-        userId: req.user._id,
-        details: {
-          fileCount: req.files.length,
-          uploadedCount: uploadedImages.length,
-          errors: errors.length > 0 ? errors : undefined,
-        },
-        ipAddress: req.ip,
-        userAgent: req.get("User-Agent"),
-        success: true,
-      });
-
-      return res.json({
-        success: uploadedImages.length > 0,
-        message: `${uploadedImages.length} package image(s) uploaded successfully`,
-        data: {
-          files: uploadedImages,
-        },
-        errors: errors.length > 0 ? errors : undefined,
-      });
-    } catch (error) {
-      logger.error("Multiple package images upload error", {
-        error: error.message,
-        userId: req.user._id,
-      });
-
-      // Clean up all temporary files
-      if (req.files) {
-        req.files.forEach((file) => {
-          try {
-            const fs = require("fs");
-            fs.unlinkSync(file.path);
-          } catch (unlinkError) {
-            console.error("Error cleaning up file:", unlinkError);
-          }
-        });
-      }
-
-      return res.status(500).json({
-        success: false,
-        message: "Failed to upload package images to Cloudinary",
-      });
-    }
+    return uploadMultipleImages(req, res, "pather-khonje/packages", "Package");
   },
 );
 // ===== GridFS-based storage (MongoDB) =====
@@ -573,7 +166,7 @@ router.post(
 // @route   POST /api/upload/gridfs
 // @desc    Upload single file to Mongo GridFS (admin only)
 // @access  Admin only
-router.post("/gridfs", requireAdmin, async (req, res) => {
+router.post("/gridfs", authenticateToken, requireAdmin, async (req, res) => {
   try {
     // Expect a raw binary body with header 'x-filename' OR multipart already handled
     const filename = req.headers["x-filename"] || "upload_" + Date.now();

@@ -59,6 +59,7 @@ const packageRoutes = require("./routes/packages");
 const invoiceRoutes = require("./routes/invoiceRoutes");
 const paymentVoucherRoutes = require("./routes/paymentVoucherRoutes");
 const galleryRoutes = require("./routes/gallery");
+const leadRoutes = require("./routes/leads");
 // const enquiryRoutes = require("./routes/enquiries");
 
 const app = express();
@@ -401,6 +402,7 @@ app.use("/api/packages", packageRoutes);
 app.use("/api/invoices", invoiceRoutes);
 app.use("/api/payment-vouchers", paymentVoucherRoutes);
 app.use("/api/gallery", galleryRoutes);
+app.use("/api/leads", leadRoutes);
 // app.use("/api/enquiries", enquiryRoutes);
 
 // Health check endpoint

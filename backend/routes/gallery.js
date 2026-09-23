@@ -3,9 +3,17 @@ const router = express.Router();
 const Gallery = require('../models/Gallery');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
 const { uploadSingle } = require('../middleware/upload');
-const { uploadToCloudinary, deleteImage } = require('../utils/cloudinary');
 const fs = require('fs');
-const path = require('path');
+const ImageService = require('../services/imageService');
+
+const buildImageData = async (file) => {
+  return ImageService.processImage(file, 'pather-khonje/gallery');
+};
+
+const deleteGalleryImage = async (image) => {
+  if (!image || !image.public_id) return;
+  await ImageService.deleteImage(image.public_id);
+};
 
 // @route   GET /api/gallery
 // @desc    Get all gallery items (public)
@@ -155,46 +163,7 @@ router.post('/', authenticateToken, requireAdmin, uploadSingle, async (req, res)
       });
     }
 
-    let imageData;
-    
-    // Try to upload to Cloudinary first, fallback to local storage
-    try {
-      const result = await uploadToCloudinary(req.file.path, 'pather-khonje/gallery');
-      imageData = {
-        public_id: result.public_id,
-        url: result.secure_url,
-        width: result.width,
-        height: result.height,
-        format: result.format,
-        uploadedAt: new Date()
-      };
-      // Clean up temporary file
-      fs.unlinkSync(req.file.path);
-    } catch (cloudinaryError) {
-      console.warn('Cloudinary upload failed, using local storage:', cloudinaryError.message);
-      
-      // Fallback to local storage
-      const relativePath = `/uploads/gallery/${req.file.filename}`;
-      const absolutePath = path.join(__dirname, '..', 'uploads', 'gallery');
-      
-      // Ensure gallery upload directory exists
-      if (!fs.existsSync(absolutePath)) {
-        fs.mkdirSync(absolutePath, { recursive: true });
-      }
-      
-      // Move file to gallery directory
-      const newPath = path.join(absolutePath, req.file.filename);
-      fs.renameSync(req.file.path, newPath);
-      
-      imageData = {
-        public_id: `local-${req.file.filename}`,
-        url: relativePath,
-        width: null,
-        height: null,
-        format: path.extname(req.file.originalname).slice(1),
-        uploadedAt: new Date()
-      };
-    }
+    const imageData = await buildImageData(req.file);
 
     // Create gallery item
     const gallery = new Gallery({
@@ -249,7 +218,7 @@ router.post('/', authenticateToken, requireAdmin, uploadSingle, async (req, res)
 // @route   PUT /api/gallery/:id
 // @desc    Update gallery item
 // @access  Admin only
-router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/:id', authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
   try {
     const { title, description, category, displayOrder, isActive } = req.body;
     const adminId = req.user._id;
@@ -268,6 +237,15 @@ router.put('/:id', authenticateToken, requireAdmin, async (req, res) => {
     if (category) gallery.category = category;
     if (displayOrder !== undefined) gallery.displayOrder = parseInt(displayOrder);
     if (isActive !== undefined) gallery.isActive = isActive === 'true' || isActive === true;
+
+    if (req.file) {
+      try {
+        await deleteGalleryImage(gallery.image);
+      } catch (deleteError) {
+        console.error('Error deleting old image:', deleteError);
+      }
+      gallery.image = await buildImageData(req.file);
+    }
     
     gallery.metadata.lastModifiedBy = adminId;
 
@@ -313,64 +291,13 @@ router.put('/:id/image', authenticateToken, requireAdmin, uploadSingle, async (r
       });
     }
 
-    // Delete old image
-    if (gallery.image && gallery.image.public_id) {
-      try {
-        if (gallery.image.public_id.startsWith('local-')) {
-          // Delete local file
-          const localPath = path.join(__dirname, '..', 'uploads', 'gallery', gallery.image.public_id.replace('local-', ''));
-          if (fs.existsSync(localPath)) {
-            fs.unlinkSync(localPath);
-          }
-        } else {
-          // Delete from Cloudinary
-          await deleteImage(gallery.image.public_id);
-        }
-      } catch (deleteError) {
-        console.error('Error deleting old image:', deleteError);
-      }
+    try {
+      await deleteGalleryImage(gallery.image);
+    } catch (deleteError) {
+      console.error('Error deleting old image:', deleteError);
     }
 
-    let imageData;
-    
-    // Try to upload to Cloudinary first, fallback to local storage
-    try {
-      const result = await uploadToCloudinary(req.file.path, 'pather-khonje/gallery');
-      imageData = {
-        public_id: result.public_id,
-        url: result.secure_url,
-        width: result.width,
-        height: result.height,
-        format: result.format,
-        uploadedAt: new Date()
-      };
-      // Clean up temporary file
-      fs.unlinkSync(req.file.path);
-    } catch (cloudinaryError) {
-      console.warn('Cloudinary upload failed, using local storage:', cloudinaryError.message);
-      
-      // Fallback to local storage
-      const relativePath = `/uploads/gallery/${req.file.filename}`;
-      const absolutePath = path.join(__dirname, '..', 'uploads', 'gallery');
-      
-      // Ensure gallery upload directory exists
-      if (!fs.existsSync(absolutePath)) {
-        fs.mkdirSync(absolutePath, { recursive: true });
-      }
-      
-      // Move file to gallery directory
-      const newPath = path.join(absolutePath, req.file.filename);
-      fs.renameSync(req.file.path, newPath);
-      
-      imageData = {
-        public_id: `local-${req.file.filename}`,
-        url: relativePath,
-        width: null,
-        height: null,
-        format: path.extname(req.file.originalname).slice(1),
-        uploadedAt: new Date()
-      };
-    }
+    const imageData = await buildImageData(req.file);
 
     // Update gallery image
     gallery.image = imageData;
@@ -411,22 +338,10 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
       });
     }
 
-    // Delete image
-    if (gallery.image && gallery.image.public_id) {
-      try {
-        if (gallery.image.public_id.startsWith('local-')) {
-          // Delete local file
-          const localPath = path.join(__dirname, '..', 'uploads', 'gallery', gallery.image.public_id.replace('local-', ''));
-          if (fs.existsSync(localPath)) {
-            fs.unlinkSync(localPath);
-          }
-        } else {
-          // Delete from Cloudinary
-          await deleteImage(gallery.image.public_id);
-        }
-      } catch (deleteError) {
-        console.error('Error deleting image:', deleteError);
-      }
+    try {
+      await deleteGalleryImage(gallery.image);
+    } catch (deleteError) {
+      console.error('Error deleting image:', deleteError);
     }
 
     await Gallery.findByIdAndDelete(req.params.id);

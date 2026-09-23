@@ -58,6 +58,12 @@ const getGridSpan = (index) => {
   return patterns[index % patterns.length];
 };
 
+const getImageUrl = (item) => {
+  const image = item?.image;
+  const url = typeof image === "string" ? image : image?.url || image?.secure_url;
+  return apiService.toAbsoluteUrl(url) || "https://images.unsplash.com/photo-1544634076-a901606f41b9?q=80&w=2000";
+};
+
 const featuredDestinations = [
   // North Sikkim - Dramatic snow peaks
   {
@@ -236,10 +242,11 @@ function Gallery() {
   ];
 
   return (
-    <div className="bg-white">
+    <div className="premium-page">
       <SEO
-        title="Gallery"
-        description="Explore our travel gallery featuring destinations, stays, and experiences in Sikkim and Darjeeling."
+        title="Travel Gallery"
+        description="Explore Pather Khonje travel moments across destinations, premium stays, cuisine, culture and curated experiences."
+        keywords="Pather Khonje gallery, Sikkim travel photos, Darjeeling gallery, hotel stay photos, India travel experiences"
       />
       {/* 1. HERO HEADER */}
       <section className="relative py-32 bg-ice-blue/30 overflow-hidden">
@@ -255,7 +262,7 @@ function Gallery() {
             className="w-full h-full object-cover opacity-90"
             alt="Gallery Hero"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-black/20 to-white/5"></div>
+          <div className="absolute inset-0 luxury-hero-overlay"></div>
         </motion.div>
 
         <div className="container mx-auto px-6 md:px-12 relative z-10">
@@ -334,7 +341,7 @@ function Gallery() {
                     )}`}
                   >
                     <LazyLoadImage
-                      src={apiService.toAbsoluteUrl(img.image?.url)}
+                      src={getImageUrl(img)}
                       alt={img.title}
                       className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
                       effect="blur"

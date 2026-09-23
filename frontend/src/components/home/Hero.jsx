@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Compass, ShieldCheck, Sparkles } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 
 // Indian Mountain Photos: Ladakh, Manali, Sikkim, Darjeeling
@@ -23,47 +23,69 @@ const Hero = () => {
   }, []);
 
   return (
-    <section className="relative w-full min-h-[90vh] flex flex-col lg:flex-row overflow-hidden bg-white">
-      {/* Left Content Panel */}
-      <div className="w-full lg:w-[45%] flex flex-col justify-center relative z-10 order-2 lg:order-1 bg-white py-16 lg:py-0 px-6 md:px-12 lg:px-24">
+    <section className="relative w-full min-h-[92vh] overflow-hidden bg-midnight-ocean">
+      {heroImages.map((src, idx) => (
+        <motion.div
+          key={src}
+          initial={false}
+          animate={{
+            opacity: activeImage === idx ? 1 : 0,
+            scale: activeImage === idx ? 1 : 1.08,
+          }}
+          transition={{ duration: 1.6, ease: "easeInOut" }}
+          className="absolute inset-0"
+          style={{ pointerEvents: activeImage === idx ? "auto" : "none" }}
+        >
+          <img
+            src={src}
+            alt={`Curated Himalayan journey ${idx + 1}`}
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 luxury-hero-overlay" />
+        </motion.div>
+      ))}
+
+      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-midnight-ocean/45 to-transparent" />
+
+      <div className="relative z-10 mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-center px-6 pb-20 pt-32 md:px-12 lg:px-16">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: "easeOut" }}
+          className="max-w-4xl"
         >
           <div className="flex items-center gap-4 mb-6">
-            <div className="h-[1px] w-12 bg-soft-gold"></div>
-            <span className="text-xs font-bold tracking-widest text-slate-gray uppercase">
-              Estd. 2015
+            <div className="gold-rule"></div>
+            <span className="section-kicker">
+              Estd. 2015 · Kolkata based travel atelier
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif text-midnight-ocean leading-[1.1] mb-6">
+          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-white leading-[0.98] mb-7 drop-shadow-lg">
             A Tour That <br />
-            <span className="italic text-soft-gold">Never Seen Before.</span>
+            <span className="italic text-soft-gold">Feels Personally Found.</span>
           </h1>
 
-          <p className="text-lg text-slate-gray font-light max-w-md leading-relaxed mb-10">
-            Discover the hidden gems of the Himalayas. We craft journeys that 
-            match the rhythm of your heart with clarity, comfort, and character.
+          <p className="text-lg md:text-xl text-white/82 font-light max-w-2xl leading-relaxed mb-10">
+            Discover Himalayan stays, coastal escapes, and custom journeys curated with local knowledge, premium comfort, and calm end-to-end planning.
           </p>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4, duration: 0.8 }}
-            className="flex flex-col sm:flex-row items-start sm:items-center gap-6"
+            className="flex flex-col sm:flex-row items-start sm:items-center gap-5"
           >
             <button
               onClick={() => navigate("/packages")}
-              className="bg-midnight-ocean text-white px-8 py-4 font-sans font-bold text-xs tracking-widest uppercase hover:bg-deep-steel-blue transition-colors duration-200 shadow-lg"
+              className="premium-button px-8 py-4 font-sans font-bold text-xs tracking-widest uppercase"
             >
               Plan Your Journey
             </button>
 
             <Link
               to="/packages"
-              className="group flex items-center gap-2 text-midnight-ocean font-sans font-medium text-sm tracking-wide hover:text-horizon-blue transition-colors duration-200"
+              className="group flex items-center gap-2 text-white font-sans font-semibold text-sm tracking-wide hover:text-soft-gold transition-colors duration-200"
             >
               View Destinations{" "}
               <ArrowRight
@@ -72,36 +94,26 @@ const Hero = () => {
               />
             </Link>
           </motion.div>
+
+          <div className="mt-12 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
+            {[
+              { icon: Compass, label: "Curated Routes" },
+              { icon: ShieldCheck, label: "Verified Stays" },
+              { icon: Sparkles, label: "Custom Planning" },
+            ].map((item) => (
+              <div key={item.label} className="premium-panel flex items-center gap-3 rounded-xl px-4 py-3 text-white">
+                <item.icon className="h-5 w-5 text-soft-gold" />
+                <span className="text-xs font-bold uppercase tracking-[0.18em]">{item.label}</span>
+              </div>
+            ))}
+          </div>
         </motion.div>
-      </div>
 
-      {/* Right Image Panel */}
-      <div className="w-full lg:w-[55%] h-[50vh] lg:min-h-[90vh] relative order-1 lg:order-2 overflow-hidden bg-gray-100">
-        {/* Render all images and animate opacity for a seamless crossfade */}
-        {heroImages.map((src, idx) => (
-          <motion.div
-            key={idx}
-            initial={false}
-            animate={{
-              opacity: activeImage === idx ? 1 : 0,
-              scale: activeImage === idx ? 1 : 1.1,
-            }}
-            transition={{ duration: 1.5, ease: "easeInOut" }}
-            className="absolute inset-0"
-            style={{ pointerEvents: activeImage === idx ? "auto" : "none" }}
-          >
-            <img
-              src={src}
-              alt={`Himalayan Destination ${idx + 1}`}
-              className="w-full h-full object-cover"
-            />
-            {/* Soft gradient to blend the image edge with the white panel on desktop */}
-            <div className="absolute inset-0 bg-gradient-to-r from-white via-white/10 to-transparent lg:w-48 z-10 hidden lg:block"></div>
-          </motion.div>
-        ))}
-
-        {/* Carousel Indicators (Dots) */}
-        <div className="absolute bottom-8 right-12 z-20 flex gap-3">
+        <div className="absolute bottom-8 left-6 right-6 z-20 flex items-center justify-between md:left-12 md:right-12 lg:left-16 lg:right-16">
+          <div className="hidden text-xs font-semibold uppercase tracking-[0.24em] text-white/60 md:block">
+            Sikkim · Darjeeling · Araku · Beyond
+          </div>
+          <div className="flex gap-3">
           {heroImages.map((_, idx) => (
             <button
               key={idx}
@@ -114,6 +126,7 @@ const Hero = () => {
               aria-label={`Go to slide ${idx + 1}`}
             />
           ))}
+          </div>
         </div>
       </div>
     </section>

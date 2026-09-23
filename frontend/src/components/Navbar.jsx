@@ -68,8 +68,10 @@ function Navbar() {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 bg-white ${
-        scrolled ? "shadow-lg" : "py-2 border-b border-gray-100"
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
+        scrolled
+          ? "bg-white/90 shadow-[0_18px_45px_rgba(10,46,77,0.10)] backdrop-blur-xl border-b border-white/70"
+          : "bg-white/80 py-2 border-b border-white/60 backdrop-blur-md"
       }`}
     >
       <div className="container mx-auto px-6 lg:px-12">

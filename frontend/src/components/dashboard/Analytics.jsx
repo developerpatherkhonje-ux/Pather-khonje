@@ -17,100 +17,67 @@ function Analytics() {
     try {
       setLoading(true);
       const result = await analyticsService.getAnalyticsData(selectedPeriod);
-      
-      // Calculate derived stats based on backend data
-      const totalRev = result.invoices?.totalRevenue || 0;
-      const totalExp = result.vouchers?.totalExpenses || 0;
-      const profit = totalRev - totalExp;
-      const totalBk = result.invoices?.totalInvoices || 0;
-      const margin = totalRev > 0 ? Math.round((profit / totalRev) * 100) : 0;
-      const avgBooking = totalBk > 0 ? Math.round(totalRev / totalBk) : 0;
-
-      // Process monthly data for charts
-      const monthlyMap = new Map();
-      
-      (result.invoices?.monthlyRevenue || []).forEach(m => {
-         monthlyMap.set(m.month, { month: m.month, revenue: m.amount, expenses: 0, profit: m.amount, bookings: m.count || 0 });
-      });
-      
-      (result.vouchers?.monthlyExpenses || []).forEach(m => {
-         if(monthlyMap.has(m.month)) {
-             const existing = monthlyMap.get(m.month);
-             existing.expenses = m.amount;
-             existing.profit = existing.revenue - m.amount;
-         } else {
-             monthlyMap.set(m.month, { month: m.month, revenue: 0, expenses: m.amount, profit: -m.amount, bookings: 0 });
-         }
-      });
-      
-      let processedMonthly = Array.from(monthlyMap.values()).slice(-6);
-      if (processedMonthly.length === 0) {
-        processedMonthly = [{ month: 'Current', revenue: totalRev, expenses: totalExp, profit: profit, bookings: totalBk }];
-      }
-
-      // Process recent transactions
-      const transactions = [];
-      (result.invoices?.rawInvoices || []).forEach(inv => {
-         transactions.push({ 
-           type: 'revenue', 
-           description: `${inv.type === 'hotel' ? 'Hotel' : 'Tour'} - ${inv.invoiceNumber || 'INV'}`, 
-           amount: inv.total || 0, 
-           date: new Date(inv.date || inv.createdAt) 
-         });
-      });
-      (result.vouchers?.rawVouchers || []).forEach(v => {
-         transactions.push({ 
-           type: 'expense', 
-           description: `${v.category || 'Expense'} Voucher`, 
-           amount: -(v.total || 0), 
-           date: new Date(v.date || v.createdAt) 
-         });
-      });
-      
-      const sortedTransactions = transactions
-        .sort((a,b) => b.date - a.date)
-        .slice(0, 5)
-        .map(t => ({...t, date: t.date.toLocaleDateString('en-IN')}));
+      const metrics = result.metrics || {};
+      const monthlyData = result.monthlyData?.length
+        ? result.monthlyData
+        : [{
+            month: 'Current',
+            revenue: metrics.revenue?.total || 0,
+            expenses: metrics.expenses?.total || 0,
+            profit: metrics.profit?.total || 0,
+            bookings: metrics.bookings?.total || 0
+          }];
 
       setData({
         stats: {
-          revenue: { total: totalRev, change: 12, trend: 'up' }, 
-          expenses: { total: totalExp, change: 5, trend: 'down' },
-          profit: { total: profit, change: 15, trend: 'up' },
-          bookings: { total: totalBk, change: 8, trend: 'up' }
+          revenue: {
+            total: metrics.revenue?.total || 0,
+            change: metrics.revenue?.change || 0,
+            trend: (metrics.revenue?.change || 0) >= 0 ? 'up' : 'down'
+          },
+          expenses: {
+            total: metrics.expenses?.total || 0,
+            change: metrics.expenses?.change || 0,
+            trend: (metrics.expenses?.change || 0) <= 0 ? 'down' : 'up'
+          },
+          profit: {
+            total: metrics.profit?.total || 0,
+            change: metrics.profit?.change || 0,
+            trend: (metrics.profit?.change || 0) >= 0 ? 'up' : 'down'
+          },
+          bookings: {
+            total: metrics.bookings?.total || 0,
+            change: metrics.bookings?.change || 0,
+            trend: (metrics.bookings?.change || 0) >= 0 ? 'up' : 'down'
+          }
         },
-        monthlyData: processedMonthly,
-        recentTransactions: sortedTransactions,
-        margin,
-        avgBooking
+        monthlyData,
+        recentTransactions: (result.recentTransactions || []).map(t => ({
+          ...t,
+          date: new Date(t.date).toLocaleDateString('en-IN')
+        })),
+        topPackages: result.topPackages || [],
+        topHotels: result.topHotels || [],
+        margin: metrics.profit?.margin || 0,
+        avgBooking: metrics.bookings?.averageValue || 0,
+        receivable: metrics.revenue?.receivable || 0,
+        expenseDue: metrics.expenses?.due || 0,
+        lastUpdated: result.lastUpdated
       });
       setError(null);
     } catch (err) {
       console.error('Failed to load analytics:', err);
-      setError('Could not load real-time analytics. Displaying cached/fallback data.');
+      setError('Could not load live analytics. Please check backend/API connection.');
     } finally {
       setLoading(false);
     }
   };
 
-  // Mock data for Top Performers (To keep your layout intact if backend doesn't group these yet)
-  const topPackages = [
-    { name: 'Himalayan Adventure', bookings: 25, revenue: 625000 },
-    { name: 'Royal Rajasthan', bookings: 18, revenue: 630000 },
-    { name: 'Goa Beach Paradise', bookings: 32, revenue: 576000 },
-    { name: 'Kashmir Valley', bookings: 15, revenue: 450000 },
-    { name: 'Kerala Backwaters', bookings: 22, revenue: 484000 }
-  ];
+  const StatCard = ({ title, value, change, trend, icon: Icon, color, lowerIsGood = false }) => {
+    const positiveState = lowerIsGood ? change <= 0 : change >= 0;
+    const TrendIcon = trend === 'up' ? TrendingUp : TrendingDown;
 
-  const topHotels = [
-    { name: 'The Grand Mountain Resort', bookings: 28, revenue: 420000 },
-    { name: 'Heritage Palace Hotel', bookings: 22, revenue: 550000 },
-    { name: 'Beach Resort Goa', bookings: 35, revenue: 525000 },
-    { name: 'Valley View Hotel', bookings: 18, revenue: 324000 },
-    { name: 'Backwater Resort', bookings: 25, revenue: 375000 }
-  ];
-
-  const StatCard = ({ title, value, change, trend, icon: Icon, color }) => (
+    return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
@@ -121,10 +88,10 @@ function Analytics() {
           <Icon className="h-6 w-6 text-white" />
         </div>
         <div className={`flex items-center text-sm font-medium ${
-          trend === 'up' ? 'text-green-600' : 'text-red-600'
+          positiveState ? 'text-green-600' : 'text-red-600'
         }`}>
-          {trend === 'up' ? <TrendingUp className="h-4 w-4 mr-1" /> : <TrendingDown className="h-4 w-4 mr-1" />}
-          {change}%
+          <TrendIcon className="h-4 w-4 mr-1" />
+          {Math.abs(change)}%
         </div>
       </div>
       <h3 className="text-2xl font-bold text-gray-900 mb-1">
@@ -132,7 +99,8 @@ function Analytics() {
       </h3>
       <p className="text-gray-600">{title}</p>
     </motion.div>
-  );
+    );
+  };
 
   if (loading && !data) {
     return (
@@ -149,6 +117,9 @@ function Analytics() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Analytics & Reports</h1>
           {error && <p className="text-red-500 text-sm mt-1 flex items-center"><AlertCircle size={14} className="mr-1"/>{error}</p>}
+          {data?.lastUpdated && !error && (
+            <p className="text-gray-500 text-sm mt-1">Last updated {new Date(data.lastUpdated).toLocaleString('en-IN')}</p>
+          )}
         </div>
         <div className="flex space-x-2">
           {['week', 'month', 'year', 'all'].map((period) => (
@@ -185,6 +156,7 @@ function Analytics() {
             trend={data.stats.expenses.trend}
             icon={TrendingDown}
             color="bg-red-500"
+            lowerIsGood
           />
           <StatCard
             title="Net Profit"
@@ -245,7 +217,7 @@ function Analytics() {
             <h2 className="text-xl font-bold text-gray-900 mb-6">Profit vs Expenses</h2>
             <div className="space-y-4">
               {data.monthlyData.map((d) => {
-                const total = Math.max(d.profit + d.expenses, 1);
+                const total = Math.max(Math.abs(d.profit) + Math.abs(d.expenses), 1);
                 return (
                   <div key={d.month} className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -259,13 +231,13 @@ function Analytics() {
                       <div className="flex-1 bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-500 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.max((d.profit / total) * 100, 0)}%` }}
+                          style={{ width: `${Math.max((Math.max(d.profit, 0) / total) * 100, 0)}%` }}
                         />
                       </div>
                       <div className="flex-1 bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-red-500 h-2 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.max((d.expenses / total) * 100, 0)}%` }}
+                          style={{ width: `${Math.max((Math.abs(d.expenses) / total) * 100, 0)}%` }}
                         />
                       </div>
                     </div>
@@ -300,7 +272,7 @@ function Analytics() {
             Top Performing Packages
           </h2>
           <div className="space-y-4">
-            {topPackages.map((pkg, index) => (
+            {(data?.topPackages || []).length > 0 ? data.topPackages.map((pkg, index) => (
               <div key={pkg.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
                   <h3 className="font-semibold text-gray-900">{pkg.name}</h3>
@@ -311,7 +283,9 @@ function Analytics() {
                   <p className="text-xs text-gray-500">#{index + 1}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-6 text-gray-500">No tour invoice data for this period.</div>
+            )}
           </div>
         </motion.div>
 
@@ -326,7 +300,7 @@ function Analytics() {
             Top Performing Hotels
           </h2>
           <div className="space-y-4">
-            {topHotels.map((hotel, index) => (
+            {(data?.topHotels || []).length > 0 ? data.topHotels.map((hotel, index) => (
               <div key={hotel.name} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div>
                   <h3 className="font-semibold text-gray-900">{hotel.name}</h3>
@@ -337,7 +311,9 @@ function Analytics() {
                   <p className="text-xs text-gray-500">#{index + 1}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+              <div className="text-center py-6 text-gray-500">No hotel invoice data for this period.</div>
+            )}
           </div>
         </motion.div>
       </div>
@@ -413,9 +389,9 @@ function Analytics() {
               transition={{ delay: 0.7 }}
               className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-2xl p-6 shadow-lg"
             >
-              <h3 className="text-lg font-semibold mb-2">Customer Satisfaction</h3>
-              <p className="text-3xl font-bold mb-1">4.8/5</p>
-              <p className="text-purple-100">Based on recent feedback</p>
+              <h3 className="text-lg font-semibold mb-2">Pending Balances</h3>
+              <p className="text-3xl font-bold mb-1">₹{(data.receivable + data.expenseDue).toLocaleString('en-IN')}</p>
+              <p className="text-purple-100">Receivable + expense due</p>
             </motion.div>
           </div>
         </>
