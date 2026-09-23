@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { motion } from 'framer-motion';
+import { motion } from 'framer-motion'; 
 
 function AppRouter() {
   const { user, isLoading } = useAuth();
