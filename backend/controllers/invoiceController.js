@@ -1,4 +1,4 @@
-const Invoice = require('../models/Invoice');
+const Invoice = require('../models/Invoice'); 
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
