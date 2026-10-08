@@ -4,7 +4,7 @@ const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const Invoice = require('../models/Invoice');
 const PaymentVoucher = require('../models/PaymentVoucher');
-const { 
+const {  
   authenticateToken, 
   requireAdmin,
   requireAdminOrManager,
