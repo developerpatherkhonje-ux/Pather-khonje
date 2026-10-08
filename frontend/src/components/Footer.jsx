@@ -24,7 +24,7 @@ const Footer = () => {
           <div>
             {!imageError ? (
               <img 
-                src="/logo/Pather%20Khonje%20Logo.png" 
+                src="/logo/pather-khonje-logo.png"
                 alt="Pather Khonje" 
                 className="h-16 mb-6 object-contain" 
                 onError={() => setImageError(true)}

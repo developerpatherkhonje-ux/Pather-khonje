@@ -1,132 +1,147 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, Compass, ShieldCheck, Sparkles } from "lucide-react";
-import { useNavigate, Link } from "react-router-dom";
+import { ArrowRight, CalendarCheck, MapPinned, MessageCircle, ShieldCheck } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 
-// Indian Mountain Photos: Ladakh, Manali, Sikkim, Darjeeling
 const heroImages = [
-  "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?q=80&w=2070", // Ladakh (Confirmed working)
-  "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070", // Manali (Epic Snow Mountains)
-  "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=2070", // Sikkim (Confirmed working)
-  "https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?q=80&w=2070", // Darjeeling (Mist & Hills)
+  { src: "/assets/home-mountain-premium.png", label: "Premium mountain sunrise route" },
+  { src: "/assets/home-monastery-road.png", label: "Colorful mountain road and viewpoint" },
+  { src: "/assets/home-hill-resort.png", label: "Boutique hill resort balcony" },
 ];
+
+const openWhatsApp = () => {
+  const message =
+    "Hi Pather Khonje, I want help planning a premium Himalayan trip.";
+  window.open(
+    `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+};
+
 const Hero = () => {
   const [activeImage, setActiveImage] = useState(0);
   const navigate = useNavigate();
 
-  // Auto-slide every 4.5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveImage((prev) => (prev + 1) % heroImages.length);
-    }, 4500);
+    }, 5200);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <section className="relative w-full min-h-[92vh] overflow-hidden bg-midnight-ocean">
-      {heroImages.map((src, idx) => (
-        <motion.div
-          key={src}
-          initial={false}
-          animate={{
-            opacity: activeImage === idx ? 1 : 0,
-            scale: activeImage === idx ? 1 : 1.08,
-          }}
-          transition={{ duration: 1.6, ease: "easeInOut" }}
-          className="absolute inset-0"
-          style={{ pointerEvents: activeImage === idx ? "auto" : "none" }}
-        >
-          <img
-            src={src}
-            alt={`Curated Himalayan journey ${idx + 1}`}
-            className="h-full w-full object-cover"
+    <section className="relative min-h-[calc(100vh-88px)] overflow-hidden bg-[#071c23] text-white">
+      <div className="absolute inset-0">
+        {heroImages.map((image, idx) => (
+          <motion.img
+            key={image.src}
+            src={image.src}
+            alt={image.label}
+            initial={false}
+            animate={{
+              opacity: activeImage === idx ? 1 : 0,
+              scale: activeImage === idx ? 1.03 : 1.1,
+            }}
+            transition={{ duration: 1.4, ease: "easeInOut" }}
+            className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-0 luxury-hero-overlay" />
-        </motion.div>
-      ))}
+        ))}
+        <div className="absolute inset-0 himalaya-hero-overlay" />
+        <div className="absolute inset-0 topographic-mask opacity-45" />
+      </div>
 
-      <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-midnight-ocean/45 to-transparent" />
-
-      <div className="relative z-10 mx-auto flex min-h-[92vh] max-w-7xl flex-col justify-center px-6 pb-20 pt-32 md:px-12 lg:px-16">
+      <div className="relative z-10 mx-auto grid min-h-[calc(100vh-88px)] max-w-7xl grid-cols-1 items-center gap-10 px-5 pb-16 pt-24 sm:px-6 md:px-10 lg:px-12">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, ease: "easeOut" }}
-          className="max-w-4xl"
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="max-w-3xl"
         >
-          <div className="flex items-center gap-4 mb-6">
-            <div className="gold-rule"></div>
-            <span className="section-kicker">
-              Estd. 2015 · Kolkata based travel atelier
+          <div className="mb-6 flex flex-wrap items-center gap-3">
+            <span className="himalaya-kicker text-soft-gold">
+              Premium mountain travel
+            </span>
+            <span className="hidden h-px w-16 bg-soft-gold/55 sm:block" />
+            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-white/70">
+              Kolkata based travel atelier
             </span>
           </div>
 
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-serif text-white leading-[0.98] mb-7 drop-shadow-lg">
-            A Tour That <br />
-            <span className="italic text-soft-gold">Feels Personally Found.</span>
+          <h1 className="atelier-display max-w-5xl text-[3.25rem] font-semibold leading-[0.9] text-white sm:text-7xl lg:text-[5.8rem] xl:text-[6.35rem]">
+            The mountains,
+            <span className="block italic text-[#e3c879]">
+              planned with feeling.
+            </span>
           </h1>
 
-          <p className="text-lg md:text-xl text-white/82 font-light max-w-2xl leading-relaxed mb-10">
-            Discover Himalayan stays, coastal escapes, and custom journeys curated with local knowledge, premium comfort, and calm end-to-end planning.
+          <p className="mt-7 max-w-2xl text-base leading-8 text-white/80 sm:text-lg">
+            Premium hill journeys with handpicked stays, route pacing, local
+            insight, and WhatsApp support from the first idea to the return
+            drive home.
           </p>
 
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4, duration: 0.8 }}
-            className="flex flex-col sm:flex-row items-start sm:items-center gap-5"
-          >
+          <div className="mt-9 flex flex-col gap-4 sm:flex-row sm:items-center">
             <button
               onClick={() => navigate("/packages")}
-              className="premium-button px-8 py-4 font-sans font-bold text-xs tracking-widest uppercase"
+              className="premium-button inline-flex items-center justify-center gap-3 px-7 py-4 text-xs font-bold uppercase tracking-[0.18em]"
             >
-              Plan Your Journey
+              Explore Packages
+              <ArrowRight className="h-4 w-4" />
             </button>
-
-            <Link
-              to="/packages"
-              className="group flex items-center gap-2 text-white font-sans font-semibold text-sm tracking-wide hover:text-soft-gold transition-colors duration-200"
+            <button
+              onClick={openWhatsApp}
+            className="inline-flex items-center justify-center gap-3 border border-white/45 bg-white/15 px-7 py-4 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-[0_18px_50px_rgba(0,0,0,0.22)] backdrop-blur-md transition hover:border-soft-gold hover:bg-white/22 focus:outline-none focus:ring-2 focus:ring-soft-gold/70"
             >
-              View Destinations{" "}
-              <ArrowRight
-                size={16}
-                className="transition-transform duration-200 group-hover:translate-x-1"
-              />
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp Planner
+            </button>
+            <Link
+              to="/hotels"
+              className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white/80 transition hover:text-soft-gold"
+            >
+              View hotels <ArrowRight className="h-4 w-4" />
             </Link>
-          </motion.div>
+          </div>
 
-          <div className="mt-12 grid max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-10 grid max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3">
             {[
-              { icon: Compass, label: "Curated Routes" },
-              { icon: ShieldCheck, label: "Verified Stays" },
-              { icon: Sparkles, label: "Custom Planning" },
+              { icon: MapPinned, label: "Local route notes" },
+              { icon: ShieldCheck, label: "Verified stays" },
+              { icon: CalendarCheck, label: "Paced itinerary" },
             ].map((item) => (
-              <div key={item.label} className="premium-panel flex items-center gap-3 rounded-xl px-4 py-3 text-white">
+              <div
+                key={item.label}
+                className="flex items-center gap-3 border border-white/22 bg-[#071c23]/58 px-4 py-3 shadow-[0_18px_50px_rgba(0,0,0,0.18)] backdrop-blur-xl"
+              >
                 <item.icon className="h-5 w-5 text-soft-gold" />
-                <span className="text-xs font-bold uppercase tracking-[0.18em]">{item.label}</span>
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-white/80">
+                  {item.label}
+                </span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        <div className="absolute bottom-8 left-6 right-6 z-20 flex items-center justify-between md:left-12 md:right-12 lg:left-16 lg:right-16">
-          <div className="hidden text-xs font-semibold uppercase tracking-[0.24em] text-white/60 md:block">
-            Sikkim · Darjeeling · Araku · Beyond
-          </div>
-          <div className="flex gap-3">
-          {heroImages.map((_, idx) => (
+      </div>
+
+      <div className="absolute bottom-6 left-5 right-5 z-20 flex items-center justify-between sm:left-8 sm:right-8 lg:left-12 lg:right-12">
+        <p className="hidden text-[10px] font-bold uppercase tracking-[0.28em] text-white/60 md:block">
+          Slow hill roads · Boutique stays · Custom family itineraries
+        </p>
+        <div className="flex gap-3">
+          {heroImages.map((image, idx) => (
             <button
-              key={idx}
+              key={image.src}
               onClick={() => setActiveImage(idx)}
-              className={`h-2.5 rounded-full transition-all duration-300 ${
+              className={`h-2.5 transition-all duration-300 ${
                 idx === activeImage
-                  ? "bg-white w-8 shadow-md"
-                  : "bg-white/50 hover:bg-white/80 w-2.5"
+                  ? "w-10 bg-soft-gold"
+                  : "w-2.5 bg-white/48 hover:bg-white"
               }`}
-              aria-label={`Go to slide ${idx + 1}`}
+              aria-label={`Show ${image.label}`}
             />
           ))}
-          </div>
         </div>
       </div>
     </section>

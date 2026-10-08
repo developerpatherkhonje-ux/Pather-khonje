@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { HelmetProvider } from "react-helmet-async";
 import { AuthProvider } from "./context/AuthContext";
@@ -26,7 +26,6 @@ const PackageDetails = React.lazy(() => import("./pages/PackageDetails"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Policies = React.lazy(() => import("./pages/Policies"));
-const AuthPage = React.lazy(() => import("./pages/AuthPage"));
 
 function App() {
   const [loading, setLoading] = useState(true);
@@ -53,7 +52,7 @@ function App() {
                 <Suspense fallback={<LoadingScreen />}>
                   <Routes>
                     {/* Authentication Route */}
-                    <Route path="/auth" element={<AuthPage />} />
+                    <Route path="/auth" element={<Navigate to="/?login=corporate" replace />} />
 
                     {/* Protected Dashboard Route */}
                     <Route

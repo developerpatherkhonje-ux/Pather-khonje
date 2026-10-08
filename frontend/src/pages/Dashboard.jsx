@@ -68,7 +68,7 @@ function Dashboard() {
       {/* Mobile Sidebar Toggle */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-midnight-ocean text-white flex items-center justify-between px-4 z-50">
         <div className="flex items-center gap-3">
-          <img src="/logo/Pather Khonje Logo.png" alt="Logo" className="h-8 brightness-0 invert" />
+          <img src="/logo/pather-khonje-logo.png" alt="Logo" className="h-8 brightness-0 invert" />
           <span className="font-serif tracking-widest font-bold">PK Corporate</span>
         </div>
         <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2">
@@ -87,7 +87,7 @@ function Dashboard() {
             className="fixed lg:static inset-y-0 left-0 w-64 bg-midnight-ocean text-white z-40 flex flex-col h-full shadow-2xl lg:shadow-none mt-16 lg:mt-0"
           >
             <div className="p-6 hidden lg:flex items-center gap-3 border-b border-white/10">
-              <img src="/logo/Pather Khonje Logo.png" alt="Logo" className="h-20 " />
+              <img src="/logo/pather-khonje-logo.png" alt="Logo" className="h-20 " />
               <span className="font-serif text-lg tracking-widest font-bold">Corporate</span>
             </div>
 

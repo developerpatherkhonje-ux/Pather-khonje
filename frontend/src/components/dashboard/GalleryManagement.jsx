@@ -8,7 +8,7 @@ import {
   Eye, 
   EyeOff, 
   Image as ImageIcon,
-  Upload,
+  Film,
   X,
   Save,
   RotateCcw
@@ -32,9 +32,11 @@ function GalleryManagement() {
     title: '',
     description: '',
     category: 'destinations',
-    image: null
+    image: null,
+    mediaType: 'image'
   });
   const [imagePreview, setImagePreview] = useState(null);
+  const [previewType, setPreviewType] = useState('image');
   const [uploading, setUploading] = useState(false);
 
   const categories = [
@@ -42,19 +44,27 @@ function GalleryManagement() {
     { value: 'destinations', label: 'Destinations' },
     { value: 'hotels', label: 'Hotels' },
     { value: 'activities', label: 'Activities' },
-    { value: 'food', label: 'Cuisine' }
+    { value: 'food', label: 'Cuisine' },
+    { value: 'videos', label: 'Videos' }
   ];
 
   const categoryOptions = [
     { value: 'destinations', label: 'Destinations' },
     { value: 'hotels', label: 'Hotels' },
     { value: 'activities', label: 'Activities' },
-    { value: 'food', label: 'Cuisine' }
+    { value: 'food', label: 'Cuisine' },
+    { value: 'videos', label: 'Videos' }
   ];
 
   const getGalleryImageUrl = (gallery) => (
     apiService.toAbsoluteUrl(gallery?.image?.url) || '/gallery/placeholder.jpg'
   );
+
+  const getGalleryMediaType = (gallery) => {
+    if (gallery?.mediaType) return gallery.mediaType;
+    const url = getGalleryImageUrl(gallery).toLowerCase();
+    return /\.(mp4|mov|webm|m4v)(\?|$)/.test(url) ? 'video' : 'image';
+  };
 
   useEffect(() => {
     fetchGalleries();
@@ -88,9 +98,11 @@ function GalleryManagement() {
       title: '',
       description: '',
       category: 'destinations',
-      image: null
+      image: null,
+      mediaType: 'image'
     });
     setImagePreview(null);
+    setPreviewType('image');
     setShowAddModal(true);
   };
 
@@ -100,16 +112,20 @@ function GalleryManagement() {
       title: gallery.title,
       description: gallery.description,
       category: gallery.category,
-      image: null
+      image: null,
+      mediaType: getGalleryMediaType(gallery)
     });
     setImagePreview(getGalleryImageUrl(gallery));
+    setPreviewType(getGalleryMediaType(gallery));
     setShowEditModal(true);
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData({ ...formData, image: file });
+      const type = file.type.startsWith('video/') ? 'video' : 'image';
+      setFormData({ ...formData, image: file, mediaType: type, category: type === 'video' ? 'videos' : formData.category });
+      setPreviewType(type);
       const reader = new FileReader();
       reader.onload = (e) => setImagePreview(e.target.result);
       reader.readAsDataURL(file);
@@ -179,9 +195,11 @@ function GalleryManagement() {
       title: '',
       description: '',
       category: 'destinations',
-      image: null
+      image: null,
+      mediaType: 'image'
     });
     setImagePreview(null);
+    setPreviewType('image');
   };
 
   const handleDeleteGallery = async (id) => {
@@ -391,12 +409,22 @@ function GalleryManagement() {
               transition={{ delay: index * 0.1 }}
               className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
             >
-              <div className="relative aspect-[4/3]">
-                <img
-                  src={getGalleryImageUrl(gallery)}
-                  alt={gallery.title}
-                  className="w-full h-full object-cover"
-                />
+              <div className="relative aspect-[4/3] bg-gray-900">
+                {getGalleryMediaType(gallery) === 'video' ? (
+                  <video
+                    src={getGalleryImageUrl(gallery)}
+                    className="w-full h-full object-cover"
+                    muted
+                    playsInline
+                    controls
+                  />
+                ) : (
+                  <img
+                    src={getGalleryImageUrl(gallery)}
+                    alt={gallery.title}
+                    className="w-full h-full object-cover"
+                  />
+                )}
                 
                 {/* Status Badge */}
                 <div className="absolute top-4 left-4">
@@ -415,6 +443,15 @@ function GalleryManagement() {
                     {categoryOptions.find(cat => cat.value === gallery.category)?.label}
                   </span>
                 </div>
+
+                {getGalleryMediaType(gallery) === 'video' && (
+                  <div className="absolute bottom-2 left-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-xs font-medium text-white backdrop-blur">
+                      <Film className="h-3 w-3" />
+                      Video
+                    </span>
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="absolute bottom-2 right-2 flex space-x-1">
@@ -542,11 +579,11 @@ function GalleryManagement() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Image {showAddModal ? '*' : ''}
+                      Photo / Video {showAddModal ? '*' : ''}
                     </label>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/*,video/mp4,video/webm,video/quicktime,video/x-m4v"
                       onChange={handleImageChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-sky-500 focus:border-sky-500"
                       required={showAddModal}
@@ -558,14 +595,23 @@ function GalleryManagement() {
                 {imagePreview && (
                   <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Image Preview
+                      Media Preview
                     </label>
                     <div className="relative w-full h-48 rounded-lg overflow-hidden border border-gray-300">
-                      <img
-                        src={imagePreview}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
+                      {previewType === 'video' ? (
+                        <video
+                          src={imagePreview}
+                          className="w-full h-full object-cover"
+                          controls
+                          muted
+                        />
+                      ) : (
+                        <img
+                          src={imagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
                     </div>
                   </div>
                 )}

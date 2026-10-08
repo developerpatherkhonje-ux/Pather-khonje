@@ -1,33 +1,56 @@
 import React from "react";
+import { MessageCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const FinalCTA = () => {
   const navigate = useNavigate();
 
-  return (
-    <section className="relative w-full h-[500px] flex items-center justify-center bg-white overflow-hidden">
-      <div className="absolute inset-0 z-0">
-        <img
-          src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2070&auto=format&fit=crop"
-          alt="Mountain Landscape"
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-midnight-ocean/80 mix-blend-multiply"></div>
-      </div>
+  const openWhatsApp = () => {
+    const message =
+      "Hi Pather Khonje, please help me plan a custom hill trip.";
+    window.open(
+      `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
 
-      <div className="container mx-auto px-6 relative z-10 text-center">
-        <span className="font-sans text-xs font-bold text-soft-gold uppercase tracking-[0.2em] mb-4 block">
-          Start Your Journey
+  return (
+    <section className="relative min-h-[560px] overflow-hidden bg-[#071c23] px-5 py-20 text-white sm:px-6">
+      <img
+        src="/assets/home-mountain-premium.png"
+        alt="Eastern Himalayan mountain route"
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-[#071c23]/78" />
+      <div className="absolute inset-0 topographic-mask opacity-25" />
+
+      <div className="relative z-10 mx-auto flex min-h-[400px] max-w-5xl flex-col items-center justify-center text-center">
+        <span className="himalaya-kicker text-soft-gold">
+          Start with one conversation
         </span>
-        <h2 className="font-serif text-5xl lg:text-6xl text-white mb-10 tracking-wide max-w-3xl mx-auto">
-          Let’s plan your next <br /> adventure together.
+        <h2 className="atelier-display mt-5 max-w-4xl text-5xl leading-[0.95] text-white md:text-7xl">
+          Tell us the mountain you want. We will shape the road.
         </h2>
-        <button 
-          onClick={() => navigate('/contact')}
-          className="px-12 py-4 bg-white text-midnight-ocean font-sans font-bold text-xs tracking-[0.15em] uppercase hover:bg-slate-100 transition-colors shadow-2xl"
-        >
-          Start Your Inquiry
-        </button>
+        <p className="mt-6 max-w-2xl text-base leading-8 text-white/70">
+          Share your dates, travellers and comfort level. The team will suggest
+          a route with stays, transfers and practical day-by-day pacing.
+        </p>
+        <div className="mt-9 flex flex-col gap-4 sm:flex-row">
+          <button
+            onClick={() => navigate("/contact")}
+            className="bg-white px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] text-[#071c23] transition hover:bg-soft-gold focus:outline-none focus:ring-2 focus:ring-white/80"
+          >
+            Send Enquiry
+          </button>
+          <button
+            onClick={openWhatsApp}
+            className="inline-flex items-center justify-center gap-3 border border-white/25 bg-white/10 px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] text-white backdrop-blur transition hover:border-soft-gold hover:bg-white/16 focus:outline-none focus:ring-2 focus:ring-soft-gold/70"
+          >
+            <MessageCircle className="h-4 w-4" />
+            WhatsApp
+          </button>
+        </div>
       </div>
     </section>
   );

@@ -30,14 +30,14 @@ const SEO = ({
   };
 
   const siteUrl = url || window.location.href;
-  const siteImage = getAbsoluteUrl(image || "/logo.png"); // Assuming logo.png is in public folder, or use a specific SEO image
+  const siteImage = getAbsoluteUrl(image || "/logo/pather-khonje-logo.png");
   const canonicalUrl = siteUrl.split("#")[0];
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "TravelAgency",
     name: siteTitle,
     url: window.location.origin,
-    logo: getAbsoluteUrl("/logo/Pather Khonje Logo.png"),
+    logo: getAbsoluteUrl("/logo/pather-khonje-logo.png"),
     image: siteImage,
     telephone: config.COMPANY?.phone,
     email: config.COMPANY?.email,

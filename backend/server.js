@@ -188,6 +188,11 @@ app.use(
         return callback(null, true);
       }
 
+      // Allow private network addresses for local device testing
+      if (/^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[0-1])\.)/.test(origin)) {
+        return callback(null, true);
+      }
+
       // Allow any Vercel domain (for dynamic URLs)
       if (origin.includes(".vercel.app")) {
         return callback(null, true);
@@ -267,23 +272,28 @@ app.use((req, res, next) => {
 });
 
 // Session configuration
-app.use(
-  session({
-    secret: config.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-      mongoUrl: config.MONGODB_URI,
-      touchAfter: 24 * 3600, // lazy session update
-    }),
-    cookie: {
-      secure: config.NODE_ENV === "production",
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    },
-    name: "pather-khonje-session",
-  }),
-);
+const sessionOptions = {
+  secret: config.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: config.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  },
+  name: "pather-khonje-session",
+};
+
+if (config.NODE_ENV === "production") {
+  sessionOptions.store = MongoStore.create({
+    mongoUrl: config.MONGODB_URI,
+    touchAfter: 24 * 3600, // lazy session update
+  });
+} else {
+  console.warn("⚠️  Using in-memory session store for local development.");
+}
+
+app.use(session(sessionOptions));
 
 // Database connection
 const connectDB = async () => {

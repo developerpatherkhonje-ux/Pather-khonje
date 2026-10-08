@@ -1,162 +1,112 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { LazyLoadImage } from "react-lazy-load-image-component";
-import "react-lazy-load-image-component/src/effects/blur.css";
+import { Link } from "react-router-dom";
 
-const ExperienceCard = ({
-  index,
-  title,
-  description,
-  image,
-  align = "left",
-  linkText,
-}) => {
-  return (
-    <div
-      className={`flex flex-col lg:flex-row ${
-        align === "right" ? "lg:flex-row-reverse" : ""
-      } w-full min-h-[550px]`}
-    >
-      <div
-        className={`flex flex-col lg:flex-row ${
-          align === "right" ? "lg:flex-row-reverse" : ""
-        } w-full min-h-[550px]`}
-      >
-        {/* Image Side - Editorial Scale In */}
-        <div className="w-full lg:w-1/2 overflow-hidden relative group">
-          <motion.div
-            initial={{ scale: 1.15 }}
-            whileInView={{ scale: 1 }}
-            viewport={{ once: true, margin: "-10%" }}
-            transition={{ duration: 1.4, ease: "easeOut" }}
-            className="w-full h-full"
-          >
-            <LazyLoadImage
-              src={image}
-              alt={title}
-              className="w-full h-full object-cover"
-              effect="blur"
-              wrapperClassName="w-full h-full"
-            />
-          </motion.div>
-        </div>
-
-        {/* Content Side - Precise Stagger */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: "-100px" }}
-          variants={{
-            hidden: { opacity: 0 },
-            visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
-          }}
-          className="w-full lg:w-1/2 flex flex-col justify-center px-6 md:px-12 lg:px-24 py-16 bg-ice-blue"
-        >
-          <motion.span
-            variants={{
-              hidden: { opacity: 0, y: 10 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            className="font-serif text-sm text-slate-400 mb-4 block"
-          >
-            0{index + 1}
-          </motion.span>
-
-          <motion.h3
-            variants={{
-              hidden: { opacity: 0, y: 10 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            className="font-serif text-3xl lg:text-4xl text-midnight-ocean mb-6 leading-tight"
-          >
-            {title}
-          </motion.h3>
-
-          <motion.p
-            variants={{
-              hidden: { opacity: 0, y: 10 },
-              visible: { opacity: 1, y: 0 },
-            }}
-            className="font-sans text-slate-gray text-base leading-relaxed mb-8 max-w-md"
-          >
-            {description}
-          </motion.p>
-
-          <motion.button
-            variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }}
-            className="flex items-center gap-2 font-sans font-bold text-midnight-ocean text-xs uppercase tracking-widest group cursor-pointer hover:text-deep-steel-blue transition-colors"
-          >
-            {linkText}
-            <ArrowRight
-              size={14}
-              className="group-hover:translate-x-1 transition-transform duration-200"
-            />
-          </motion.button>
-        </motion.div>
-      </div>
-    </div>
-  );
-};
+const experiences = [
+  {
+    title: "Tea ridge mornings",
+    eyebrow: "Soft mornings",
+    description:
+      "A refined hill escape through tea gardens, viewpoints, heritage corners and stays that keep Mall Road within easy reach.",
+    image: "/assets/home-mountain-premium.png",
+    link: "/hotels/darjeeling",
+  },
+  {
+    title: "Monastery road circuit",
+    eyebrow: "Sacred roads",
+    description:
+      "Monastery stops, alpine lake days and clean transfers paced around weather-aware routing.",
+    image: "/assets/home-monastery-road.png",
+    link: "/packages",
+  },
+  {
+    title: "Cloud forest trails",
+    eyebrow: "Rain-lit greens",
+    description:
+      "Waterfalls, root bridges, scenic pauses and comfortable family stays planned without rushing.",
+    image: "/assets/home-cloud-forest.png",
+    link: "/packages",
+  },
+  {
+    title: "Custom family hill trip",
+    eyebrow: "Made to measure",
+    description:
+      "A personal route board for seniors, children, food preferences, hotel comfort and the exact number of slow mornings you need.",
+    image: "/assets/home-hill-resort.png",
+    link: "/contact",
+  },
+  {
+    title: "Boutique stay circuit",
+    eyebrow: "View-led stays",
+    description:
+      "Premium hill stays matched with route logic, room comfort, food preferences and easy access to key viewpoints.",
+    image: "/assets/home-boutique-homestay.png",
+    link: "/hotels",
+  },
+];
 
 const CuratedExperiences = () => {
-  const experiences = [
-    {
-      title: "Heritage & History",
-      description:
-        "Walk through the corridors of time. From the Mughal gardens of Kashmir to the colonial charm of Kolkata, we open doors to India's most storied pasts.",
-      image:
-        "https://images.unsplash.com/photo-1524492412937-b28074a5d7da?q=80&w=2071&auto=format&fit=crop",
-      linkText: "View Heritage Trips",
-    },
-    {
-      title: "Nature & Wild",
-      description:
-        "Immerse yourself in the untamed. Private safaris in Ranthambore, silent boat rides in the Sunderbans, and stargazing in Spiti Valley.",
-      image:
-        "https://images.unsplash.com/photo-1504705759706-c5ee7158f8bb?q=80&w=2070&auto=format&fit=crop",
-      linkText: "View Nature Trips",
-    },
-    {
-      title: "Retreat & Restore",
-      description:
-        "Find your center. Curated wellness retreats in the Himalayas and coastal sanctuaries designed for deep rest and rejuvenation.",
-      image:
-        "https://images.unsplash.com/photo-1507725914440-e1e434774828?q=80&w=2000&auto=format&fit=crop",
-      linkText: "View Wellness Trips",
-    },
-  ];
-
   return (
-    <section className="w-full">
-      <div className="py-20 bg-white text-center">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <span className="font-sans text-[10px] font-bold text-slate-gray uppercase tracking-[0.2em] mb-3 block">
-            The Collection
-          </span>
-          <h2 className="font-serif text-4xl lg:text-5xl text-midnight-ocean">
-            Curated Experiences
-          </h2>
-        </motion.div>
-      </div>
+    <section className="bg-[#edf6f8] px-5 py-20 sm:px-6 lg:py-28">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+          <div>
+            <span className="himalaya-kicker text-[#0b4a42]">
+              Signature routes
+            </span>
+            <h2 className="atelier-display mt-4 text-5xl leading-[0.96] text-[#071c23] md:text-6xl">
+              The hill collection, edited for real travellers.
+            </h2>
+          </div>
+          <p className="max-w-2xl text-base leading-8 text-slate-600 lg:ml-auto">
+            Instead of generic packages, each route starts with the day rhythm:
+            when to drive, where to pause, which stay makes sense and what to
+            leave unhurried.
+          </p>
+        </div>
 
-      <div className="flex flex-col">
-        {experiences.map((exp, index) => (
-          <ExperienceCard
-            key={index}
-            index={index}
-            title={exp.title}
-            description={exp.description}
-            image={exp.image}
-            align={index % 2 !== 0 ? "right" : "left"}
-            linkText={exp.linkText}
-          />
-        ))}
+        <div className="grid gap-5 lg:grid-cols-4">
+          {experiences.map((experience, index) => (
+            <motion.article
+              key={experience.title}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }}
+              transition={{ delay: index * 0.05, duration: 0.6 }}
+              className={`experience-tile group ${
+                index === 0 ? "lg:col-span-2 lg:row-span-2" : ""
+              }`}
+            >
+              <img
+                src={experience.image}
+                alt={experience.title}
+                className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
+              />
+              <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,23,25,0.10),rgba(6,23,25,0.25)_34%,rgba(6,23,25,0.94)_100%)]" />
+              <div className="relative z-10 flex min-h-[360px] flex-col justify-end p-6 sm:p-7">
+                <div className="border border-white/12 bg-[#061719]/72 p-5 shadow-[0_18px_55px_rgba(0,0,0,0.32)] backdrop-blur-md">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-soft-gold">
+                    {experience.eyebrow}
+                  </span>
+                  <h3 className="mt-3 font-serif text-3xl leading-tight text-white">
+                    {experience.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-7 text-white/90">
+                    {experience.description}
+                  </p>
+                  <Link
+                    to={experience.link}
+                    className="mt-6 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-white"
+                  >
+                    View route{" "}
+                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              </div>
+            </motion.article>
+          ))}
+        </div>
       </div>
     </section>
   );

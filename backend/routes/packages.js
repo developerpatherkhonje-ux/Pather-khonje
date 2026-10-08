@@ -45,9 +45,28 @@ const pkgValidation = [
     .optional()
     .isArray()
     .withMessage("Highlights must be array"),
+  body("itinerary")
+    .optional()
+    .isArray()
+    .withMessage("Itinerary must be an array"),
+  body("itinerary.*.day").optional().isString(),
+  body("itinerary.*.title").optional().isString(),
+  body("itinerary.*.description").optional().isString(),
+  body("inclusions")
+    .optional()
+    .isArray()
+    .withMessage("Inclusions must be an array"),
+  body("inclusions.*").optional().isString(),
+  body("exclusions")
+    .optional()
+    .isArray()
+    .withMessage("Exclusions must be an array"),
+  body("exclusions.*").optional().isString(),
   body("category").optional().isString(),
+  body("route").optional().isString(),
   body("bestTime").optional().isString(),
   body("groupSize").optional().isString(),
+  body("isActive").optional().isBoolean().withMessage("Active status must be true or false"),
 ];
 
 const handleValidationErrors = (req, res, next) => {
@@ -64,6 +83,42 @@ const handleValidationErrors = (req, res, next) => {
   next();
 };
 
+const normalizePackagePayload = (body) => {
+  const payload = { ...body };
+  if (payload.price !== undefined) payload.price = Number(payload.price);
+  if (
+    payload.rating !== undefined &&
+    payload.rating !== null &&
+    payload.rating !== ""
+  ) {
+    payload.rating = Number(payload.rating);
+    if (!Number.isNaN(payload.rating)) {
+      if (payload.rating > 5) payload.rating = 5;
+      if (payload.rating < 1) payload.rating = 1;
+    } else {
+      delete payload.rating;
+    }
+  }
+
+  ["highlights", "inclusions", "exclusions", "images"].forEach((field) => {
+    if (Array.isArray(payload[field])) {
+      payload[field] = payload[field].filter((item) => String(item || "").trim() !== "");
+    }
+  });
+
+  if (Array.isArray(payload.itinerary)) {
+    payload.itinerary = payload.itinerary
+      .map((item, index) => ({
+        day: String(item.day || `Day ${index + 1}`).trim(),
+        title: String(item.title || "").trim(),
+        description: String(item.description || "").trim(),
+      }))
+      .filter((item) => item.title || item.description);
+  }
+
+  return payload;
+};
+
 // Public: list packages
 router.get("/", async (req, res) => {
   try {
@@ -78,6 +133,20 @@ router.get("/", async (req, res) => {
   }
 });
 
+// Admin: list all packages, including inactive records
+router.get("/admin/all", authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const list = await Package.find({}).sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      data: { packages: list.map((p) => p.getPublicProfile()) },
+    });
+  } catch (e) {
+    logger.error("Get admin packages error", { error: e.message });
+    res.status(500).json({ success: false, message: "Failed to get packages" });
+  }
+});
+
 // Public: get package by id or slug
 router.get("/:idOrSlug", async (req, res) => {
   try {
@@ -86,7 +155,7 @@ router.get("/:idOrSlug", async (req, res) => {
 
     // Checks if the string is a valid MongoDB ID, otherwise assumes it's a slug
     if (mongoose.Types.ObjectId.isValid(param)) {
-      pkg = await Package.findById(param);
+      pkg = await Package.findOne({ _id: param, isActive: true });
     } else {
       pkg = await Package.findOne({ slug: param, isActive: true });
     }
@@ -112,21 +181,7 @@ router.post(
   handleValidationErrors,
   async (req, res) => {
     try {
-      const payload = { ...req.body };
-      if (payload.price !== undefined) payload.price = Number(payload.price);
-      if (
-        payload.rating !== undefined &&
-        payload.rating !== null &&
-        payload.rating !== ""
-      ) {
-        payload.rating = Number(payload.rating);
-        if (!Number.isNaN(payload.rating)) {
-          if (payload.rating > 5) payload.rating = 5;
-          if (payload.rating < 1) payload.rating = 1;
-        } else {
-          delete payload.rating;
-        }
-      }
+      const payload = normalizePackagePayload(req.body);
 
       const pkg = new Package(payload);
       await pkg.save();
@@ -164,21 +219,7 @@ router.put(
   handleValidationErrors,
   async (req, res) => {
     try {
-      const payload = { ...req.body };
-      if (payload.price !== undefined) payload.price = Number(payload.price);
-      if (
-        payload.rating !== undefined &&
-        payload.rating !== null &&
-        payload.rating !== ""
-      ) {
-        payload.rating = Number(payload.rating);
-        if (!Number.isNaN(payload.rating)) {
-          if (payload.rating > 5) payload.rating = 5;
-          if (payload.rating < 1) payload.rating = 1;
-        } else {
-          delete payload.rating;
-        }
-      }
+      const payload = normalizePackagePayload(req.body);
       const pkg = await Package.findByIdAndUpdate(req.params.id, payload, {
         new: true,
         runValidators: true,

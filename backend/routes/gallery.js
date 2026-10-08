@@ -10,6 +10,8 @@ const buildImageData = async (file) => {
   return ImageService.processImage(file, 'pather-khonje/gallery');
 };
 
+const getMediaType = (file) => file?.mimetype?.startsWith('video/') ? 'video' : 'image';
+
 const deleteGalleryImage = async (image) => {
   if (!image || !image.public_id) return;
   await ImageService.deleteImage(image.public_id);
@@ -32,7 +34,7 @@ router.get('/', async (req, res) => {
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
     const galleries = await Gallery.find(filter)
-      .select('title description category image displayOrder createdAt')
+      .select('title description category mediaType image displayOrder createdAt')
       .sort({ displayOrder: 1, createdAt: -1 })
       .limit(parseInt(limit))
       .skip(skip);
@@ -118,7 +120,7 @@ router.get('/admin', authenticateToken, requireAdmin, async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const gallery = await Gallery.findById(req.params.id)
-      .select('title description category image displayOrder createdAt');
+      .select('title description category mediaType image displayOrder createdAt');
 
     if (!gallery) {
       return res.status(404).json({
@@ -164,12 +166,14 @@ router.post('/', authenticateToken, requireAdmin, uploadSingle, async (req, res)
     }
 
     const imageData = await buildImageData(req.file);
+    const mediaType = getMediaType(req.file);
 
     // Create gallery item
     const gallery = new Gallery({
       title,
       description,
       category,
+      mediaType,
       displayOrder: parseInt(displayOrder) || 0,
       image: imageData,
       metadata: {
@@ -245,6 +249,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadSingle, async (req, re
         console.error('Error deleting old image:', deleteError);
       }
       gallery.image = await buildImageData(req.file);
+      gallery.mediaType = getMediaType(req.file);
     }
     
     gallery.metadata.lastModifiedBy = adminId;
@@ -301,6 +306,7 @@ router.put('/:id/image', authenticateToken, requireAdmin, uploadSingle, async (r
 
     // Update gallery image
     gallery.image = imageData;
+    gallery.mediaType = getMediaType(req.file);
     gallery.metadata.lastModifiedBy = adminId;
 
     await gallery.save();

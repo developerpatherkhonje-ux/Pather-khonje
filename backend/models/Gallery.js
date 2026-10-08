@@ -19,9 +19,14 @@ const gallerySchema = new mongoose.Schema({
     type: String,
     required: [true, 'Category is required'],
     enum: {
-      values: ['destinations', 'hotels', 'activities', 'food'],
-      message: 'Category must be one of: destinations, hotels, activities, food'
+      values: ['destinations', 'hotels', 'activities', 'food', 'videos'],
+      message: 'Category must be one of: destinations, hotels, activities, food, videos'
     }
+  },
+  mediaType: {
+    type: String,
+    enum: ['image', 'video'],
+    default: 'image'
   },
   image: {
     public_id: {
@@ -84,7 +89,8 @@ gallerySchema.virtual('categoryName').get(function() {
     'destinations': 'Destinations',
     'hotels': 'Hotels', 
     'activities': 'Activities',
-    'food': 'Cuisine'
+    'food': 'Cuisine',
+    'videos': 'Videos'
   };
   return categoryMap[this.category] || this.category;
 });

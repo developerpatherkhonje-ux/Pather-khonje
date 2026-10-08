@@ -19,7 +19,7 @@ function LandingPage() {
             transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
             className="inline-flex items-center justify-center mb-6"
           >
-            <img src="/logo/Pather Khonje Logo.png" alt="Pather Khonje Logo" className="h-20 w-auto" />
+            <img src="/logo/pather-khonje-logo.png" alt="Pather Khonje Logo" className="h-20 w-auto" />
           </motion.div>
           
           <motion.h1
@@ -119,6 +119,5 @@ function LandingPage() {
 }
 
 export default LandingPage;
-
 
 

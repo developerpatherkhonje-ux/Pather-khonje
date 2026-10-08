@@ -1,4 +1,5 @@
 const express = require("express");
+const mongoose = require("mongoose");
 const { body, validationResult } = require("express-validator");
 const User = require("../models/User");
 const RefreshToken = require("../models/RefreshToken");
@@ -239,6 +240,14 @@ router.post(
   async (req, res) => {
     try {
       const { email, password } = req.body; // CAPTCHA TOKEN REMOVED HERE
+
+      if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({
+          success: false,
+          message:
+            "Database is not connected. Please start MongoDB or configure MONGODB_URI.",
+        });
+      }
 
       // Find user and include password for comparison
       const user = await User.findByEmail(email).select("+password");

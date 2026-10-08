@@ -65,12 +65,48 @@ const packageSchema = new mongoose.Schema(
         trim: true,
       },
     ],
+    itinerary: [
+      {
+        day: {
+          type: String,
+          trim: true,
+          default: "",
+        },
+        title: {
+          type: String,
+          trim: true,
+          default: "",
+        },
+        description: {
+          type: String,
+          trim: true,
+          default: "",
+        },
+      },
+    ],
+    inclusions: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    exclusions: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     category: {
       type: String,
       trim: true,
       lowercase: true,
       default: "general",
       index: true,
+    },
+    route: {
+      type: String,
+      trim: true,
+      default: "",
     },
     bestTime: {
       type: String,
@@ -104,6 +140,15 @@ packageSchema.pre('save', function(next) {
   next();
 });
 
+packageSchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate() || {};
+  if (update.name) {
+    update.slug = slugify(update.name, { lower: true, strict: true });
+    this.setUpdate(update);
+  }
+  next();
+});
+
 packageSchema.methods.getPublicProfile = function () {
   return {
     id: this._id,
@@ -116,9 +161,14 @@ packageSchema.methods.getPublicProfile = function () {
     price: this.price,
     rating: this.rating,
     highlights: this.highlights,
+    itinerary: this.itinerary || [],
+    inclusions: this.inclusions || [],
+    exclusions: this.exclusions || [],
     category: this.category,
+    route: this.route,
     bestTime: this.bestTime,
     groupSize: this.groupSize,
+    isActive: this.isActive,
     createdAt: this.createdAt,
   };
 };

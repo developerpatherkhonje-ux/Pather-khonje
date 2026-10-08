@@ -1,5 +1,32 @@
 const Invoice = require('../models/Invoice');
 const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
+
+const frontendPublicPath = path.resolve(__dirname, '../../frontend/public');
+const logoPath = path.join(frontendPublicPath, 'logo', 'pather-khonje-logo.png');
+const stampPath = path.join(frontendPublicPath, 'assets', 'stamp.png');
+
+const formatCurrency = (value = 0) => `Rs. ${Number(value || 0).toLocaleString('en-IN')}`;
+const formatDate = (value) => {
+  if (!value) return 'N/A';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'N/A' : date.toLocaleDateString('en-IN');
+};
+
+const drawSection = (doc, title, y, height) => {
+  doc.roundedRect(40, y, 515, height, 6).fillAndStroke('#ffffff', '#dbe4ea');
+  doc.fillColor('#071c23').fontSize(11).font('Helvetica-Bold').text(title, 52, y + 12);
+  doc.strokeColor('#e8b85c').moveTo(52, y + 30).lineTo(543, y + 30).stroke();
+};
+
+const drawKeyValue = (doc, label, value, x, y, width = 220) => {
+  doc.font('Helvetica-Bold').fontSize(8).fillColor('#64748b').text(label.toUpperCase(), x, y);
+  doc.font('Helvetica').fontSize(10).fillColor('#071c23').text(value || 'N/A', x, y + 12, {
+    width,
+    lineGap: 2,
+  });
+};
 
 // Generate invoice number helper (prefix + padded count)
 async function generateInvoiceNumber(type) {
@@ -167,100 +194,166 @@ exports.downloadInvoicePdf = async (req, res, next) => {
     const invoice = await Invoice.findById(req.params.id);
     if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
 
-    const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true });
+    const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, autoFirstPage: true });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=${invoice.invoiceNumber}.pdf`);
 
     doc.pipe(res);
 
-    // Header
-    try {
-      doc.image('../frontend/public/logo/Pather Khonje Logo.png', 40, 30, { width: 50 }).moveDown();
-    } catch (logoError) {
-      console.warn('Logo could not be loaded for PDF:', logoError);
+    if (fs.existsSync(logoPath)) {
+      doc.image(logoPath, 40, 28, { width: 58 });
     }
-    doc.fontSize(20).fillColor('#0ea5e9').text('Pather Khonje', 100, 35);
-    doc.fillColor('#6b7280').fontSize(10).text('A tour that never seen before.', 100, 58);
-    doc.moveDown();
-    doc.strokeColor('#93c5fd').moveTo(40, 90).lineTo(555, 90).stroke();
-
-    // Title
     const title = invoice.type === 'hotel' ? 'Hotel Booking Invoice' : 'Tour Package Invoice';
-    doc.fontSize(16).fillColor('#0ea5e9').text(title, 40, 110);
-    doc.fontSize(10).fillColor('#6b7280').text(`Invoice #${invoice.invoiceNumber}`, 40, 130);
-    doc.text(`Date: ${new Date(invoice.date).toLocaleDateString()}`, 460, 110);
 
-    // Customer Details
-    doc.roundedRect(40, 150, 515, 80, 8).fillAndStroke('#f8fafc', '#e5e7eb');
-    doc.fillColor('#111827').fontSize(12).text('Customer Details', 50, 160);
-    doc.fontSize(10).fillColor('#374151');
-    doc.text(`Name: ${invoice.customer?.name || ''}`, 50, 180);
-    doc.text(`Email: ${invoice.customer?.email || ''}`, 280, 180);
-    doc.text(`Phone: ${invoice.customer?.phone || ''}`, 50, 196);
-    doc.text(`Address: ${invoice.customer?.address || ''}`, 280, 196);
+    doc.font('Helvetica-Bold').fontSize(22).fillColor('#071c23').text('Pather Khonje', 112, 35);
+    doc.font('Helvetica').fontSize(9).fillColor('#64748b').text('A Tour That Never Seen Before', 112, 62);
+    doc.font('Helvetica-Bold').fontSize(20).fillColor('#0b4a42').text(title, 360, 36, {
+      width: 195,
+      align: 'right',
+    });
+    doc.font('Helvetica').fontSize(9).fillColor('#64748b').text(`Invoice #${invoice.invoiceNumber}`, 360, 66, {
+      width: 195,
+      align: 'right',
+    });
+    doc.strokeColor('#e8b85c').lineWidth(1.5).moveTo(40, 95).lineTo(555, 95).stroke();
 
-    // Details
-    let y = 250;
+    drawSection(doc, 'Customer Details', 115, 100);
+    drawKeyValue(doc, 'Name', invoice.customer?.name, 52, 153);
+    drawKeyValue(doc, 'Phone', invoice.customer?.phone, 214, 153, 140);
+    drawKeyValue(doc, 'Email', invoice.customer?.email, 366, 153, 170);
+    drawKeyValue(doc, 'Address', invoice.customer?.address, 52, 184, 470);
+
+    drawSection(doc, 'Invoice Details', 232, 74);
+    drawKeyValue(doc, 'Date', formatDate(invoice.date), 52, 270, 120);
+    drawKeyValue(doc, 'Type', invoice.type === 'hotel' ? 'Hotel Booking' : 'Tour Package', 196, 270, 140);
+    drawKeyValue(doc, 'Payment Method', invoice.paymentMethod || 'Cash', 360, 270, 170);
+
+    let y = 323;
     if (invoice.type === 'hotel') {
       const d = invoice.hotelDetails || {};
-      doc.roundedRect(40, y, 515, 70, 8).fillAndStroke('#eff6ff', '#e5e7eb');
-      doc.fillColor('#111827').fontSize(12).text('Hotel Booking Details', 50, y + 10);
-      doc.fontSize(10).fillColor('#374151');
-      doc.text(`Hotel Name: ${d.hotelName || ''}`, 50, y + 30);
-      doc.text(`Check-in: ${d.checkIn ? new Date(d.checkIn).toLocaleDateString() : ''}`, 250, y + 30);
-      doc.text(`Check-out: ${d.checkOut ? new Date(d.checkOut).toLocaleDateString() : ''}`, 400, y + 30);
-      doc.text(`Nights: ${d.nights || ''}`, 50, y + 46);
-      doc.text(`Rooms: ${d.rooms || ''}`, 120, y + 46);
-      doc.text(`Price/Night: ₹${d.pricePerNight || 0}`, 180, y + 46);
-      y += 90;
+      drawSection(doc, 'Hotel Booking Details', y, 132);
+      drawKeyValue(doc, 'Hotel Name', d.hotelName, 52, y + 38, 230);
+      drawKeyValue(doc, 'Place', d.place || d.location, 308, y + 38, 210);
+      drawKeyValue(doc, 'Check In', formatDate(d.checkIn), 52, y + 70, 120);
+      drawKeyValue(doc, 'Check Out', formatDate(d.checkOut), 182, y + 70, 120);
+      drawKeyValue(doc, 'Room Type', d.roomType, 312, y + 70, 120);
+      drawKeyValue(doc, 'Rooms', String(d.rooms || 0), 442, y + 70, 70);
+      drawKeyValue(doc, 'Nights / Days', `${d.nights || 0} Nights / ${d.days || d.nights || 0} Days`, 52, y + 102, 160);
+      drawKeyValue(doc, 'Price Per Night', formatCurrency(d.pricePerNight), 234, y + 102, 140);
+      drawKeyValue(doc, 'Guests', `${d.adults || 0} Adults, ${d.children || 0} Children`, 396, y + 102, 140);
+      y += 150;
+
+      if (d.address || d.additionalBenefits) {
+        drawSection(doc, 'Hotel Notes', y, 78);
+        drawKeyValue(doc, 'Address', d.address, 52, y + 38, 235);
+        drawKeyValue(doc, 'Additional Benefits', d.additionalBenefits, 310, y + 38, 220);
+        y += 96;
+      }
     } else {
       const t = invoice.tourDetails || {};
-      doc.roundedRect(40, y, 515, 70, 8).fillAndStroke('#ecfdf5', '#e5e7eb');
-      doc.fillColor('#111827').fontSize(12).text('Tour Package Details', 50, y + 10);
-      doc.fontSize(10).fillColor('#374151');
-      doc.text(`Package: ${t.packageName || ''}`, 50, y + 30);
-      doc.text(`Start: ${t.startDate ? new Date(t.startDate).toLocaleDateString() : ''}`, 250, y + 30);
-      doc.text(`End: ${t.endDate ? new Date(t.endDate).toLocaleDateString() : ''}`, 400, y + 30);
-      doc.text(`Pax: ${t.pax || ''}`, 50, y + 46);
-      y += 90;
+      const transport = invoice.transportDetails || {};
+      drawSection(doc, 'Tour Package Details', y, 130);
+      drawKeyValue(doc, 'Package', t.packageName, 52, y + 38, 230);
+      drawKeyValue(doc, 'Pax', t.pax || `${t.adults || 0} Adults, ${t.children || 0} Children`, 308, y + 38, 210);
+      drawKeyValue(doc, 'Start Date', formatDate(t.startDate), 52, y + 70, 120);
+      drawKeyValue(doc, 'End Date', formatDate(t.endDate), 182, y + 70, 120);
+      drawKeyValue(doc, 'Duration', `${t.totalDays || t.days || 0} Days / ${t.totalNights || 0} Nights`, 312, y + 70, 120);
+      drawKeyValue(doc, 'Transport', transport.modeOfTransport || t.modeOfTransport || t.transport, 442, y + 70, 90);
+      drawKeyValue(doc, 'Pickup', transport.pickupPoint || t.pickupPoint || t.pickup, 52, y + 102, 235);
+      drawKeyValue(doc, 'Drop', transport.dropPoint || t.dropPoint || t.drop, 310, y + 102, 220);
+      y += 148;
+
+      const hotels = Array.isArray(t.hotels) ? t.hotels : [];
+      if (hotels.length > 0) {
+        const sectionHeight = Math.min(112, 42 + hotels.length * 18);
+        drawSection(doc, 'Included Hotels', y, sectionHeight);
+        let hy = y + 40;
+        hotels.slice(0, 4).forEach((hotel, index) => {
+          doc.font('Helvetica-Bold').fontSize(9).fillColor('#071c23').text(`${index + 1}. ${hotel.hotelName || 'Hotel'}`, 52, hy, { width: 190 });
+          doc.font('Helvetica').fontSize(9).fillColor('#475569').text(hotel.place || 'N/A', 252, hy, { width: 95 });
+          doc.text(`${formatDate(hotel.checkIn)} - ${formatDate(hotel.checkOut)}`, 354, hy, { width: 125 });
+          doc.text(hotel.roomType || 'N/A', 485, hy, { width: 55 });
+          hy += 18;
+        });
+        y += sectionHeight + 18;
+      }
     }
 
-    // Payment Summary
-    doc.roundedRect(40, y, 515, 130, 8).fillAndStroke('#ffffff', '#e5e7eb');
-    doc.fillColor('#111827').fontSize(12).text('Payment Summary', 50, y + 10);
-    doc.fontSize(10).fillColor('#374151');
+    if (y > 610) {
+      doc.addPage();
+      y = 44;
+    }
+
+    drawSection(doc, 'Payment Summary', y, 150);
     const rows = [
       ['Subtotal', invoice.subtotal],
       ['Discount', -Math.abs(invoice.discount || 0)],
-      ['Tax', invoice.tax || 0],
+      [`GST / Tax (${invoice.gstPercent || 0}%)`, invoice.tax || 0],
       ['Total Amount', invoice.total],
       ['Advance Paid', invoice.advancePaid || 0],
       ['Due Amount', invoice.dueAmount || (invoice.total - (invoice.advancePaid || 0))]
     ];
-    let ry = y + 30;
+    let ry = y + 42;
     rows.forEach(([label, amount]) => {
-      doc.text(label, 50, ry);
-      doc.text(`₹${Number(amount).toLocaleString('en-IN')}`, 480, ry, { width: 60, align: 'right' });
-      ry += 18;
+      const isTotal = label === 'Total Amount' || label === 'Due Amount';
+      doc.font(isTotal ? 'Helvetica-Bold' : 'Helvetica').fontSize(isTotal ? 11 : 10).fillColor(isTotal ? '#071c23' : '#475569');
+      doc.text(label, 52, ry);
+      doc.text(formatCurrency(amount), 410, ry, { width: 120, align: 'right' });
+      doc.strokeColor('#eef2f7').moveTo(52, ry + 15).lineTo(530, ry + 15).stroke();
+      ry += 20;
     });
-    doc.text(`Payment Method`, 50, ry);
-    doc.text(invoice.paymentMethod || 'Cash', 480, ry, { width: 60, align: 'right' });
 
-    // Terms
-    doc.moveDown();
-    doc.fontSize(10).fillColor('#6b7280').text('\nTerms and Conditions:', 40, ry + 40);
-    const terms = [
-      'Check-in and check-out timings as per hotel policy.',
-      'Any damage to property will be charged to the guest.',
-      'Smoking is prohibited inside rooms.',
-      'Outside food and alcohol not allowed.',
-      'Cancellation as per company policy.'
-    ];
-    terms.forEach((t) => doc.text(`- ${t}`));
+    y += 172;
+    if (y > 650) {
+      doc.addPage();
+      y = 44;
+    }
+
+    doc.font('Helvetica-Bold').fontSize(10).fillColor('#071c23').text('Terms & Conditions', 40, y);
+    const terms =
+      invoice.type === 'hotel'
+        ? [
+            'Check-in and check-out timings as per hotel policy.',
+            'Any damage to property will be charged to the guest.',
+            'Cancellation and refund as per company policy.',
+          ]
+        : [
+            'Itinerary and services are subject to availability and local conditions.',
+            'Any extra personal expenses are payable by the traveller.',
+            'Cancellation and refund as per company policy.',
+          ];
+    doc.font('Helvetica').fontSize(8.5).fillColor('#64748b');
+    terms.forEach((term, index) => {
+      doc.text(`${index + 1}. ${term}`, 40, y + 18 + index * 13, { width: 300 });
+    });
+
+    const signX = 392;
+    const signY = y - 8;
+    if (fs.existsSync(stampPath)) {
+      doc.image(stampPath, signX + 33, signY, { width: 92 });
+    }
+    doc.strokeColor('#071c23').lineWidth(1).moveTo(signX, signY + 88).lineTo(signX + 150, signY + 88).stroke();
+    doc.font('Helvetica-Bold').fontSize(9).fillColor('#071c23').text('Authorized Signatory', signX, signY + 96, {
+      width: 150,
+      align: 'center',
+    });
+    doc.font('Helvetica').fontSize(8).fillColor('#64748b').text('Pather Khonje', signX, signY + 110, {
+      width: 150,
+      align: 'center',
+    });
+
+    const pageRange = doc.bufferedPageRange();
+    for (let i = pageRange.start; i < pageRange.start + pageRange.count; i += 1) {
+      doc.switchToPage(i);
+      doc.font('Helvetica').fontSize(8).fillColor('#94a3b8').text(
+        `Generated by Pather Khonje Corporate Dashboard · Page ${i + 1} of ${pageRange.count}`,
+        40,
+        812,
+        { width: 515, align: 'center' },
+      );
+    }
 
     doc.end();
   } catch (error) { next(error); }
 };
-
-
 

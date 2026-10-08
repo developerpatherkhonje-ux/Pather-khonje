@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Edit, Trash2, Edit3, Check, X } from 'lucide-react';
 import api from '../../services/api';
-import { generateInvoicePdf } from '../../utils/pdf';
-import { generateTourInvoicePdf } from '../../utils/pdfTour';
 import { formatDisplayDate } from '../../utils/dateUtils';
 import toast from 'react-hot-toast';
 
@@ -86,59 +84,7 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
 
   const download = async (inv) => {
     try {
-        console.log('InvoiceList - Raw invoice data from backend:', inv);
-        console.log('InvoiceList - Tour Details:', inv.tourDetails);
-        console.log('InvoiceList - Transport Details:', inv.transportDetails);
-        console.log('InvoiceList - Raw hotels from tourDetails:', inv.tourDetails?.hotels);
-        console.log('InvoiceList - Raw hotels from root:', inv.hotels);
-        console.log('InvoiceList - Hotels array type:', Array.isArray(inv.tourDetails?.hotels));
-        console.log('InvoiceList - Hotels length:', inv.tourDetails?.hotels?.length || 0);
-        
-        if (inv.type === 'tour') {
-          // Transform backend data to match TourInvoiceForm structure
-          const tourData = {
-            type: 'tour',
-            invoiceNumber: inv.invoiceNumber,
-            date: inv.date,
-            customer: inv.customer,
-            tourDetails: {
-              packageName: inv.tourDetails?.packageName || '',
-              startDate: inv.tourDetails?.startDate || '',
-              endDate: inv.tourDetails?.endDate || '',
-              totalDays: inv.tourDetails?.totalDays || inv.tourDetails?.days || 0,
-              totalNights: inv.tourDetails?.totalNights || (inv.tourDetails?.days ? inv.tourDetails.days - 1 : 0),
-              pax: inv.tourDetails?.pax || '',
-              inclusions: inv.tourDetails?.inclusions || '',
-              exclusions: inv.tourDetails?.exclusions || '',
-              adults: inv.tourDetails?.adults || 0,
-              children: inv.tourDetails?.children || 0,
-              adultPrice: inv.tourDetails?.adultPrice || 0,
-              childPrice: inv.tourDetails?.childPrice || 0
-            },
-            transportDetails: {
-              modeOfTransport: inv.transportDetails?.modeOfTransport || inv.tourDetails?.modeOfTransport || inv.tourDetails?.transport || '',
-              fooding: inv.transportDetails?.fooding || inv.tourDetails?.fooding || '',
-              pickupPoint: inv.transportDetails?.pickupPoint || inv.tourDetails?.pickupPoint || inv.tourDetails?.pickup || '',
-              dropPoint: inv.transportDetails?.dropPoint || inv.tourDetails?.dropPoint || inv.tourDetails?.drop || '',
-              includedTransportDetails: inv.transportDetails?.includedTransportDetails || inv.tourDetails?.includedTransportDetails || ''
-            },
-            hotels: inv.tourDetails?.hotels || inv.hotels || [],
-            subtotal: inv.subtotal,
-            discount: inv.discount,
-            tax: inv.tax,
-            gstPercent: inv.gstPercent,
-            total: inv.total,
-            advancePaid: inv.advancePaid,
-            paymentMethod: inv.paymentMethod
-          };
-          
-          console.log('InvoiceList - Transformed tour data:', tourData);
-          console.log('InvoiceList - Transport Details in transformed data:', tourData.transportDetails);
-          console.log('InvoiceList - Hotels data:', tourData.hotels);
-          await generateTourInvoicePdf(tourData, inv.invoiceNumber || `tour-invoice-${inv._id}`);
-        } else {
-          await generateInvoicePdf(inv, inv.invoiceNumber || `invoice-${inv._id}`);
-        }
+      await api.downloadInvoicePdf(inv._id || inv.id, inv.invoiceNumber || `invoice-${inv._id || inv.id}`);
       toast.success(`${inv.invoiceNumber || 'Invoice'} downloaded`);
     } catch (e2) {
       toast.error(e2.message || 'Failed to download');
@@ -300,5 +246,4 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
 }
 
 export default InvoiceList;
-
 

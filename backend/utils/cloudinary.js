@@ -94,7 +94,10 @@ const deleteImage = async (publicId) => {
       throw new Error('Cloudinary not configured. Please set CLOUD_NAME, CLOUD_API_KEY, and CLOUD_API_SECRET in your .env file');
     }
 
-    const result = await cloudinary.uploader.destroy(publicId);
+    let result = await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
+    if (result?.result === 'not found') {
+      result = await cloudinary.uploader.destroy(publicId, { resource_type: 'video' });
+    }
     return result;
   } catch (error) {
     console.error('Error deleting image from Cloudinary:', error);

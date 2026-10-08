@@ -67,9 +67,8 @@ const timelineData = [
 
 const teamData = [
   {
-    name: "Soma Shah Mitra", // UPDATED NAME
+    name: "Soma Shah Mitra",
     role: "Proprietor & Founder",
-    img: "/images/soma-shah-mitra.png", // UPDATED: Path to local image file
   },
 ];
 
@@ -489,13 +488,11 @@ const About = () => {
                 <div className="absolute top-0 left-0 w-2 h-full bg-soft-gold"></div>
                 
                 <div className="w-full md:w-1/3 flex-shrink-0">
-                  <div className="w-56 h-56 md:w-72 md:h-72 rounded-full overflow-hidden mx-auto border-[6px] border-ice-blue shadow-inner relative group">
-                    <LazyLoadImage
-                      src={member.img}
-                      alt={member.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      effect="blur"
-                    />
+                  <div className="mx-auto flex h-56 w-56 flex-col items-center justify-center rounded-full border-[6px] border-ice-blue bg-[radial-gradient(circle_at_35%_25%,rgba(198,167,94,0.28),transparent_34%),linear-gradient(145deg,#071c23,#0b4a42)] p-6 text-center shadow-inner md:h-72 md:w-72">
+                    <span className="font-serif text-6xl text-soft-gold md:text-7xl">PK</span>
+                    <span className="mt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/80">
+                      Founder led
+                    </span>
                   </div>
                 </div>
 

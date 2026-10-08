@@ -57,6 +57,9 @@ function HotelDetails() {
           
           // Combine images for the carousel
           let combinedImages = [];
+          if (realHotel.cardImage && typeof realHotel.cardImage === "string") {
+            combinedImages.push(apiService.toAbsoluteUrl(realHotel.cardImage));
+          }
           if (realHotel.image && typeof realHotel.image === "string") {
             combinedImages.push(apiService.toAbsoluteUrl(realHotel.image));
           }
@@ -117,6 +120,7 @@ function HotelDetails() {
     window.open(
       `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
       "_blank",
+      "noopener,noreferrer",
     );
   };
 
@@ -178,7 +182,7 @@ function HotelDetails() {
               className="absolute inset-0"
             >
               <LazyLoadImage
-                src={allImages[activeImage] || "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=2070"}
+                src={allImages[activeImage] || "/assets/hero12.jpg"}
                 alt={`${hotel.name} view ${activeImage + 1}`}
                 className="w-full h-full object-cover"
                 effect="blur"
@@ -256,6 +260,28 @@ function HotelDetails() {
           </div>
         </motion.div>
       </section>
+
+      {allImages.length > 1 && (
+        <section className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-12">
+          <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
+            {allImages.slice(0, 12).map((image, index) => (
+              <button
+                key={`${image}-${index}`}
+                type="button"
+                onClick={() => setActiveImage(index)}
+                className={`relative h-24 overflow-hidden rounded-lg border-2 transition ${
+                  activeImage === index
+                    ? "border-[#C7A14A]"
+                    : "border-transparent opacity-75 hover:opacity-100"
+                }`}
+                aria-label={`Show ${hotel.name} photo ${index + 1}`}
+              >
+                <img src={image} alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 2. NAVIGATION BUTTONS */}
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12 mb-8 flex justify-between items-center">

@@ -1,78 +1,24 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, Building2, MapPin, MessageCircle, Star } from "lucide-react";
 import apiService from "../services/api";
 
-// Color Constants based on design requirements
-const COLORS = {
-  primary: "#0B2545", // Deep Midnight Blue
-  secondary: "#3A5F8C", // Steel Blue
-  background: "#FAFBFD", // Cloud White
-  hoverBg: "#F1F6FB", // Soft Blue Tint
-  accent: "#C7A14A", // Muted Heritage Gold
-};
+export const CURATED_STAYS = [];
 
-// Destination IDs
-const CATEGORIES = {
-  HILLS: "hills",
-  HIMALAYA: "himalaya",
-  BEACH: "beach",
-  CULTURE: "culture",
-  FAMILY: "family",
-  ALL: "all",
-};
-
-// Dummy Data for Curated List (Used by Mobile Menu)
-export const CURATED_STAYS = [
-  {
-    id: "vizag-araku",
-    name: "Vizag – Araku Escape",
-    duration: "3 Nights",
-    price: "₹18,500",
-    location: "Visakhapatnam",
-    category: CATEGORIES.BEACH,
-    tag: "Trending",
-  },
-  {
-    id: "darjeeling-tea",
-    name: "Glenburn Tea Estate",
-    duration: "2 Nights",
-    price: "₹32,000",
-    location: "Darjeeling",
-    category: CATEGORIES.HILLS,
-    tag: "Luxury",
-  },
-  {
-    id: "kaziranga-wild",
-    name: "Kaziranga Wilderness",
-    duration: "4 Nights",
-    price: "₹24,500",
-    location: "Assam",
-    category: CATEGORIES.CULTURE,
-  },
-  {
-    id: "gangtok-retreat",
-    name: "Mayfair Gangtok Retreat",
-    duration: "3 Nights",
-    price: "₹45,000",
-    location: "Sikkim",
-    category: CATEGORIES.HIMALAYA,
-  },
-];
-
-// Destination Styles
 export const DESTINATIONS = [
-  { name: "All Destinations", id: CATEGORIES.ALL, path: "/hotels" },
-  { name: "Eastern Hills", id: CATEGORIES.HILLS, path: "/hotels" },
-  { name: "Himalayan Stays", id: CATEGORIES.HIMALAYA, path: "/hotels" },
-  { name: "Beach Destinations", id: CATEGORIES.BEACH, path: "/hotels" },
-  { name: "Cultural Circuits", id: CATEGORIES.CULTURE, path: "/hotels" },
-  { name: "Family-Friendly Stays", id: CATEGORIES.FAMILY, path: "/hotels" },
+  { name: "All Hotel Destinations", path: "/hotels" },
 ];
+
+const getPlaceImage = (place) =>
+  apiService.toAbsoluteUrl(
+    place?.image?.url ||
+      place?.image ||
+      place?.images?.[0]?.url ||
+      place?.images?.[0],
+  ) || "/assets/hero12.jpg";
 
 const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES.ALL);
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -82,113 +28,141 @@ const HotelsMegaMenu = ({ isOpen, onMouseEnter, onMouseLeave, onClose }) => {
         setLoading(true);
         const response = await apiService.getPlaces();
         if (response.success) {
-          // 🔴 FIX: Map backend data and explicitly grab the SLUG!
-          const mappedPlaces = (response.data.places || []).map((place) => ({
-            id: place.id,
-            slug: place.slug, // <--- Grabbing the SEO slug here
-            name: place.name,
-            duration: "Flexible", 
-            price: "View Details", 
-            location: place.name, 
-            category: CATEGORIES.ALL, 
-            tag: place.hotelsCount ? `${place.hotelsCount} Stays` : null,
-          }));
-          setPlaces(mappedPlaces);
+          setPlaces(response.data.places || []);
         }
       } catch (err) {
-        console.error("Error fetching places for menu:", err);
+        console.error("Error fetching places for hotel menu:", err);
       } finally {
         setLoading(false);
       }
     };
-
     fetchPlaces();
   }, []);
 
-  // Filter logic - Simplify to show all
-  const filteredStays = places;
+  const featuredPlaces = useMemo(() => places.slice(0, 6), [places]);
+  const firstPlace = featuredPlaces[0];
+
+  const handleWhatsApp = () => {
+    const message = "Hi! I want premium hotel options. Please share destinations, photos, rates and availability.";
+    window.open(
+      `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
 
   return (
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
+          initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.2, ease: "easeOut" }}
-          className="absolute top-full left-0 w-full bg-[#FAFBFD] border-b border-blue-100 shadow-xl z-50 overflow-hidden"
-          style={{ borderBottomColor: "rgba(58, 95, 140, 0.2)" }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.18, ease: "easeOut" }}
+          className="absolute left-0 top-full z-50 w-full overflow-hidden border-b border-white/70 bg-white/95 shadow-[0_26px_80px_rgba(10,46,77,0.14)] backdrop-blur-xl"
           onMouseEnter={onMouseEnter}
           onMouseLeave={onMouseLeave}
         >
-          <div className="container mx-auto px-6 lg:px-12 py-8">
-            <div className="grid grid-cols-12 gap-8">
-              {/* COLUMN 1: INTRO / CONTEXT */}
-              <div className="col-span-3 border-r border-gray-100 pr-8">
-                <h3
-                  className="font-inter font-semibold text-lg mb-4 tracking-tight"
-                  style={{ color: COLORS.primary }}
-                >
-                  Associate Hotels
-                </h3>
-                <p
-                  className="font-inter font-medium text-sm leading-relaxed mb-6"
-                  style={{ color: COLORS.secondary }}
-                >
-                  Our trusted partners providing exceptional hospitality across
-                  destinations.
-                </p>
-                <div
-                  className="w-12 h-[1px]"
-                  style={{ backgroundColor: COLORS.accent }}
-                ></div>
-              </div>
-
-              {/* COLUMN 2: HOTEL LIST (PRIMARY) - DYNAMIC - EXPANDED */}
-              <div className="col-span-9 pl-4">
-                <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
-                  <AnimatePresence mode="wait">
-                    {filteredStays.length > 0 ? (
-                      filteredStays.map((stay) => (
-                        // 🔴 FIX: Using stay.slug instead of stay.id for the URL!
-                        <Link
-                          key={stay.id}
-                          to={`/hotels/${stay.slug || stay.id}`}
-                          className="group flex items-center justify-between p-3 rounded-lg transition-all duration-200 hover:bg-[#F1F6FB]"
-                          onClick={onClose}
-                        >
-                          <div className="flex items-center gap-3 border-l-2 border-transparent group-hover:border-[#3A5F8C] pl-2 transition-all w-full">
-                            <div className="w-full">
-                              <h4
-                                className="font-inter font-medium text-sm group-hover:translate-x-1 transition-transform truncate"
-                                style={{ color: COLORS.primary }}
-                              >
-                                {stay.name}
-                              </h4>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span
-                                  className="font-inter text-[10px]"
-                                  style={{ color: COLORS.secondary }}
-                                >
-                                  {stay.location}
-                                </span>
-                              </div>
-                            </div>
-                            <ArrowRight
-                              size={14}
-                              className="opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all text-[#3A5F8C]"
-                            />
-                          </div>
-                        </Link>
-                      ))
-                    ) : (
-                      <div className="col-span-3 py-10 text-center text-sm text-gray-400 font-inter">
-                        No stays found.
-                      </div>
-                    )}
-                  </AnimatePresence>
+          <div className="container mx-auto grid grid-cols-12 gap-8 px-6 py-8 lg:px-12">
+            <div className="col-span-4 overflow-hidden rounded-2xl bg-midnight-ocean text-white">
+              <div className="relative h-56">
+                <img
+                  src={firstPlace ? getPlaceImage(firstPlace) : "/assets/hero13.jpg"}
+                  alt=""
+                  className="h-full w-full object-cover opacity-80"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-midnight-ocean via-midnight-ocean/20 to-transparent" />
+                <div className="absolute bottom-5 left-5 right-5">
+                  <div className="section-kicker">Stay finder</div>
+                  <h3 className="mt-2 font-serif text-3xl">Premium hotels by destination</h3>
                 </div>
               </div>
+              <div className="space-y-4 p-5">
+                <p className="text-sm leading-7 text-white/72">
+                  Open a destination to compare hotel photos, amenities, room
+                  details, and WhatsApp booking support.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleWhatsApp}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-xs font-bold uppercase tracking-[0.16em] text-midnight-ocean transition hover:bg-soft-gold hover:text-white"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  Ask Expert
+                </button>
+              </div>
+            </div>
+
+            <div className="col-span-8">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <div className="section-kicker">Destinations</div>
+                  <h3 className="mt-1 font-serif text-2xl text-midnight-ocean">
+                    Choose a stay base
+                  </h3>
+                </div>
+                <Link
+                  to="/hotels"
+                  onClick={onClose}
+                  className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.16em] text-midnight-ocean hover:text-soft-gold"
+                >
+                  View all
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+
+              {loading ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {[1, 2, 3, 4].map((item) => (
+                    <div key={item} className="h-24 animate-pulse rounded-2xl bg-slate-100" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {featuredPlaces.map((place) => (
+                    <Link
+                      key={place.id || place._id}
+                      to={`/hotels/${place.slug || place.id}`}
+                      onClick={onClose}
+                      className="group flex gap-4 rounded-2xl border border-slate-100 bg-white p-3 transition hover:-translate-y-0.5 hover:border-soft-gold/50 hover:shadow-[0_18px_40px_rgba(10,46,77,0.09)]"
+                    >
+                      <img
+                        src={getPlaceImage(place)}
+                        alt=""
+                        className="h-20 w-24 rounded-xl object-cover"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <h4 className="truncate font-semibold text-midnight-ocean group-hover:text-soft-gold">
+                          {place.name}
+                        </h4>
+                        <div className="mt-2 flex items-center gap-2 text-xs text-slate-500">
+                          <Building2 className="h-3.5 w-3.5 text-soft-gold" />
+                          {place.hotelsCount || 0} stays
+                        </div>
+                        <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                          <Star className="h-3.5 w-3.5 fill-soft-gold text-soft-gold" />
+                          {place.rating || "4.5"}
+                        </div>
+                      </div>
+                      <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-slate-300 transition group-hover:translate-x-1 group-hover:text-soft-gold" />
+                    </Link>
+                  ))}
+                  <Link
+                    to="/hotels"
+                    onClick={onClose}
+                    className="group flex items-center justify-between rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 transition hover:border-soft-gold hover:bg-white"
+                  >
+                    <div>
+                      <div className="font-semibold text-midnight-ocean">All destinations</div>
+                      <div className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                        <MapPin className="h-3.5 w-3.5" />
+                        Browse every hotel collection
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400 group-hover:text-soft-gold" />
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </motion.div>

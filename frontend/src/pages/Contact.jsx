@@ -1,22 +1,35 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import {
-  Phone,
+  ArrowRight,
+  Check,
+  Facebook,
+  Instagram,
   Mail,
   MapPin,
-  ArrowRight,
-  Instagram,
-  Facebook,
+  MessageCircle,
+  Mountain,
+  Phone,
+  Send,
+  ShieldCheck,
 } from "lucide-react";
 import SEO from "../components/SEO";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
+const quickTopics = [
+  "Custom package",
+  "Hotel booking",
+  "Family trip",
+  "Group tour",
+  "Honeymoon plan",
+];
+
 const Contact = () => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    subject: "",
+    subject: "Custom package",
     message: "",
     destination: "",
     month: "",
@@ -28,35 +41,25 @@ const Contact = () => {
     error: null,
   });
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    // Reset status on change
+  const handleChange = (event) => {
+    setFormData({ ...formData, [event.target.name]: event.target.value });
     if (status.success || status.error) {
       setStatus({ submitting: false, success: false, error: null });
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setStatus({ ...status, submitting: true, error: null });
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setStatus({ submitting: true, success: false, error: null });
 
     try {
-      // Import dynamically to avoid top-level issues if any
       const { submitEnquiry } = await import("../services/enquiryService");
-
       await submitEnquiry(formData);
-
-      setStatus({
-        submitting: false,
-        success: true,
-        error: null,
-      });
-
-      // Reset form
+      setStatus({ submitting: false, success: true, error: null });
       setFormData({
         name: "",
         email: "",
-        subject: "",
+        subject: "Custom package",
         message: "",
         destination: "",
         month: "",
@@ -68,394 +71,359 @@ const Contact = () => {
         success: false,
         error:
           error.response?.data?.message ||
-          "Something went wrong. Please try again.",
+          "Something went wrong. Please try again or message us on WhatsApp.",
       });
     }
   };
 
+  const handleWhatsApp = (topic = formData.subject) => {
+    const message = `Hi! I want help with ${topic || "travel planning"}. Destination: ${formData.destination || "not decided yet"}. Travel month: ${formData.month || "flexible"}. Please share options and details.`;
+    window.open(
+      `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  };
+
   return (
-    <div className="bg-ice-blue min-h-screen font-sans">
+    <div className="premium-page min-h-screen font-sans text-midnight-ocean">
       <SEO
-        title="Contact Us"
-        description="Contact Pather Khonje for custom tours, premium hotel bookings, family trips and curated travel planning across India."
+        title="Contact Pather Khonje"
+        description="Contact Pather Khonje for custom mountain tours, premium hotel bookings, family trips and curated travel planning across India."
         keywords="contact Pather Khonje, custom tour planner Kolkata, travel agency Kolkata, Sikkim travel enquiry, hotel booking assistance"
       />
-      {/* SECTION 1: MODERN EDITORIAL HERO */}
-      <section className="relative w-full py-16 px-6 md:px-12 bg-ice-blue overflow-hidden">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
-          {/* LEFT: TYPOGRAPHY */}
-          <div className="lg:w-1/2 z-10 relative">
-            <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 1, ease: "easeOut" }}
-            >
-              <div className="flex items-center gap-4 mb-6">
-                <div className="h-[1px] w-12 bg-soft-gold"></div>
-                <span className="text-sm font-bold tracking-widest text-deep-steel-blue uppercase">
-                  Estd. 2015
-                </span>
-              </div>
-              <h1 className="text-6xl md:text-8xl font-serif text-midnight-ocean leading-[1.1] mb-8">
-                Plan the <br />
-                <span className="italic text-soft-gold relative inline-block">
-                  Unforgettable.
-                  <svg
-                    className="absolute w-full h-3 -bottom-1 left-0 text-soft-gold/30"
-                    viewBox="0 0 100 10"
-                    preserveAspectRatio="none"
-                  >
-                    <path
-                      d="M0 5 Q 50 10 100 5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      fill="none"
-                    />
-                  </svg>
-                </span>
-              </h1>
-              <p className="text-xl text-slate-600 font-light max-w-md leading-relaxed mb-10">
-                We craft journeys that match the rhythm of your heart.
-                Experience India with clarity, comfort, and character.
-              </p>
 
-              <div className="flex items-center gap-6">
+      <section className="relative min-h-[78vh] overflow-hidden bg-midnight-ocean">
+        <LazyLoadImage
+          src="/assets/hero12.jpg"
+          alt="Mountain route planning"
+          className="absolute inset-0 h-full w-full object-cover"
+          wrapperClassName="absolute inset-0 h-full w-full"
+          effect="blur"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,37,35,0.98),rgba(10,46,77,0.76)_52%,rgba(10,46,77,0.34)),linear-gradient(180deg,rgba(0,0,0,0.22),rgba(0,0,0,0.68))]" />
+
+        <div className="relative z-10 mx-auto flex min-h-[78vh] max-w-7xl flex-col justify-end px-6 pb-12 pt-32 md:pb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, ease: "easeOut" }}
+            className="max-w-4xl"
+          >
+            <div className="mb-5 flex items-center gap-4">
+              <div className="gold-rule" />
+              <span className="section-kicker">Trip concierge</span>
+            </div>
+            <h1 className="font-serif text-5xl leading-[1.02] text-white md:text-7xl lg:text-8xl">
+              Tell us where the road should begin.
+            </h1>
+            <p className="mt-6 max-w-2xl rounded-2xl border border-white/12 bg-midnight-ocean/58 p-5 text-base font-medium leading-8 text-white shadow-[0_18px_55px_rgba(0,0,0,0.24)] backdrop-blur-md md:text-xl">
+              Share your dates, destination, pace and budget. We will shape a
+              clear travel plan with hotels, route notes and WhatsApp support.
+            </p>
+          </motion.div>
+
+          <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={() => handleWhatsApp("custom travel planning")}
+              className="premium-button flex items-center justify-center gap-3 rounded-full px-8 py-4 text-xs font-bold uppercase tracking-[0.18em]"
+            >
+              <MessageCircle className="h-4 w-4" />
+              Chat on WhatsApp
+            </button>
+            <a
+              href="tel:+917439857694"
+              className="flex items-center justify-center gap-3 rounded-full border border-white/24 bg-white/10 px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] text-white backdrop-blur transition hover:border-soft-gold hover:text-soft-gold"
+            >
+              <Phone className="h-4 w-4" />
+              Call Now
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-12 md:px-6">
+        <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-3">
+          {[
+            {
+              icon: Phone,
+              title: "Direct Line",
+              text: "Speak with our travel concierge for quick route help.",
+              value: "+91 7439857694",
+              href: "tel:+917439857694",
+            },
+            {
+              icon: Mail,
+              title: "Email Us",
+              text: "Send detailed itinerary or hotel booking requests.",
+              value: "contact@patherkhonje.com",
+              href: "mailto:contact@patherkhonje.com",
+            },
+            {
+              icon: MapPin,
+              title: "Visit Us",
+              text: "64/2/12, Biren Roy Road (East), Behala, Kolkata - 700008",
+              value: "Open Maps",
+              href: "#map",
+            },
+          ].map(({ icon: Icon, title, text, value, href }) => (
+            <a
+              key={title}
+              href={href}
+              className="premium-panel group rounded-[1.5rem] p-7 transition hover:-translate-y-1"
+            >
+              <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-midnight-ocean text-white transition group-hover:bg-soft-gold">
+                <Icon className="h-5 w-5" />
+              </div>
+              <h2 className="font-serif text-2xl">{title}</h2>
+              <p className="mt-3 min-h-[54px] text-sm leading-7 text-slate-600">
+                {text}
+              </p>
+              <div className="mt-5 flex items-center gap-2 text-sm font-bold text-deep-steel-blue group-hover:text-soft-gold">
+                {value}
+                <ArrowRight className="h-4 w-4" />
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="px-4 pb-16 md:px-6 md:pb-24">
+        <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[1.75rem] bg-white shadow-[0_26px_80px_rgba(10,46,77,0.12)] ring-1 ring-midnight-ocean/8 lg:grid-cols-[1fr_430px]">
+          <div className="bg-mist-blue p-6 md:p-10 lg:p-12">
+            <div className="mb-8">
+              <span className="section-kicker">Plan request</span>
+              <h2 className="mt-3 font-serif text-4xl md:text-5xl">
+                Build my trip
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-600">
+                The more clearly you describe the journey, the faster our team
+                can send the right route and hotel options.
+              </p>
+            </div>
+
+            <div className="mb-7 flex flex-wrap gap-2">
+              {quickTopics.map((topic) => (
                 <button
-                  onClick={() =>
-                    window.scrollTo({ top: 800, behavior: "smooth" })
-                  }
-                  className="bg-midnight-ocean text-white px-8 py-4 font-medium hover:bg-deep-steel-blue transition-all shadow-lg hover:shadow-xl rounded-sm group"
+                  key={topic}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, subject: topic })}
+                  className={`rounded-full border px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] transition ${
+                    formData.subject === topic
+                      ? "border-midnight-ocean bg-midnight-ocean text-white"
+                      : "border-white bg-white text-slate-500 hover:border-soft-gold hover:text-midnight-ocean"
+                  }`}
                 >
-                  Start Planning{" "}
-                  <ArrowRight
-                    className="inline ml-2 group-hover:translate-x-1 transition-transform"
-                    size={18}
-                  />
+                  {topic}
                 </button>
-                <div className="flex -space-x-4">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="w-12 h-12 rounded-full border-2 border-white bg-slate-200 overflow-hidden"
-                    >
-                      <img
-                        src={`https://randomuser.me/api/portraits/thumb/women/${
-                          i + 20
-                        }.jpg`}
-                        alt="Traveler"
-                        className="w-full h-full object-cover"
-                      />
+              ))}
+            </div>
+
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              <div className="grid gap-5 md:grid-cols-2">
+                <Field label="Your Name">
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    className="contact-input"
+                    placeholder="Your full name"
+                    required
+                  />
+                </Field>
+                <Field label="Email or Phone">
+                  <input
+                    type="text"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="contact-input"
+                    placeholder="Phone number or email"
+                    required
+                  />
+                </Field>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <Field label="Destination">
+                  <input
+                    type="text"
+                    name="destination"
+                    value={formData.destination}
+                    onChange={handleChange}
+                    className="contact-input"
+                    placeholder="Sikkim, Darjeeling, Araku..."
+                  />
+                </Field>
+                <Field label="Travel Month">
+                  <input
+                    type="text"
+                    name="month"
+                    value={formData.month}
+                    onChange={handleChange}
+                    className="contact-input"
+                    placeholder="October, winter, flexible..."
+                  />
+                </Field>
+              </div>
+
+              <Field label="How can we help?">
+                <textarea
+                  name="message"
+                  value={formData.message}
+                  onChange={handleChange}
+                  rows={5}
+                  className="contact-input resize-none"
+                  placeholder="Group size, budget, preferred hotel type, places you want to cover..."
+                  required
+                />
+              </Field>
+
+              {status.success && (
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
+                  Thank you. Your request has been sent successfully.
+                </div>
+              )}
+
+              {status.error && (
+                <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+                  {status.error}
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+                <button
+                  type="submit"
+                  disabled={status.submitting}
+                  className="premium-button flex items-center justify-center gap-3 rounded-full px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] disabled:opacity-60"
+                >
+                  <Send className="h-4 w-4" />
+                  {status.submitting ? "Sending..." : "Send Request"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleWhatsApp()}
+                  className="flex items-center justify-center gap-3 rounded-full border border-midnight-ocean/15 bg-white px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] text-midnight-ocean transition hover:border-soft-gold hover:text-soft-gold"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp Instead
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <aside className="relative bg-midnight-ocean p-6 text-white md:p-10 lg:p-12">
+            <div className="absolute inset-0 opacity-20">
+              <LazyLoadImage
+                src="/assets/hero13.jpg"
+                alt=""
+                className="h-full w-full object-cover"
+                wrapperClassName="h-full w-full"
+                effect="blur"
+              />
+            </div>
+            <div className="relative z-10 flex h-full flex-col justify-between">
+              <div>
+                <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-3xl bg-white/12 backdrop-blur">
+                  <Mountain className="h-8 w-8 text-soft-gold" />
+                </div>
+                <h3 className="font-serif text-4xl">What happens next?</h3>
+                <div className="mt-8 space-y-5">
+                  {[
+                    "We understand your route, pace and hotel preference.",
+                    "We share suitable options with photos and price range.",
+                    "You confirm on WhatsApp, then our team handles the rest.",
+                  ].map((item, index) => (
+                    <div key={item} className="flex gap-4">
+                      <div className="flex h-8 min-w-8 items-center justify-center rounded-full bg-soft-gold text-xs font-bold text-midnight-ocean">
+                        {index + 1}
+                      </div>
+                      <p className="leading-7 text-white/78">{item}</p>
                     </div>
                   ))}
-                  <div className="flex items-center justify-center w-12 h-12 rounded-full border-2 border-white bg-slate-100 text-xs font-bold text-midnight-ocean">
-                    2k+
+                </div>
+              </div>
+
+              <div className="mt-10 rounded-3xl border border-white/12 bg-white/10 p-5 backdrop-blur">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="h-5 w-5 text-soft-gold" />
+                  <span className="text-sm font-bold uppercase tracking-[0.14em]">
+                    Trusted planning
+                  </span>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm text-white/78">
+                  <div className="rounded-2xl bg-white/10 p-4">
+                    <div className="font-serif text-3xl text-white">10+</div>
+                    Years
+                  </div>
+                  <div className="rounded-2xl bg-white/10 p-4">
+                    <div className="font-serif text-3xl text-white">2k+</div>
+                    Travelers
                   </div>
                 </div>
               </div>
-            </motion.div>
-          </div>
-
-          {/* RIGHT: ABSTRACT IMAGE SHAPE */}
-          <div className="lg:w-1/2 relative">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
-              className="relative"
-            >
-              <motion.div
-                className="absolute w-full h-full border-4 border-soft-gold/30 rounded-[250px_0px_0px_250px] z-10"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1.2, ease: "easeOut", delay: 0.2 }}
-              ></motion.div>
-              <div className="w-full h-[600px] rounded-[250px_0px_0px_250px] overflow-hidden shadow-2xl relative">
-                <img
-                  src="/assets/hero12.jpg"
-                  alt="Luxury Travel"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-1000"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-midnight-ocean/40 to-transparent"></div>
-              </div>
-
-              {/* Floating Badge */}
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 1, duration: 0.8 }}
-                className="absolute bottom-10 -left-10 bg-white p-6 shadow-xl max-w-xs hidden md:block border-l-4 border-soft-gold z-10"
-              >
-                <p className="font-serif text-lg text-midnight-ocean italic">
-                  "The journey not the arrival matters."
-                </p>
-                <p className="text-xs text-slate-400 mt-2 uppercase tracking-wide">
-                  — T.S. Eliot
-                </p>
-              </motion.div>
-            </motion.div>
-          </div>
+            </div>
+          </aside>
         </div>
       </section>
 
-      {/* SECTION 2: CONTACT CARDS */}
-      <section className="relative py-12 px-6 md:px-12 bg-ice-blue">
-        <div className="max-w-7xl mx-auto relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="flex flex-col md:flex-row gap-8 justify-center items-stretch"
-          >
-            {/* Card 1: Contact Info */}
-            <div className="flex-1 bg-white/70 backdrop-blur-xl border border-white/40 p-10 shadow-2xl hover:shadow-3xl transition-all duration-500 rounded-sm group">
-              <div className="w-12 h-12 bg-midnight-ocean text-white flex items-center justify-center rounded-full mb-8 group-hover:scale-110 transition-transform duration-300">
-                <Phone size={20} />
-              </div>
-              <h3 className="text-2xl font-serif text-midnight-ocean mb-4">
-                Direct Line
-              </h3>
-              <p className="text-slate-600 mb-6 font-light">
-                Speak directly with our travel concierge for immediate
-                assistance.
-              </p>
+      <section id="map" className="px-4 pb-16 md:px-6">
+        <div className="mx-auto grid max-w-7xl overflow-hidden rounded-[1.75rem] bg-white shadow-[0_20px_60px_rgba(10,46,77,0.10)] ring-1 ring-midnight-ocean/8 lg:grid-cols-[360px_1fr]">
+          <div className="p-8">
+            <span className="section-kicker">Kolkata office</span>
+            <h2 className="mt-3 font-serif text-3xl">Meet us in Behala</h2>
+            <p className="mt-4 text-sm leading-7 text-slate-600">
+              64/2/12, Biren Roy Road (East), Behala, Chowrasta, Kolkata -
+              700008
+            </p>
+            <div className="mt-6 flex gap-4 text-slate-400">
               <a
-                href="tel:+917439857694"
-                className="text-lg font-medium text-deep-steel-blue hover:text-soft-gold transition-colors"
+                href="https://www.instagram.com/patherkhonje?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw=="
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-midnight-ocean"
+                aria-label="Instagram"
               >
-                +91 7439857694
+                <Instagram size={24} />
               </a>
-              <p className="text-sm text-slate-400 mt-2">Mon-Sat, 9am - 7pm</p>
-            </div>
-
-            {/* Card 2: Email */}
-            <div className="flex-1 bg-white/70 backdrop-blur-xl border border-white/40 p-10 shadow-2xl hover:shadow-3xl transition-all duration-500 rounded-sm group">
-              <div className="w-12 h-12 bg-midnight-ocean text-white flex items-center justify-center rounded-full mb-8 group-hover:scale-110 transition-transform duration-300">
-                <Mail size={20} />
-              </div>
-              <h3 className="text-2xl font-serif text-midnight-ocean mb-4">
-                Email Us
-              </h3>
-              <p className="text-slate-600 mb-6 font-light">
-                Send us your detailed itinerary requests or general inquiries.
-              </p>
               <a
-                href="mailto:contact@patherkhonje.com"
-                className="text-lg font-medium text-deep-steel-blue hover:text-soft-gold transition-colors"
+                href="https://www.facebook.com/profile.php?id=61577923149985"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:text-midnight-ocean"
+                aria-label="Facebook"
               >
-                contact@patherkhonje.com
+                <Facebook size={24} />
               </a>
-              <p className="text-sm text-slate-400 mt-2">Response within 24h</p>
-            </div>
-
-            {/* Card 3: Location */}
-            <div className="flex-1 bg-white/70 backdrop-blur-xl border border-white/40 p-10 shadow-2xl hover:shadow-3xl transition-all duration-500 rounded-sm group">
-              <div className="w-12 h-12 bg-midnight-ocean text-white flex items-center justify-center rounded-full mb-8 group-hover:scale-110 transition-transform duration-300">
-                <MapPin size={20} />
-              </div>
-              <h3 className="text-2xl font-serif text-midnight-ocean mb-4">
-                Visit Us
-              </h3>
-              <p className="text-slate-600 mb-6 font-light">
-                Come have a coffee with us at our Kolkata expert center.
-              </p>
-              <address className="text-base text-deep-steel-blue not-italic font-medium leading-relaxed">
-                64/2/12, Biren Roy Road (East), <br /> Behala, Chowrasta, <br /> Kolkata - 700008
-              </address>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* SECTION 3: REQUEST A CALLBACK FORM */}
-      <section className="bg-ice-blue py-20 px-6 md:px-12">
-        <div className="max-w-7xl mx-auto premium-card overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[600px]">
-            {/* LEFT: FORM (Ice/Mist Blue Background) */}
-            <div className="lg:col-span-7 bg-mist-blue p-10 md:p-16 flex flex-col justify-center">
-              <motion.div
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-              >
-                <h2 className="text-3xl md:text-4xl font-serif text-midnight-ocean mb-10">
-                  Tell us about your trip
-                </h2>
-
-                <form className="space-y-6" onSubmit={handleSubmit}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-xs font-bold text-deep-steel-blue/70 uppercase tracking-widest mb-2">
-                        Your Name
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="w-full bg-white p-4 text-midnight-ocean focus:outline-none focus:ring-1 focus:ring-horizon-blue transition-all shadow-sm"
-                        placeholder="e.g. Anjali Das"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-deep-steel-blue/70 uppercase tracking-widest mb-2">
-                        Email or Phone
-                      </label>
-                      <input
-                        type="text"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        className="w-full bg-white p-4 text-midnight-ocean focus:outline-none focus:ring-1 focus:ring-horizon-blue transition-all shadow-sm"
-                        placeholder="Contact number"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-xs font-bold text-deep-steel-blue/70 uppercase tracking-widest mb-2">
-                        Destination
-                      </label>
-                      <input
-                        type="text"
-                        name="destination"
-                        value={formData.destination}
-                        onChange={handleChange}
-                        className="w-full bg-white p-4 text-midnight-ocean focus:outline-none focus:ring-1 focus:ring-horizon-blue transition-all shadow-sm"
-                        placeholder="Select a region"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-deep-steel-blue/70 uppercase tracking-widest mb-2">
-                        Travel Month
-                      </label>
-                      <input
-                        type="text"
-                        name="month"
-                        value={formData.month}
-                        onChange={handleChange}
-                        className="w-full bg-white p-4 text-midnight-ocean focus:outline-none focus:ring-1 focus:ring-horizon-blue transition-all shadow-sm"
-                        placeholder="e.g. October 2025"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-deep-steel-blue/70 uppercase tracking-widest mb-2">
-                      How can we help?
-                    </label>
-                    <textarea
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      rows="4"
-                      className="w-full bg-white p-4 text-midnight-ocean focus:outline-none focus:ring-1 focus:ring-horizon-blue transition-all shadow-sm resize-none"
-                      placeholder="Tell us about your preferences, group size, or specific requirements..."
-                      required
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-4 pt-4">
-                    {status.success && (
-                      <div className="p-4 bg-green-50 text-green-700 border border-green-200 rounded-lg">
-                        Thank you! Your message has been sent successfully. We
-                        will get back to you shortly.
-                      </div>
-                    )}
-
-                    {status.error && (
-                      <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded-lg">
-                        {status.error}
-                      </div>
-                    )}
-
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                      <button
-                        type="submit"
-                        disabled={status.submitting}
-                        className={`bg-midnight-ocean text-white px-8 py-4 font-medium hover:bg-deep-steel-blue transition-colors duration-300 w-full md:w-auto shadow-lg hover:shadow-xl rounded-sm ${
-                          status.submitting
-                            ? "opacity-70 cursor-not-allowed"
-                            : ""
-                        }`}
-                      >
-                        {status.submitting
-                          ? "Sending..."
-                          : "Request a Callback"}
-                      </button>
-                      <p className="text-sm text-slate-500 italic">
-                        We usually respond within one business day.
-                      </p>
-                    </div>
-                  </div>
-                </form>
-              </motion.div>
-            </div>
-
-            {/* RIGHT: TRUST & STORY */}
-            <div className="lg:col-span-5 bg-ice-blue/30 p-10 md:p-16 flex flex-col justify-center relative border-l border-white/50">
-              <div className="mb-10">
-                <LazyLoadImage
-                  src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80"
-                  alt="Our Team"
-                  className="w-full h-64 object-cover mb-8 shadow-md"
-                  effect="blur"
-                  wrapperClassName="w-full h-64 mb-8"
-                />
-                <p className="text-lg text-midnight-ocean leading-relaxed mb-6 font-medium">
-                  Since <span className="text-soft-gold font-bold">2015</span>,
-                  we’ve helped thousands of travelers explore India with comfort
-                  and clarity.
-                </p>
-                <ul className="space-y-4">
-                  <li className="flex items-center space-x-3 text-slate-600">
-                    <span className="text-soft-gold">✓</span>
-                    <span>10+ years of local expertise</span>
-                  </li>
-                  <li className="flex items-center space-x-3 text-slate-600">
-                    <span className="text-soft-gold">✓</span>
-                    <span>2000+ happy travelers</span>
-                  </li>
-                  <li className="flex items-center space-x-3 text-slate-600">
-                    <span className="text-soft-gold">✓</span>
-                    <span>Dedicated trip consultants</span>
-                  </li>
-                </ul>
-              </div>
             </div>
           </div>
+          <iframe
+            src="https://maps.google.com/maps?width=100%25&height=100%25&hl=en&q=64/2/12,%20Biren%20Roy%20Road%20(East),%20Behala,%20Chowrasta,%20Kolkata%20-%20700008+(Pather%20Khonje)&t=&z=16&ie=UTF8&iwloc=B&output=embed"
+            width="100%"
+            height="420"
+            style={{ border: 0 }}
+            allowFullScreen=""
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Pather Khonje Office Location"
+          />
         </div>
       </section>
-
-      {/* SECTION 5: SOLO MAP COMPONENT */}
-      <section className="w-full h-[500px] bg-slate-100 mb-0">
-        <iframe
-          src="https://maps.google.com/maps?width=100%25&height=100%25&hl=en&q=64/2/12,%20Biren%20Roy%20Road%20(East),%20Behala,%20Chowrasta,%20Kolkata%20-%20700008+(Pather%20Khonje)&t=&z=16&ie=UTF8&iwloc=B&output=embed"
-          width="100%"
-          height="100%"
-          style={{ border: 0 }}
-          allowFullScreen=""
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          title="Pather Khonje Office Location"
-        ></iframe>
-      </section>
-
-      {/* SECTION 4: SOCIAL FOOTER STRIP */}
-      <div className="border-t border-slate-100 py-8">
-        <div className="flex justify-center gap-8 text-slate-400">
-          <a href="https://www.instagram.com/patherkhonje?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" className="hover:text-midnight-ocean transition-colors">
-            <Instagram size={24} />
-          </a>
-          <a href="https://www.facebook.com/profile.php?id=61577923149985" target="_blank" rel="noopener noreferrer" className="hover:text-midnight-ocean transition-colors">
-            <Facebook size={24} />
-          </a>
-        </div>
-      </div>
     </div>
   );
 };
+
+function Field({ label, children }) {
+  return (
+    <label>
+      <span className="mb-2 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+        {label}
+      </span>
+      {children}
+    </label>
+  );
+}
 
 export default Contact;

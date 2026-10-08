@@ -43,15 +43,23 @@ const storage = multer.diskStorage({
 
 // File filter
 const fileFilter = (req, file, cb) => {
-  // Check file type
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
+  const routeContext = `${req.baseUrl || ''}${req.originalUrl || ''}${req.route?.path || ''}`;
+  const isGalleryUpload = routeContext.includes('gallery');
+  const allowedTypes = isGalleryUpload
+    ? /jpeg|jpg|png|gif|webp|mp4|mov|webm|m4v/
+    : /jpeg|jpg|png|gif|webp/;
+  const allowedMime = isGalleryUpload
+    ? (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/'))
+    : file.mimetype.startsWith('image/');
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
 
-  if (mimetype && extname) {
+  if (allowedMime && extname) {
     return cb(null, true);
   } else {
-    cb(new Error('Only image files (JPEG, JPG, PNG, GIF, WebP) are allowed!'));
+    cb(new Error(isGalleryUpload
+      ? 'Only image/video files (JPEG, PNG, GIF, WebP, MP4, MOV, WebM) are allowed!'
+      : 'Only image files (JPEG, JPG, PNG, GIF, WebP) are allowed!'
+    ));
   }
 };
 
@@ -59,7 +67,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 50 * 1024 * 1024, // allow gallery videos while keeping uploads bounded
     files: 5 // Maximum 5 files per request
   },
   fileFilter: fileFilter
@@ -94,7 +102,7 @@ const handleUploadError = (error, req, res, next) => {
     }
   }
   
-  if (error.message.includes('Only image files')) {
+  if (error.message.includes('Only image') || error.message.includes('Only image/video')) {
     return res.status(400).json({
       success: false,
       message: error.message

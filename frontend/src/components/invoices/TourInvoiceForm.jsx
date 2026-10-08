@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { Save, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { generateInvoicePdf } from '../../utils/pdf';
-import { generateTourInvoicePdf } from '../../utils/pdfTour';
 import api from '../../services/api';
 
 const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, onCancel, initial, inlineButtons = true, onStateChange, formId = 'tour-invoice-form' }, ref) {
@@ -256,36 +254,19 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
   };
 
   const downloadPdf = async () => {
-    const fileName = form.invoiceNumber || `TRP${String(Date.now()).slice(-6)}`;
+    const invoiceId = savedId || initial?._id;
+    if (!invoiceId) {
+      toast.error('Save the invoice before downloading PDF');
+      return;
+    }
+
+    const fileName = form.invoiceNumber || initial?.invoiceNumber || `TRP${String(Date.now()).slice(-6)}`;
     try {
-      const data = {
-        invoiceNumber: fileName,
-        date: Date.now(),
-        customer: form.customer,
-        tourDetails: {
-          ...form.tourDetails,
-          hotels: form.hotels  // Move hotels into tourDetails
-        },
-        transportDetails: form.transportDetails,
-        hotels: form.hotels,  // Keep this for backward compatibility
-        subtotal: form.subtotal,
-        discount: form.discount,
-        tax: form.tax,
-        gstPercent: form.gstPercent,
-        total: form.total,
-        advancePaid: form.advancePaid,
-      };
-      
-      // Debug: Log the data being sent to PDF
-      console.log('TourInvoiceForm - PDF data:', JSON.stringify(data, null, 2));
-      console.log('TourInvoiceForm - PDF hotels:', data.hotels);
-      console.log('TourInvoiceForm - PDF tourDetails.hotels:', data.tourDetails.hotels);
-      
-      await generateTourInvoicePdf(data, fileName);
+      await api.downloadInvoicePdf(invoiceId, fileName);
       toast.success(`${fileName} downloaded`);
     } catch (err) {
-      console.error('PDF generation error:', err);
-      toast.error('Failed to generate PDF');
+      console.error('PDF download error:', err);
+      toast.error('Failed to download PDF');
     }
   };
 
@@ -585,5 +566,4 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
 });
 
 export default TourInvoiceForm;
-
 

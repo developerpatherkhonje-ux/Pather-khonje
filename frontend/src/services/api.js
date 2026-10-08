@@ -1,12 +1,26 @@
 import { config } from "../config/config.js";
 
-// 💡 AUTOMATIC LOCALHOST DETECTION
-// Detects if you are developing locally and automatically points to your local backend port (usually 5000)
-const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+const isLocalhost =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+const isPrivateNetwork =
+  /^192\.168\./.test(window.location.hostname) ||
+  /^10\./.test(window.location.hostname) ||
+  /^172\.(1[6-9]|2\d|3[0-1])\./.test(window.location.hostname);
 
-const API_BASE_URL = isLocalhost 
-  ? (import.meta.env.VITE_API_URL || "http://localhost:5000/api")
-  : import.meta.env.VITE_API_URL;
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  if (isLocalhost || isPrivateNetwork) {
+    return `${window.location.protocol}//${window.location.hostname}:5000/api`;
+  }
+
+  return config.API_BASE_URL;
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 const PROD_BASE_URL = "https://api.patherkhonje.com/api";
 
@@ -352,6 +366,10 @@ class ApiService {
     return this.get("/places", { includeAuth: false });
   }
 
+  async getAdminPlaces() {
+    return this.get("/places/admin/all");
+  }
+
   async getPlaceById(placeId) {
     return this.get(`/places/${placeId}`, { includeAuth: false });
   }
@@ -567,6 +585,10 @@ class ApiService {
   // Packages API
   async listPackages() {
     return this.get("/packages", { includeAuth: false });
+  }
+
+  async listAdminPackages() {
+    return this.get("/packages/admin/all");
   }
   
   // 🔴 ADDED: Fetch a single package by ID or SEO Slug

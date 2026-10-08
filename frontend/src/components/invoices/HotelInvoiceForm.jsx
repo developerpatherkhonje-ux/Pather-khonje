@@ -1,9 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Calendar, IndianRupee, Save, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { generateInvoicePdf } from '../../utils/pdf';
 import api from '../../services/api';
 
 function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons = true, formId = 'hotel-invoice-form' }) {
@@ -184,49 +181,19 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
   };
 
   const downloadPdf = async () => {
-    const fileName = form.invoiceNumber || `HTL${String(Date.now()).slice(-6)}`;
+    const invoiceId = savedId || initial?._id;
+    if (!invoiceId) {
+      toast.error('Save the invoice before downloading PDF');
+      return;
+    }
+
+    const fileName = form.invoiceNumber || initial?.invoiceNumber || `HTL${String(Date.now()).slice(-6)}`;
     try {
-      const data = {
-        invoiceNumber: fileName,
-        date: Date.now(),
-        customer: form.customer,
-        hotelDetails: form.hotelDetails,
-        subtotal: form.subtotal,
-        discount: form.discount,
-        tax: form.tax,
-        total: form.total,
-        advancePaid: form.advancePaid,
-      };
-      await generateInvoicePdf(data, fileName);
+      await api.downloadInvoicePdf(invoiceId, fileName);
       toast.success(`${fileName} downloaded`);
     } catch (err) {
-      console.error('PDF generation failed:', err);
-      // Ultimate fallback: capture page
-      try {
-        const target = document.body;
-        const canvas = await html2canvas(target, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pageWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-        let position = 0;
-        let heightLeft = imgHeight;
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-        heightLeft -= pageHeight;
-        while (heightLeft > 0) {
-          position = heightLeft - imgHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, undefined, 'FAST');
-          heightLeft -= pageHeight;
-        }
-        pdf.save(`${fileName}.pdf`);
-        toast.success(`${fileName} downloaded`);
-      } catch (genErr) {
-        console.error(genErr);
-        toast.error('Failed to download PDF');
-      }
+      console.error('PDF download failed:', err);
+      toast.error('Failed to download PDF');
     }
   };
 
@@ -392,5 +359,4 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
 }
 
 export default HotelInvoiceForm;
-
 

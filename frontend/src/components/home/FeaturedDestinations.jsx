@@ -1,131 +1,117 @@
-import React, { useRef } from "react";
+import React from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { LazyLoadImage } from "react-lazy-load-image-component";
+import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import "react-lazy-load-image-component/src/effects/blur.css";
 
 const destinations = [
   {
-    // UPDATED: Fresh working Darjeeling Image
-    image: "https://images.unsplash.com/photo-1698753864905-a447aa362ec9?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8ZGFyamVlbGluZ3xlbnwwfHwwfHx8MA%3D%3D",
-    name: "Darjeeling",
-    label: "Queen of the Hills",
-    path: "/hotels/darjeeling"
+    name: "Tea Garden Hills",
+    label: "Soft views, heritage corners, sunrise roads",
+    path: "/hotels/darjeeling",
+    image: "/assets/home-mountain-premium.png",
   },
   {
-    image: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?q=80&w=2070",
-    name: "Sikkim",
-    label: "Mystic Mountains",
-    path: "/hotels/sikkim"
+    name: "Alpine Valleys",
+    label: "Monasteries, lakes, mountain roads",
+    path: "/hotels/sikkim",
+    image: "/assets/home-monastery-road.png",
   },
   {
-    image: "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?q=80&w=2070",
-    name: "Ladakh",
-    label: "High Altitude Desert",
-    path: "/hotels/ladakh"
+    name: "Cloud Forests",
+    label: "Waterfalls, bridges, rain-lit greens",
+    path: "/packages",
+    image: "/assets/home-cloud-forest.png",
   },
   {
-    // UPDATED: Fresh working Manali Image
-    image: "https://images.unsplash.com/photo-1516406742981-2b7d67ec4ae8?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-    name: "Manali",
-    label: "Valley of Gods",
-    path: "/hotels/manali"
+    name: "Quiet Hill Towns",
+    label: "Slow roads, viewpoints, boutique stays",
+    path: "/packages",
+    image: "/assets/home-hill-resort.png",
   },
   {
-    image: "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?q=80&w=1974",
-    name: "Goa",
-    label: "Coastal Paradise",
-    path: "/hotels/goa"
-  }
+    name: "Forest Retreats",
+    label: "Forests, rivers, quiet resorts",
+    path: "/packages",
+    image: "/assets/home-cloud-forest.png",
+  },
+  {
+    name: "River Hideaways",
+    label: "Turquoise rivers, bridges, forest stays",
+    path: "/packages",
+    image: "/assets/home-river-retreat.png",
+  },
+  {
+    name: "Flower Valley Trails",
+    label: "Blooming meadows, open skies, ridge walks",
+    path: "/packages",
+    image: "/assets/home-flower-valley.png",
+  },
+  {
+    name: "Boutique Homestays",
+    label: "Warm lights, village lanes, slow evenings",
+    path: "/hotels",
+    image: "/assets/home-boutique-homestay.png",
+  },
 ];
 
-const DestinationCard = ({ image, name, label, path }) => (
-  <Link 
-    to={path} 
-    className="flex-none w-[85vw] md:w-[400px] flex flex-col gap-4 group cursor-pointer snap-center"
-  >
-    <div className="w-full h-[450px] overflow-hidden relative">
-      <motion.div
-        whileHover={{ scale: 1.1 }}
-        transition={{ duration: 0.7, ease: "easeInOut" }}
-        className="w-full h-full"
-      >
-        <LazyLoadImage
-          src={image}
-          alt={name}
-          className="w-full h-full object-cover"
-          effect="blur"
-          wrapperClassName="w-full h-full"
-        />
-      </motion.div>
-      <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500 pointer-events-none" />
-    </div>
-    <div className="flex flex-col items-start">
-      <span className="text-[10px] font-bold text-soft-gold uppercase tracking-[0.2em] mb-1">
-        {label}
-      </span>
-      <h3 className="font-serif text-2xl text-midnight-ocean group-hover:text-horizon-blue transition-colors">
-        {name}
-      </h3>
-    </div>
-  </Link>
-);
-
 const FeaturedDestinations = () => {
-  const scrollRef = useRef(null);
-
-  const scroll = (direction) => {
-    if (scrollRef.current) {
-      const scrollAmount = direction === "left" ? -400 : 400;
-      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
-    }
-  };
-
   return (
-    <section className="bg-white py-24 relative">
-      <div className="text-center mb-16 px-6">
-        <motion.h2
-          initial={{ opacity: 0, y: 12 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="font-serif text-3xl md:text-4xl lg:text-5xl text-midnight-ocean mb-4"
-        >
-          Featured Destinations
-        </motion.h2>
-        <motion.div
-          initial={{ width: 0 }}
-          whileInView={{ width: "64px" }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="h-[1px] bg-soft-gold mx-auto"
-        ></motion.div>
-      </div>
-
-      <div className="relative group">
-        <button 
-          onClick={() => scroll("left")}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 backdrop-blur-sm p-4 rounded-full shadow-lg text-midnight-ocean hover:bg-midnight-ocean hover:text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
-        >
-          <ChevronLeft size={24} />
-        </button>
-
-        <div 
-          ref={scrollRef}
-          className="flex gap-8 overflow-x-auto pb-12 snap-x snap-mandatory scrollbar-thin px-6 md:px-12"
-        >
-          {destinations.map((dest, index) => (
-            <DestinationCard key={index} {...dest} />
-          ))}
+    <section className="bg-white px-5 py-20 sm:px-6 lg:py-28">
+      <div className="mx-auto max-w-7xl">
+        <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+          <div>
+            <span className="himalaya-kicker text-[#0b4a42]">
+              Destinations
+            </span>
+            <h2 className="atelier-display mt-4 max-w-3xl text-5xl leading-[0.96] text-[#071c23] md:text-6xl">
+              Familiar names, planned with sharper local judgement.
+            </h2>
+          </div>
+          <Link
+            to="/hotels"
+            className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.18em] text-[#0b4a42]"
+          >
+            Browse hotels <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
 
-        <button 
-          onClick={() => scroll("right")}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-10 bg-white/80 backdrop-blur-sm p-4 rounded-full shadow-lg text-midnight-ocean hover:bg-midnight-ocean hover:text-white transition-all opacity-0 group-hover:opacity-100 hidden md:block"
-        >
-          <ChevronRight size={24} />
-        </button>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+          {destinations.map((destination, index) => (
+            <motion.div
+              key={destination.name}
+              initial={{ opacity: 0, y: 18 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: index * 0.05, duration: 0.48 }}
+              className={index < 2 ? "lg:col-span-2" : ""}
+            >
+              <Link
+                to={destination.path}
+              className="destination-card group block"
+            >
+                <img
+                  src={destination.image}
+                  alt={destination.name}
+                  className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,28,35,0.06),rgba(7,28,35,0.28)_38%,rgba(7,28,35,0.94)_100%)]" />
+                <div className="relative z-10 flex h-full min-h-[330px] flex-col justify-end p-6">
+                  <div className="border border-white/12 bg-[#071c23]/72 p-5 shadow-[0_16px_50px_rgba(0,0,0,0.32)] backdrop-blur-md">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-soft-gold">
+                      {destination.label}
+                    </p>
+                    <div className="mt-3 flex items-end justify-between gap-4">
+                      <h3 className="font-serif text-3xl leading-tight text-white">
+                        {destination.name}
+                      </h3>
+                      <ArrowRight className="h-5 w-5 shrink-0 text-white transition group-hover:translate-x-1" />
+                    </div>
+                  </div>
+                </div>
+              </Link>
+            </motion.div>
+          ))}
+        </div>
       </div>
     </section>
   );

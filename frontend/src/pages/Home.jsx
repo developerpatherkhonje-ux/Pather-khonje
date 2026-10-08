@@ -7,16 +7,15 @@ import WhyPatherKhonje from "../components/home/WhyPatherKhonje";
 import Testimonials from "../components/home/Testimonials";
 import FinalCTA from "../components/home/FinalCTA";
 import OurServices from "../components/home/OurServices";
-
 import SEO from "../components/SEO";
 
 const Home = () => {
   return (
-    <div className="min-h-screen font-sans bg-white selection:bg-horizon-blue selection:text-white">
+    <div className="premium-page min-h-screen font-sans selection:bg-soft-gold selection:text-midnight-ocean">
       <SEO
-        title="Curated Travel Packages, Hotels & Custom Journeys"
-        description="Plan premium tours, handpicked hotels, and custom journeys across Sikkim, Darjeeling, Vizag, Araku and beyond with Pather Khonje."
-        keywords="Pather Khonje, Sikkim tour packages, Darjeeling hotels, Araku travel, curated travel India, custom tour planner"
+        title="Premium Mountain Travel Planning"
+        description="Plan premium hill journeys, verified hotels and custom family routes with Pather Khonje."
+        keywords="Pather Khonje, premium hill travel, mountain tour packages, boutique hotels, curated family trips"
       />
       <Hero />
       <TrustMetrics />

@@ -2,8 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Save, Download, ArrowLeft } from 'lucide-react';
 import TourInvoiceForm from '../../components/invoices/TourInvoiceForm';
-import { generateTourInvoicePdf } from '../../utils/pdfTour';
 import toast from 'react-hot-toast';
+import api from '../../services/api';
 
 function TourInvoicePage() {
   const navigate = useNavigate();
@@ -50,10 +50,10 @@ function TourInvoicePage() {
             <Save className="h-4 w-4" /> 
             {loading ? 'Saving...' : isSaved ? 'Saved ✓' : 'Save Invoice'}
           </button>
-          <button type="button" disabled={!lastInvoice} onClick={() => {
+          <button type="button" disabled={!savedId} onClick={async () => {
             try {
               const file = lastInvoice.invoiceNumber || `TRP${String(Date.now()).slice(-6)}`;
-              generateTourInvoicePdf(lastInvoice, file);
+              await api.downloadInvoicePdf(savedId, file);
               toast.success(`${file} downloaded`);
             } catch (e) { toast.error('Failed to generate PDF'); }
           }} className="bg-sky-600 text-white px-4 py-2 rounded-lg flex items-center gap-2">
@@ -80,6 +80,5 @@ function TourInvoicePage() {
 }
 
 export default TourInvoicePage;
-
 
 

@@ -7,15 +7,22 @@ import {
   User,
   LogOut,
   ChevronDown,
+  Compass,
+  Images,
+  Mountain,
+  Phone,
+  Sparkles,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import HotelsMegaMenu, { CURATED_STAYS, DESTINATIONS } from "./HotelsMegaMenu";
+import HotelsMegaMenu, { DESTINATIONS } from "./HotelsMegaMenu";
+import CorporateLoginModal from "./CorporateLoginModal";
 
 function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isHotelsOpen, setIsHotelsOpen] = useState(false);
   const [mobileHotelsOpen, setMobileHotelsOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
   const closeTimeout = React.useRef(null);
   const location = useLocation();
   const { user, logout } = useAuth();
@@ -34,7 +41,10 @@ function Navbar() {
     setIsHotelsOpen(false);
     setMobileHotelsOpen(false);
     setIsOpen(false);
-  }, [location.pathname]);
+    if (new URLSearchParams(location.search).get("login") === "corporate") {
+      setLoginOpen(true);
+    }
+  }, [location.pathname, location.search]);
 
   const handleMouseEnter = () => {
     if (closeTimeout.current) {
@@ -51,12 +61,12 @@ function Navbar() {
 
   // Clean URLs - Removed /website prefix
   const navItems = [
-    { name: "HOME", path: "/" },
-    { name: "ABOUT US", path: "/about" },
-    { name: "GALLERY", path: "/gallery" },
-    { name: "HOTELS", path: null },
-    { name: "PACKAGES", path: "/packages" },
-    { name: "CONTACT", path: "/contact" },
+    { name: "Home", path: "/", icon: Compass },
+    { name: "About", path: "/about", icon: Sparkles },
+    { name: "Gallery", path: "/gallery", icon: Images },
+    { name: "Hotels", path: null, icon: Mountain },
+    { name: "Packages", path: "/packages", icon: Mountain },
+    { name: "Contact", path: "/contact", icon: Phone },
   ];
 
   const handleLogout = async () => {
@@ -64,35 +74,59 @@ function Navbar() {
     setIsOpen(false);
   };
 
+  const openLogin = () => {
+    setIsOpen(false);
+    setLoginOpen(true);
+  };
+
   return (
-    <motion.nav
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-white/90 shadow-[0_18px_45px_rgba(10,46,77,0.10)] backdrop-blur-xl border-b border-white/70"
-          : "bg-white/80 py-2 border-b border-white/60 backdrop-blur-md"
-      }`}
-    >
-      <div className="container mx-auto px-6 lg:px-12">
-        <div className="flex items-center justify-between">
+    <>
+      <motion.nav
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        className={`fixed left-0 right-0 top-0 z-50 px-3 transition-all duration-500 sm:px-5 ${
+          scrolled
+            ? "py-3"
+            : "py-4"
+        }`}
+      >
+        <div className={`mx-auto max-w-7xl rounded-full border px-4 transition-all duration-500 lg:px-6 ${
+          scrolled
+            ? "border-white/16 bg-[#071c23]/92 shadow-[0_18px_55px_rgba(7,28,35,0.22)] backdrop-blur-2xl"
+            : "border-white/35 bg-white/70 shadow-[0_14px_45px_rgba(7,28,35,0.08)] backdrop-blur-xl"
+        }`}>
+        <div className="flex h-[72px] items-center justify-between">
           
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
-            <img
-              src="/logo/Pather Khonje Logo.png"
-              alt="Pather Khonje Logo"
-              className="md:h-24 h-12 w-auto object-contain"
-            />
-            <span className="font-serif text-xl tracking-widest text-midnight-ocean font-bold">
-              Pather Khonje
+          <Link to="/" className="group flex items-center gap-3">
+            <span className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-white shadow-[0_10px_30px_rgba(7,28,35,0.12)] ring-1 ring-soft-gold/25">
+              <img
+                src="/logo/pather-khonje-logo.png"
+                alt="Pather Khonje Logo"
+                className="h-10 w-10 object-contain"
+              />
+            </span>
+            <span className="leading-none">
+              <span className={`block font-serif text-xl font-bold tracking-wide transition-colors duration-500 ${
+                scrolled ? "text-white" : "text-midnight-ocean"
+              }`}>
+                Pather Khonje
+              </span>
+              <span className={`hidden text-[9px] font-bold uppercase tracking-[0.24em] transition-colors duration-500 sm:block ${
+                scrolled
+                  ? "text-white"
+                  : "text-midnight-ocean"
+              }`}>
+                A Tour That Never Seen Before
+              </span>
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center gap-10">
+          <div className="hidden items-center gap-1 rounded-full border border-midnight-ocean/8 bg-white/70 p-1 shadow-inner lg:flex">
             {navItems.map((item) => {
-              if (item.name === "HOTELS") {
+              const Icon = item.icon;
+              if (item.name === "Hotels") {
                 return (
                   <div
                     key={item.name}
@@ -101,13 +135,14 @@ function Navbar() {
                     onMouseLeave={handleMouseLeave}
                   >
                     <div
-                      className={`cursor-pointer text-xs font-sans font-bold tracking-widest transition-colors duration-300 relative group py-4 flex items-center gap-1 ${
+                      className={`group relative flex cursor-pointer items-center gap-2 rounded-full px-4 py-3 text-[11px] font-bold uppercase tracking-[0.14em] transition-all duration-300 ${
                         location.pathname.includes("/hotels") ||
                         location.pathname.includes("/hotel/")
-                          ? "text-midnight-ocean"
-                          : "text-slate-gray hover:text-midnight-ocean"
+                          ? "bg-midnight-ocean text-white shadow-[0_12px_28px_rgba(7,28,35,0.18)]"
+                          : "text-slate-600 hover:bg-[#edf6f8] hover:text-midnight-ocean"
                       }`}
                     >
+                      <Icon size={14} />
                       {item.name}
                       <ChevronDown
                         size={14}
@@ -116,13 +151,6 @@ function Navbar() {
                         }`}
                       />
                       {/* Active State Underline */}
-                      {(location.pathname.includes("/hotels") ||
-                        location.pathname.includes("/hotel/")) && (
-                        <motion.span
-                          layoutId="underline"
-                          className="absolute bottom-2 left-0 w-full h-[2px] bg-midnight-ocean"
-                        />
-                      )}
                     </div>
                   </div>
                 );
@@ -131,20 +159,14 @@ function Navbar() {
                 <Link
                   key={item.name}
                   to={item.path}
-                  className={`text-xs font-sans font-bold tracking-widest transition-colors duration-300 relative group py-1 ${
+                  className={`relative flex items-center gap-2 rounded-full px-4 py-3 text-[11px] font-bold uppercase tracking-[0.14em] transition-all duration-300 ${
                     location.pathname === item.path
-                      ? "text-midnight-ocean"
-                      : "text-slate-gray hover:text-midnight-ocean"
+                      ? "bg-midnight-ocean text-white shadow-[0_12px_28px_rgba(7,28,35,0.18)]"
+                      : "text-slate-600 hover:bg-[#edf6f8] hover:text-midnight-ocean"
                   }`}
                 >
+                  <Icon size={14} />
                   {item.name}
-                  {/* Active State Underline */}
-                  {location.pathname === item.path && (
-                    <motion.span
-                      layoutId="underline"
-                      className="absolute bottom-0 left-0 w-full h-[2px] bg-midnight-ocean"
-                    />
-                  )}
                 </Link>
               );
             })}
@@ -169,19 +191,20 @@ function Navbar() {
                 </button>
               </div>
             ) : (
-              <Link
-                to="/auth"
-                className="bg-midnight-ocean text-white px-6 py-2.5 rounded-md text-xs font-bold uppercase tracking-widest hover:bg-deep-steel-blue transition-colors shadow-sm"
+              <button
+                type="button"
+                onClick={openLogin}
+                className="rounded-full bg-midnight-ocean px-6 py-3 text-xs font-bold uppercase tracking-[0.16em] text-white shadow-[0_14px_34px_rgba(7,28,35,0.18)] transition hover:bg-[#0b4a42]"
               >
                 Corporate Login
-              </Link>
+              </button>
             )}
           </div>
 
           {/* Mobile Toggle */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden text-midnight-ocean p-2"
+            className="rounded-full border border-midnight-ocean/10 bg-white p-3 text-midnight-ocean shadow-sm lg:hidden"
             aria-label="Toggle Mobile Menu"
             aria-expanded={isOpen}
           >
@@ -197,11 +220,11 @@ function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-white border-t border-gray-100 overflow-y-auto max-h-[85vh]"
+            className="mx-3 mt-2 max-h-[85vh] overflow-y-auto rounded-3xl border border-white/70 bg-white/95 shadow-[0_24px_70px_rgba(7,28,35,0.16)] backdrop-blur-xl lg:hidden"
           >
             <div className="flex flex-col p-6 space-y-4">
               {navItems.map((item) => {
-                if (item.name === "HOTELS") {
+                if (item.name === "Hotels") {
                   return (
                     <div key={item.name} className="border-b border-gray-100">
                       <button
@@ -226,19 +249,8 @@ function Navbar() {
                             className="overflow-hidden bg-gray-50/50"
                           >
                             <div className="flex flex-col py-3 space-y-3 pl-4">
-                              {/* Curated Stays Mobile Links - UPDATED TO USE SLUG */}
-                              {CURATED_STAYS.map((stay) => (
-                                <Link
-                                  key={stay.id}
-                                  to={`/hotel/${stay.slug || stay.id}`}
-                                  className="text-xs font-medium text-slate-700 block py-1"
-                                  onClick={() => setIsOpen(false)}
-                                >
-                                  {stay.name}
-                                </Link>
-                              ))}
                               {/* Destination Links */}
-                              <div className="pt-2 border-t border-gray-100 mt-2">
+                              <div>
                                 <span className="text-[10px] uppercase tracking-widest text-gray-400 mb-2 block">
                                   Destinations
                                 </span>
@@ -265,7 +277,7 @@ function Navbar() {
                     key={item.name}
                     to={item.path}
                     onClick={() => setIsOpen(false)}
-                    className="text-sm font-sans font-bold text-midnight-ocean py-3 border-b border-gray-100 uppercase tracking-widest"
+                    className="rounded-2xl px-4 py-3 text-sm font-sans font-bold text-midnight-ocean hover:bg-[#edf6f8] uppercase tracking-widest"
                   >
                     {item.name}
                   </Link>
@@ -296,13 +308,13 @@ function Navbar() {
                     </button>
                   </>
                 ) : (
-                  <Link
-                    to="/auth"
-                    onClick={() => setIsOpen(false)}
+                  <button
+                    type="button"
+                    onClick={openLogin}
                     className="block w-full bg-midnight-ocean text-white text-center py-3 rounded-md text-sm font-bold uppercase tracking-widest hover:bg-deep-steel-blue transition-colors"
                   >
                     Corporate Login
-                  </Link>
+                  </button>
                 )}
               </div>
             </div>
@@ -317,7 +329,13 @@ function Navbar() {
         onMouseLeave={handleMouseLeave}
         onClose={() => setIsHotelsOpen(false)}
       />
-    </motion.nav>
+      </motion.nav>
+
+      <CorporateLoginModal
+        isOpen={loginOpen}
+        onClose={() => setLoginOpen(false)}
+      />
+    </>
   );
 }
 

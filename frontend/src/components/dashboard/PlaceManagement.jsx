@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Search, Edit, Trash2, MapPin, Star, Upload, X } from 'lucide-react';
 import apiService from '../../services/api';
@@ -36,7 +36,7 @@ function PlaceManagement() {
       setLoading(true);
       setError(null);
       
-      const response = await apiService.getPlaces();
+      const response = await apiService.getAdminPlaces();
       if (response.success) {
         setPlaces(response.data.places);
       }
@@ -171,10 +171,24 @@ function PlaceManagement() {
     }
   };
 
-  const filteredPlaces = places.filter(place =>
-    place.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    place.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredPlaces = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return places;
+    return places.filter(place =>
+      (place.name || '').toLowerCase().includes(term) ||
+      (place.description || '').toLowerCase().includes(term)
+    );
+  }, [places, searchTerm]);
+
+  const placeStats = useMemo(() => {
+    const total = places.length;
+    const visible = places.filter((place) => Number(place.hotelsCount || 0) > 0).length;
+    return {
+      total,
+      visible,
+      hidden: total - visible,
+    };
+  }, [places]);
 
   const handleAddPlace = async () => {
     // Validate required fields
@@ -333,6 +347,20 @@ function PlaceManagement() {
           {error}
         </div>
       )}
+
+      {/* Search */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {[
+          ["Total Places", placeStats.total],
+          ["Publicly Visible", placeStats.visible],
+          ["Hidden Until Hotel Added", placeStats.hidden],
+        ].map(([label, value]) => (
+          <div key={label} className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="text-2xl font-bold text-gray-900">{value}</div>
+            <div className="text-xs font-semibold uppercase tracking-widest text-gray-400">{label}</div>
+          </div>
+        ))}
+      </div>
 
       {/* Search */}
       <div className="relative">
@@ -498,7 +526,7 @@ function PlaceManagement() {
             key={place.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: Math.min(index * 0.03, 0.18) }}
             className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
           >
             <div className="relative h-48 sm:h-60">
@@ -522,6 +550,11 @@ function PlaceManagement() {
                   <Trash2 className="h-4 w-4 text-red-600" />
                 </button>
               </div>
+              {Number(place.hotelsCount || 0) === 0 && (
+                <div className="absolute left-4 top-4 rounded-full bg-amber-500/95 px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow">
+                  Hidden publicly
+                </div>
+              )}
             </div>
 
             {/* Image Gallery Section */}
@@ -600,7 +633,9 @@ function PlaceManagement() {
                   <MapPin className="h-4 w-4 mr-1" />
                   <span className="text-sm">{place.hotelsCount} Hotels</span>
                 </div>
-                <span className="text-sm text-gray-400">Added: {place.createdAt}</span>
+                <span className={`text-xs font-semibold ${Number(place.hotelsCount || 0) > 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {Number(place.hotelsCount || 0) > 0 ? 'Visible to users' : 'Add hotel to publish'}
+                </span>
               </div>
             </div>
           </motion.div>

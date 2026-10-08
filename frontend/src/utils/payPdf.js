@@ -83,7 +83,7 @@ export async function generatePaymentVoucherPdf(voucher, fileName = 'payment_vou
         // Try to load logo
         let logoDataURL = '';
         try {
-            logoDataURL = await loadImageAsBase64('/logo/Pather Khonje Logo.png');
+            logoDataURL = await loadImageAsBase64('/logo/pather-khonje-logo.png');
         } catch (logoError) {
             console.warn('Logo could not be loaded:', logoError);
         }

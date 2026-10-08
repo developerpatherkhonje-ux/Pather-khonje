@@ -41,7 +41,7 @@ export async function generateTourInvoicePdf(invoice, fileName = 'tour_invoice')
         // Pre-load images to guarantee they show up
         let logoDataURL = '';
         let stampDataURL = '';
-        try { logoDataURL = await loadImageAsBase64('/logo/Pather Khonje Logo.png'); } catch (e) {}
+        try { logoDataURL = await loadImageAsBase64('/logo/pather-khonje-logo.png'); } catch (e) {}
         try { stampDataURL = await loadImageAsBase64('/assets/stamp.png'); } catch (e) {}
 
         const wrapper = document.createElement('div');

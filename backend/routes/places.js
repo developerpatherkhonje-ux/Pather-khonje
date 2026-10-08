@@ -69,7 +69,7 @@ const handleValidationErrors = (req, res, next) => {
 // @access  Public
 router.get('/', async (req, res) => {
   try {
-    let places = await Place.find({ isActive: true }).sort({ createdAt: -1 });
+    let places = await Place.find({ isActive: true, hotelsCount: { $gt: 0 } }).sort({ createdAt: -1 });
     
     // 🔴 SUPER-HEAL: Forces all slugs to be perfectly clean and removes old random letters
     let dataFixed = false;
@@ -87,7 +87,7 @@ router.get('/', async (req, res) => {
     
     // If we scrubbed any random letters, re-fetch the clean data
     if (dataFixed) {
-      places = await Place.find({ isActive: true }).sort({ createdAt: -1 });
+      places = await Place.find({ isActive: true, hotelsCount: { $gt: 0 } }).sort({ createdAt: -1 });
     }
     
     res.json({
@@ -102,6 +102,52 @@ router.get('/', async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to get places'
+    });
+  }
+});
+
+// @route   GET /api/places/admin/all
+// @desc    Get all places for admin management, including empty places
+// @access  Admin only
+router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const places = await Place.find({}).sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      data: {
+        places: places.map(p => p.getPublicProfile ? p.getPublicProfile() : p)
+      }
+    });
+  } catch (error) {
+    logger.error('Get admin places error', { error: error.message });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get places'
+    });
+  }
+});
+
+// @route   GET /api/places/admin/stats
+// @desc    Get places statistics (admin only)
+// @access  Admin only
+router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const stats = await Place.getPlaceStats();
+    await AuditLog.logEvent({
+      action: 'READ',
+      resource: 'PLACE',
+      userId: req.user._id,
+      details: { action: 'get_place_stats' },
+      ipAddress: req.ip,
+      userAgent: req.get('User-Agent'),
+      success: true
+    });
+    res.json({ success: true, data: { stats } });
+  } catch (error) {
+    logger.error('Get place stats error', { error: error.message, userId: req.user._id });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to get place statistics'
     });
   }
 });

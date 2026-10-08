@@ -1,37 +1,59 @@
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import apiService from "../services/api"; 
-import { Clock, MapPin, ArrowRight, Star, Globe, Shield } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  Building2,
+  Check,
+  MapPin,
+  MessageCircle,
+  Mountain,
+  Search,
+  Shield,
+  Star,
+} from "lucide-react";
+import apiService from "../services/api";
 import SEO from "../components/SEO";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
+const fallbackImage = "/assets/hero13.jpg";
+
+const getPlaceImage = (place) =>
+  apiService.toAbsoluteUrl(
+    place?.image?.url ||
+      place?.image ||
+      place?.images?.[0]?.url ||
+      place?.images?.[0]?.secure_url ||
+      place?.images?.[0],
+  ) || fallbackImage;
+
 const Hotels = () => {
-  // State for API data
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activeCategory, setActiveCategory] = useState("ALL DESTINATIONS");
+  const [error, setError] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
-  // FETCH REAL DATA FROM THE DATABASE
   useEffect(() => {
     const fetchPlaces = async () => {
       try {
         setLoading(true);
+        setError("");
         const response = await apiService.getPlaces();
         if (response.success) {
-          // Sort alphabetically
-          const sortedPlaces = (response.data.places || []).sort((a, b) =>
-            (a.name || "").localeCompare(b.name || "", "en", {
-              sensitivity: "base",
-            })
+          setPlaces(
+            (response.data.places || []).sort((a, b) =>
+              (a.name || "").localeCompare(b.name || "", "en", {
+                sensitivity: "base",
+              }),
+            ),
           );
-          setPlaces(sortedPlaces);
+        } else {
+          setError("We could not load destinations right now.");
         }
       } catch (err) {
         console.error("Error fetching places:", err);
-        setError("Failed to load destinations");
+        setError("We could not load destinations right now.");
       } finally {
         setLoading(false);
       }
@@ -39,269 +61,214 @@ const Hotels = () => {
     fetchPlaces();
   }, []);
 
-  const categories = [
-    { id: "ALL DESTINATIONS", name: "ALL DESTINATIONS" },
-    { id: "HILL STATIONS", name: "HILL STATIONS" },
-    { id: "BEACHES", name: "BEACHES" },
-    { id: "HERITAGE", name: "HERITAGE" },
-    { id: "INTERNATIONAL", name: "INTERNATIONAL" },
-  ];
+  const filteredPlaces = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return places;
+    return places.filter((place) =>
+      [place.name, place.description].some((value) =>
+        String(value || "").toLowerCase().includes(term),
+      ),
+    );
+  }, [places, searchTerm]);
 
-  // Animation Variants
-  const containerVariants = {
-    hidden: {},
-    visible: {
-      transition: { staggerChildren: 0.1 },
-    },
+  const handleWhatsAppEnquiry = (place = null) => {
+    const message = place
+      ? `Hi! I want hotel options for ${place.name}. Please share available stays, price range, photos and booking details.`
+      : "Hi! I want help choosing a hotel/stay. Please share premium options with photos, price range and availability.";
+    window.open(
+      `https://wa.me/917439857694?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
   };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6, ease: "easeOut" },
-    },
-  };
-
-  const filteredPlaces =
-    activeCategory === "ALL DESTINATIONS"
-      ? places
-      : places.filter((place) => place.tag === activeCategory);
 
   return (
-    <div className="premium-page min-h-screen font-sans">
+    <div className="premium-page min-h-screen font-sans text-midnight-ocean">
       <SEO
         title="Premium Hotels, Resorts & Homestays"
-        description="Find handpicked hotels, resorts and homestays across Sikkim, Darjeeling, Araku and other curated destinations."
-        keywords="premium hotels India, Sikkim hotels, Darjeeling resorts, Araku hotels, curated stays, homestays"
+        description="Find handpicked hotels, resorts and homestays across mountain destinations with premium enquiry support."
+        keywords="premium hotels India, mountain hotels, Sikkim hotels, Darjeeling resorts, curated stays, homestays"
       />
-      {/* 1. HERO SECTION */}
-      <section className="relative h-[60vh] min-h-[500px] w-full overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1566073771259-6a8506099945?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')", // Luxury Hotel/Resort placeholder
-          }}
-        >
-          <div className="absolute inset-0 luxury-hero-overlay" />
-        </div>
 
-        <div className="relative z-10 h-full flex flex-col justify-center items-center text-center px-4 pt-10">
+      <section className="relative min-h-[76vh] overflow-hidden bg-midnight-ocean">
+        <LazyLoadImage
+          src={fallbackImage}
+          alt="Mountain hotel stays"
+          className="absolute inset-0 h-full w-full object-cover"
+          wrapperClassName="absolute inset-0 h-full w-full"
+          effect="blur"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(8,37,35,0.92),rgba(10,46,77,0.62)_48%,rgba(10,46,77,0.15)),linear-gradient(180deg,rgba(0,0,0,0.12),rgba(0,0,0,0.50))]" />
+        <div className="relative z-10 mx-auto flex min-h-[76vh] max-w-7xl flex-col justify-end px-6 pb-12 pt-32 md:pb-16">
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.65, ease: "easeOut" }}
+            className="max-w-4xl"
           >
-            <div className="mx-auto mb-5 flex items-center justify-center gap-4">
+            <div className="mb-5 flex items-center gap-4">
               <div className="gold-rule" />
-              <span className="section-kicker">Handpicked properties</span>
+              <span className="section-kicker">Handpicked mountain stays</span>
             </div>
-            <h1 className="text-5xl md:text-7xl font-serif text-white mb-4 drop-shadow-lg">
-              Premium Stays & Destinations
+            <h1 className="font-serif text-5xl leading-[1.02] text-white md:text-7xl lg:text-8xl">
+              Stays chosen for view, comfort, and route convenience.
             </h1>
-            <p className="text-lg md:text-xl text-white/90 font-light max-w-2xl mx-auto tracking-wide mb-8">
-              Handpicked accommodations and curated stays for an unforgettable
-              experience.
+            <p className="mt-6 max-w-2xl text-base leading-8 text-white/84 md:text-xl">
+              Browse destination-wise hotels, open real property details, and
+              ask our team for WhatsApp availability with photos and rates.
             </p>
           </motion.div>
-        </div>
-      </section>
 
-      {/* 2. FILTER TABS */}
-      <section className="bg-white/90 backdrop-blur-xl border-b border-white/70 sticky top-20 z-20 shadow-[0_16px_34px_rgba(10,46,77,0.06)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex overflow-x-auto gap-8 py-6 no-scrollbar items-center justify-start md:justify-center">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setActiveCategory(cat.id)}
-                className={`text-xs tracking-[0.15em] whitespace-nowrap uppercase font-medium transition-colors duration-300 relative group
-                  ${
-                    activeCategory === cat.id
-                      ? "text-midnight-ocean"
-                      : "text-gray-400 hover:text-gray-600"
-                  }`}
-              >
-                {cat.name}
-                <span
-                  className={`absolute -bottom-2 left-0 w-full h-0.5 bg-midnight-ocean transform origin-left transition-transform duration-300
-                    ${
-                      activeCategory === cat.id
-                        ? "scale-x-100"
-                        : "scale-x-0 group-hover:scale-x-50"
-                    }`}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* 3. LIST SECTION (Replaces Grid) */}
-      <section className="py-20 px-4">
-        <div className="max-w-7xl mx-auto space-y-24">
-          {loading ? (
-            <div className="flex justify-center items-center h-64 text-gray-400 tracking-widest uppercase">
-              Loading Destinations...
-            </div>
-          ) : filteredPlaces.length === 0 ? (
-            <div className="flex flex-col justify-center items-center h-64 text-center space-y-4">
-              <div className="text-midnight-ocean text-xl font-serif">
-                Coming Soon
-              </div>
-              <div className="text-slate-gray text-sm tracking-widest uppercase">
-                We do not have any associate hotels in this category yet.
-              </div>
-            </div>
-          ) : (
-            <AnimatePresence mode="wait">
-              {filteredPlaces.map((place, index) => (
-                <motion.div
-                  key={place.id || index}
-                  initial="hidden"
-                  whileInView="visible"
-                  viewport={{ once: true, margin: "-100px" }}
-                  variants={containerVariants}
-                  className="premium-card p-0 md:p-12 flex flex-col gap-10"
-                >
-                  {/* Alternating Layout: Even index = Image Right, Odd index = Image Left */}
-                  <div
-                    className={`flex flex-col ${
-                      index % 2 === 0 ? "lg:flex-row" : "lg:flex-row-reverse"
-                    } gap-12 lg:gap-20 items-stretch min-h-[500px]`}
-                  >
-                    {/* Content Side */}
-                    <div className="w-full lg:w-1/2 flex flex-col py-4">
-                      <motion.div
-                        variants={itemVariants}
-                        className="flex justify-between items-start mb-6"
-                      >
-                        <div className="space-y-2">
-                          <h2 className="text-4xl font-serif text-midnight-ocean">
-                            {place.name}
-                          </h2>
-                          <div className="flex items-center gap-2">
-                            <span className="inline-block bg-mist-blue text-midnight-ocean text-xs font-bold px-3 py-1 uppercase tracking-widest">
-                              {place.hotelsCount || "0"} Stays
-                            </span>
-                            <div className="flex items-center gap-1 text-soft-gold">
-                              <Star className="w-3 h-3 fill-soft-gold" />
-                              <span className="text-xs font-bold">
-                                {place.rating || "4.5"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </motion.div>
-
-                      <motion.div
-                        variants={itemVariants}
-                        className="flex-grow space-y-6 mb-10 border-t border-b border-soft-gold/20 py-8"
-                      >
-                        <p className="text-slate-600 text-lg leading-relaxed font-light">
-                          {place.description ||
-                            "Ideally situated to explore the region's best attractions. Enjoy premium amenities, guided tours, and authentic local experiences."}
-                        </p>
-
-                        {/* Mock Attributes for consistency with design */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {[
-                            "Premium Hotels",
-                            "Guided Tours",
-                            "Breakfast Included",
-                            "Transfer Service",
-                          ].map((attr, idx) => (
-                            <div
-                              key={idx}
-                              className="flex items-center gap-3 text-sm text-gray-600 font-light"
-                            >
-                              <div className="w-1.5 h-1.5 rounded-full bg-soft-gold" />
-                              {attr}
-                            </div>
-                          ))}
-                        </div>
-                      </motion.div>
-
-                      <motion.div
-                        variants={itemVariants}
-                        className="flex items-center gap-6 mt-auto"
-                      >
-                        {/* 🔴 THE FIX: Using place.slug so the URL is beautiful! */}
-                        <Link
-                          to={`/hotels/${place.slug || place.id}`}
-                          className="premium-button px-10 py-4 text-xs font-bold tracking-[0.2em] uppercase text-center"
-                        >
-                          Explore Hotels
-                        </Link>
-                      </motion.div>
-                    </div>
-
-                    {/* Image Side */}
-                    <motion.div
-                      variants={itemVariants}
-                      className="w-full lg:w-1/2 relative min-h-[400px]"
-                    >
-                      <div className="image-lift absolute inset-0 group">
-                        {/* Pulling the absolute URL from your API */}
-                        <LazyLoadImage
-                          src={
-                            apiService.toAbsoluteUrl(place.image?.url || place.image) ||
-                            "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80"
-                          }
-                          alt={place.name}
-                          className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[1.5s]"
-                          effect="blur"
-                          wrapperClassName="w-full h-full"
-                        />
-                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/0 transition-colors duration-500" />
-                      </div>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          )}
-        </div>
-      </section>
-
-      {/* 4. DESIGN YOUR OWN JOURNEY */}
-      <section className="bg-midnight-ocean py-24 text-white relative overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(198,167,94,0.14),transparent_32%,rgba(47,111,237,0.10))]" />
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-16 relative">
-          <div className="max-w-2xl">
-            <h2 className="text-5xl font-serif mb-6">Need Help Choosing?</h2>
-            <p className="text-gray-300 text-lg font-light leading-relaxed mb-10 max-w-xl">
-              Our travel experts are here to help you find the perfect stay for
-              your vacation. Tell us your requirements and we'll handle the
-              rest.
-            </p>
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 text-sm tracking-widest uppercase text-soft-gold">
-                <Shield className="w-4 h-4" />
-                <span>Verified Properties</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm tracking-widest uppercase text-soft-gold">
-                <Globe className="w-4 h-4" />
-                <span>Best Prices Guaranteed</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="w-full max-w-md bg-white/10 backdrop-blur-xl border border-white/15 p-10 shadow-2xl">
-            <h3 className="text-2xl font-serif mb-2">Speak to an Expert</h3>
-            <p className="text-gray-400 text-sm mb-8">
-              Get personalized recommendations instantly.
-            </p>
-            <Link
-              to="/contact"
-              className="block w-full bg-white text-midnight-ocean text-center py-4 text-xs font-bold tracking-[0.2em] uppercase hover:bg-gray-100 transition-colors"
+          <div className="mt-10 grid gap-3 border border-white/14 bg-white/10 p-3 backdrop-blur-md md:grid-cols-[1fr_auto]">
+            <label className="relative block">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/70" />
+              <input
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                placeholder="Search destination or stay type"
+                className="h-14 w-full bg-white/12 pl-12 pr-4 text-sm font-medium text-white placeholder:text-white/62 outline-none ring-1 ring-white/10 transition focus:ring-soft-gold"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => handleWhatsAppEnquiry()}
+              className="premium-button flex h-14 items-center justify-center gap-3 px-6 text-xs font-bold uppercase tracking-[0.18em]"
             >
-              Contact Us
-            </Link>
+              <MessageCircle className="h-4 w-4" />
+              Ask Expert
+            </button>
           </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-16 md:px-6 md:py-24">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <span className="section-kicker">Stay destinations</span>
+              <h2 className="mt-3 font-serif text-4xl md:text-5xl">
+                Explore hotel collections
+              </h2>
+            </div>
+            <p className="max-w-md text-sm leading-7 text-slate-600">
+              Each destination opens into curated property cards with rotating
+              photos, details, and WhatsApp enquiry.
+            </p>
+          </div>
+
+          {loading && (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="h-[470px] animate-pulse bg-white shadow-[0_20px_60px_rgba(10,46,77,0.08)]" />
+              ))}
+            </div>
+          )}
+
+          {!loading && error && (
+            <div className="border border-red-100 bg-red-50 p-8 text-center text-red-700">
+              {error}
+            </div>
+          )}
+
+          {!loading && !error && filteredPlaces.length === 0 && (
+            <div className="premium-panel rounded-3xl p-12 text-center">
+              <Mountain className="mx-auto mb-4 h-12 w-12 text-soft-gold" />
+              <h3 className="font-serif text-3xl">No destinations found</h3>
+              <p className="mt-3 text-sm text-slate-600">
+                Try another search or ask us on WhatsApp.
+              </p>
+            </div>
+          )}
+
+          {!loading && !error && filteredPlaces.length > 0 && (
+            <div className="grid gap-7 lg:grid-cols-3">
+              {filteredPlaces.map((place, index) => (
+                <motion.article
+                  key={place.id || place._id}
+                  initial={{ opacity: 0, y: 22 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-80px" }}
+                  transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.18) }}
+                  className="group flex min-h-[500px] flex-col overflow-hidden bg-white shadow-[0_22px_70px_rgba(10,46,77,0.10)] ring-1 ring-midnight-ocean/8 transition hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(10,46,77,0.15)]"
+                >
+                  <div className="relative h-72 overflow-hidden">
+                    <LazyLoadImage
+                      src={getPlaceImage(place)}
+                      alt={place.name}
+                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+                      wrapperClassName="h-full w-full"
+                      effect="blur"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-midnight-ocean/82 via-midnight-ocean/16 to-transparent" />
+                    <div className="absolute left-5 right-5 top-5 flex items-start justify-between gap-3">
+                      <span className="bg-white/90 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-midnight-ocean backdrop-blur">
+                        {place.hotelsCount || 0} stays
+                      </span>
+                      <span className="flex items-center gap-1 bg-midnight-ocean/84 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
+                        <Star className="h-3 w-3 fill-soft-gold text-soft-gold" />
+                        {place.rating || "4.5"}
+                      </span>
+                    </div>
+                    <div className="absolute bottom-5 left-5 right-5">
+                      <h3 className="font-serif text-3xl leading-tight text-white">
+                        {place.name}
+                      </h3>
+                      <div className="mt-3 flex items-center gap-2 text-sm text-white/86">
+                        <MapPin className="h-4 w-4 text-soft-gold" />
+                        Curated hotel collection
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-1 flex-col p-6">
+                    <p className="line-clamp-3 text-sm leading-7 text-slate-600">
+                      {place.description ||
+                        "A carefully selected stay base for scenic routes, comfortable transfers, and relaxed travel pacing."}
+                    </p>
+                    <div className="mt-5 grid grid-cols-2 gap-3 border-y border-midnight-ocean/8 py-4 text-xs">
+                      {[
+                        [Building2, `${place.hotelsCount || 0} stays`, "Options"],
+                        [Shield, "Verified", "Support"],
+                      ].map(([Icon, value, label]) => (
+                        <div key={label}>
+                          <div className="mb-1 flex items-center gap-1.5 font-bold uppercase tracking-widest text-slate-400">
+                            <Icon className="h-3.5 w-3.5" />
+                            {label}
+                          </div>
+                          <div className="font-semibold text-midnight-ocean">{value}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      {["Photos", "Rates", "Availability"].map((item) => (
+                        <span key={item} className="flex items-center gap-1.5 bg-ice-blue px-2.5 py-1.5 text-[11px] font-semibold text-midnight-ocean">
+                          <Check className="h-3 w-3 text-soft-gold" />
+                          {item}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="mt-auto flex items-center gap-3 pt-6">
+                      <Link
+                        to={`/hotels/${place.slug || place.id}`}
+                        className="premium-button flex flex-1 items-center justify-center gap-2 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.17em]"
+                      >
+                        Explore Hotels
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => handleWhatsAppEnquiry(place)}
+                        className="flex h-11 w-11 items-center justify-center border border-midnight-ocean/12 text-midnight-ocean transition hover:border-soft-gold hover:text-soft-gold"
+                        aria-label={`WhatsApp enquiry for ${place.name}`}
+                      >
+                        <MessageCircle className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                </motion.article>
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </div>

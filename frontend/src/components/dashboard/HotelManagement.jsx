@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
   Plus,
@@ -37,6 +37,7 @@ function HotelManagement() {
     checkIn: "2:00 PM",
     checkOut: "11:00 AM",
     priceRange: "",
+    roomTypes: [{ type: "Standard Room", price: "", features: [""] }],
   });
 
   // Separate File States
@@ -68,7 +69,7 @@ function HotelManagement() {
   useEffect(() => {
     const loadInitial = async () => {
       try {
-        const placesRes = await apiService.getPlaces();
+        const placesRes = await apiService.getAdminPlaces();
         if (placesRes.success) setPlaces(placesRes.data.places);
         fetchHotels();
       } catch (_) {}
@@ -78,21 +79,25 @@ function HotelManagement() {
 
   const fetchHotels = async () => {
     try {
-      const hotelsRes = await apiService.getHotels(1, 50);
+      const hotelsRes = await apiService.getHotels(1, 500);
       if (hotelsRes.success) {
         setHotels(hotelsRes.data.hotels || []);
       }
     } catch (_) {}
   };
 
-  const filteredHotels = hotels.filter(
-    (hotel) =>
-      hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (hotel.placeName || "")
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      (hotel.address || "").toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const filteredHotels = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return hotels;
+    return hotels.filter(
+      (hotel) =>
+        (hotel.name || "").toLowerCase().includes(term) ||
+        (hotel.placeName || "")
+          .toLowerCase()
+          .includes(term) ||
+        (hotel.address || "").toLowerCase().includes(term),
+    );
+  }, [hotels, searchTerm]);
 
   const getAmenityIcon = (amenity) => {
     switch (amenity.toLowerCase()) {
@@ -180,7 +185,15 @@ function HotelManagement() {
         address: formData.address.trim(),
         priceRange: formData.priceRange.trim(),
         amenities: formData.amenities,
-        roomTypes: [], // Simplify for now
+        roomTypes: formData.roomTypes
+          .map((room) => ({
+            type: String(room.type || "").trim(),
+            price: Number(room.price || 0),
+            features: (room.features || [])
+              .map((feature) => String(feature || "").trim())
+              .filter(Boolean),
+          }))
+          .filter((room) => room.type && room.price > 0),
         // Image Fields
         cardImage: cardImageUrl,
         image: coverImageUrl,
@@ -196,6 +209,8 @@ function HotelManagement() {
           alert("Hotel updated successfully!");
           resetForm();
           fetchHotels();
+          const placesRes = await apiService.getAdminPlaces();
+          if (placesRes.success) setPlaces(placesRes.data.places || []);
         }
       } else {
         const res = await apiService.createHotel(payload);
@@ -203,6 +218,8 @@ function HotelManagement() {
           alert("Hotel created successfully!");
           resetForm();
           fetchHotels();
+          const placesRes = await apiService.getAdminPlaces();
+          if (placesRes.success) setPlaces(placesRes.data.places || []);
         }
       }
     } catch (e) {
@@ -226,6 +243,14 @@ function HotelManagement() {
       checkIn: hotel.checkIn || "2:00 PM",
       checkOut: hotel.checkOut || "11:00 AM",
       priceRange: hotel.priceRange || "",
+      roomTypes:
+        hotel.roomTypes && hotel.roomTypes.length > 0
+          ? hotel.roomTypes.map((room) => ({
+              type: room.type || "",
+              price: room.price || "",
+              features: room.features && room.features.length ? room.features : [""],
+            }))
+          : [{ type: "Standard Room", price: "", features: [""] }],
     });
 
     setExistingCardImage(hotel.cardImage || "");
@@ -242,6 +267,8 @@ function HotelManagement() {
         const res = await apiService.deleteHotel(id);
         if (res.success) {
           fetchHotels();
+          const placesRes = await apiService.getAdminPlaces();
+          if (placesRes.success) setPlaces(placesRes.data.places || []);
         }
       } catch (e) {
         console.error("Delete hotel error:", e);
@@ -260,6 +287,7 @@ function HotelManagement() {
       checkIn: "2:00 PM",
       checkOut: "11:00 AM",
       priceRange: "",
+      roomTypes: [{ type: "Standard Room", price: "", features: [""] }],
     });
     setSelectedCardFile(null);
     setSelectedCoverFile(null);
@@ -278,6 +306,49 @@ function HotelManagement() {
       amenities: formData.amenities.includes(amenity)
         ? formData.amenities.filter((a) => a !== amenity)
         : [...formData.amenities, amenity],
+    });
+  };
+
+  const updateRoomType = (index, key, value) => {
+    setFormData((prev) => {
+      const roomTypes = [...prev.roomTypes];
+      roomTypes[index] = { ...roomTypes[index], [key]: value };
+      return { ...prev, roomTypes };
+    });
+  };
+
+  const addRoomType = () => {
+    setFormData((prev) => ({
+      ...prev,
+      roomTypes: [...prev.roomTypes, { type: "", price: "", features: [""] }],
+    }));
+  };
+
+  const removeRoomType = (index) => {
+    setFormData((prev) => ({
+      ...prev,
+      roomTypes: prev.roomTypes.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
+  const updateRoomFeature = (roomIndex, featureIndex, value) => {
+    setFormData((prev) => {
+      const roomTypes = [...prev.roomTypes];
+      const features = [...(roomTypes[roomIndex].features || [])];
+      features[featureIndex] = value;
+      roomTypes[roomIndex] = { ...roomTypes[roomIndex], features };
+      return { ...prev, roomTypes };
+    });
+  };
+
+  const addRoomFeature = (roomIndex) => {
+    setFormData((prev) => {
+      const roomTypes = [...prev.roomTypes];
+      roomTypes[roomIndex] = {
+        ...roomTypes[roomIndex],
+        features: [...(roomTypes[roomIndex].features || []), ""],
+      };
+      return { ...prev, roomTypes };
     });
   };
 
@@ -543,6 +614,80 @@ function HotelManagement() {
               </div>
             </div>
 
+            <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    Room Types
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    These show on the hotel details page and can be booked on WhatsApp.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={addRoomType}
+                  className="rounded-lg bg-sky-100 px-3 py-2 text-xs font-semibold text-sky-700 hover:bg-sky-200"
+                >
+                  + Add Room
+                </button>
+              </div>
+              <div className="space-y-3">
+                {formData.roomTypes.map((room, roomIndex) => (
+                  <div key={`room-${roomIndex}`} className="rounded-xl bg-white p-4 shadow-sm">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_160px_40px]">
+                      <input
+                        type="text"
+                        value={room.type}
+                        onChange={(event) =>
+                          updateRoomType(roomIndex, "type", event.target.value)
+                        }
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-sky-500"
+                        placeholder="Room type e.g. Deluxe Mountain View"
+                      />
+                      <input
+                        type="number"
+                        value={room.price}
+                        onChange={(event) =>
+                          updateRoomType(roomIndex, "price", event.target.value)
+                        }
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-sky-500"
+                        placeholder="Price"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeRoomType(roomIndex)}
+                        className="h-10 rounded-lg border border-gray-200 text-gray-500 hover:bg-red-50 hover:text-red-600"
+                      >
+                        <X className="mx-auto h-4 w-4" />
+                      </button>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {(room.features || []).map((feature, featureIndex) => (
+                        <input
+                          key={`room-${roomIndex}-feature-${featureIndex}`}
+                          type="text"
+                          value={feature}
+                          onChange={(event) =>
+                            updateRoomFeature(roomIndex, featureIndex, event.target.value)
+                          }
+                          className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:ring-2 focus:ring-sky-500"
+                          placeholder={`Feature ${featureIndex + 1}`}
+                        />
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => addRoomFeature(roomIndex)}
+                        className="text-xs font-semibold text-sky-700 hover:text-sky-900"
+                      >
+                        + Add feature
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="flex space-x-3 mt-8 pt-6 border-t">
               <button
                 onClick={handleAddHotel}
@@ -574,7 +719,7 @@ function HotelManagement() {
             key={hotel.id || hotel._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
+            transition={{ delay: Math.min(index * 0.03, 0.18) }}
             className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300"
           >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
@@ -650,7 +795,7 @@ function HotelManagement() {
 
                 {/* Amenities */}
                 <div className="flex flex-wrap gap-2 pt-1">
-                  {hotel.amenities.slice(0, 3).map((amenity) => (
+                  {(hotel.amenities || []).slice(0, 3).map((amenity) => (
                     <span
                       key={amenity}
                       className="bg-gray-100 text-gray-600 text-[10px] uppercase font-bold px-2 py-1 rounded"
@@ -658,9 +803,9 @@ function HotelManagement() {
                       {amenity}
                     </span>
                   ))}
-                  {hotel.amenities.length > 3 && (
+                  {(hotel.amenities || []).length > 3 && (
                     <span className="text-[10px] text-gray-400 font-medium px-2 py-1">
-                      +{hotel.amenities.length - 3}
+                      +{(hotel.amenities || []).length - 3}
                     </span>
                   )}
                 </div>

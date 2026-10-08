@@ -35,7 +35,7 @@ const LoadingScreen = () => {
           className="relative z-10 w-64 md:w-80"
         >
           <img
-            src="/logo/Pather Khonje Logo.png"
+            src="/logo/pather-khonje-logo.png"
             alt="Pather Khonje"
             className="w-full h-auto object-contain drop-shadow-2xl"
           />
