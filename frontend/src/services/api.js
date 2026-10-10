@@ -301,13 +301,14 @@ class ApiService {
   }
 
   // Invoices API
-  async listInvoices({ page = 1, limit = 20, type = "", search = "" } = {}) {
+  async listInvoices({ page = 1, limit = 20, type = "", search = "", customerId = "" } = {}) {
     const params = new URLSearchParams({
       page: String(page),
       limit: String(limit),
     });
     if (type) params.set("type", type);
     if (search) params.set("search", search);
+    if (customerId) params.set("customerId", customerId);
     return this.get(`/invoices?${params.toString()}`);
   }
 
@@ -325,6 +326,26 @@ class ApiService {
 
   async deleteInvoice(id) {
     return this.delete(`/invoices/${id}`);
+  }
+
+  async addInvoicePayment(id, payment) {
+    return this.post(`/invoices/${id}/payments`, payment);
+  }
+
+  async downloadPaymentReceiptPdf(invoiceId, paymentId, fileName) {
+    const url = `${this.baseURL}/invoices/${invoiceId}/payments/${paymentId}/pdf`;
+    const token = this.getToken();
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) throw new Error("Failed to download payment receipt");
+    const blob = await response.blob();
+    const link = document.createElement("a");
+    link.href = window.URL.createObjectURL(blob);
+    link.download = `${fileName || `receipt-${paymentId}`}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   }
 
   async downloadInvoicePdf(id, fileName) {
@@ -700,6 +721,75 @@ class ApiService {
       }
       throw err;
     }
+  }
+
+  async listCustomers({ page = 1, limit = 50, search = "" } = {}) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set("search", search);
+    return this.get(`/customers?${params.toString()}`);
+  }
+
+  async getCustomer(id) {
+    return this.get(`/customers/${id}`);
+  }
+
+  async createCustomer(customer) {
+    return this.post("/customers", customer);
+  }
+
+  async updateCustomer(id, customer) {
+    return this.put(`/customers/${id}`, customer);
+  }
+
+  async deleteCustomer(id) {
+    return this.delete(`/customers/${id}`);
+  }
+
+  async convertLeadToCustomer(leadId) {
+    return this.post(`/customers/from-lead/${leadId}`, {});
+  }
+
+  async listPayees({ page = 1, limit = 50, search = "", type = "" } = {}) {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (search) params.set("search", search);
+    if (type) params.set("type", type);
+    return this.get(`/payees?${params.toString()}`);
+  }
+
+  async createPayee(payee) {
+    return this.post("/payees", payee);
+  }
+
+  async updatePayee(id, payee) {
+    return this.put(`/payees/${id}`, payee);
+  }
+
+  async deletePayee(id) {
+    return this.delete(`/payees/${id}`);
+  }
+
+  async getBusinessSettings() {
+    return this.get("/settings");
+  }
+
+  async updateBusinessSettings(settings) {
+    return this.put("/settings", settings);
+  }
+
+  async listBranches() {
+    return this.get("/branches");
+  }
+
+  async createBranch(branch) {
+    return this.post("/branches", branch);
+  }
+
+  async updateBranch(id, branch) {
+    return this.put(`/branches/${id}`, branch);
+  }
+
+  async deleteBranch(id) {
+    return this.delete(`/branches/${id}`);
   }
 
   // Gallery API - Simplified

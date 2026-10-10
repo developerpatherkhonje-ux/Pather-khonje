@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { Edit, Plus, Search, Trash2, X } from "lucide-react";
+import { Edit, Plus, Search, Trash2, UserPlus, X } from "lucide-react";
+import toast from "react-hot-toast";
 import apiService from "../../services/api";
 
 const stageOptions = [
@@ -153,6 +154,18 @@ function LeadManagement() {
     }
   };
 
+  const convertToCustomer = async (lead) => {
+    try {
+      const response = await apiService.convertLeadToCustomer(lead.id || lead._id);
+      if (response.success) {
+        toast.success(`${lead.name} converted to customer`);
+        fetchLeads();
+      }
+    } catch (err) {
+      setError(err.message || "Failed to convert lead");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -269,6 +282,9 @@ function LeadManagement() {
                     <div className="flex justify-end gap-2">
                       <button onClick={() => openEditForm(lead)} className="rounded-full bg-gray-100 p-2 text-gray-600 hover:bg-gray-200">
                         <Edit className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => convertToCustomer(lead)} className="rounded-full bg-emerald-50 p-2 text-emerald-700 hover:bg-emerald-100" title="Convert to customer">
+                        <UserPlus className="h-4 w-4" />
                       </button>
                       <button onClick={() => deleteLead(lead)} className="rounded-full bg-red-50 p-2 text-red-600 hover:bg-red-100">
                         <Trash2 className="h-4 w-4" />

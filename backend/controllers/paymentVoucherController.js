@@ -1,5 +1,7 @@
 const PaymentVoucher = require('../models/PaymentVoucher');
+const Payee = require('../models/Payee');
 const logger = require('../utils/logger');
+const toPayeeType = (category) => ['hotel', 'transport', 'guide'].includes(category) ? category : 'vendor';
 
 // Generate voucher number helper
 async function generateVoucherNumber() {
@@ -33,6 +35,23 @@ exports.createPaymentVoucher = async (req, res, next) => {
     
     // Set created by
     data.createdBy = req.user?._id;
+    if (!data.payee && data.payeeName) {
+      const existingPayee = await Payee.findOne({
+        isActive: true,
+        $or: [
+          { name: data.payeeName },
+          ...(data.contact ? [{ phone: data.contact }] : []),
+        ],
+      });
+      const payee = existingPayee || await Payee.create({
+        name: data.payeeName,
+        type: toPayeeType(data.category),
+        phone: data.contact,
+        address: data.address,
+        createdBy: req.user?._id,
+      });
+      data.payee = payee._id;
+    }
     
     // Calculate due amount
     data.due = Number(data.total || 0) - Number(data.advance || 0);
@@ -84,6 +103,24 @@ exports.updatePaymentVoucher = async (req, res, next) => {
     }
     
     console.log('Backend - Updating payment voucher:', req.params.id, 'with data:', JSON.stringify(data, null, 2));
+    if (!data.payee && data.payeeName) {
+      const existingPayee = await Payee.findOne({
+        isActive: true,
+        $or: [
+          { name: data.payeeName },
+          ...(data.contact ? [{ phone: data.contact }] : []),
+        ],
+      });
+      const payee = existingPayee || await Payee.create({
+        name: data.payeeName,
+        type: toPayeeType(data.category),
+        phone: data.contact,
+        address: data.address,
+        createdBy: req.user?._id,
+      });
+      data.payee = payee._id;
+    }
+
     const updated = await PaymentVoucher.findByIdAndUpdate(req.params.id, data, { new: true }).lean();
     if (!updated) return res.status(404).json({ success: false, message: 'Payment voucher not found' });
     

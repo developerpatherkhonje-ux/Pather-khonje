@@ -215,12 +215,14 @@ const PackageDetails = () => {
           <div className="max-w-4xl">
             <div className="mb-5 flex items-center gap-4">
               <div className="gold-rule" />
-              <span className="section-kicker">Route dossier</span>
+              <span className="text-xs font-bold uppercase tracking-[0.22em] text-soft-gold">
+                Route dossier
+              </span>
             </div>
             <h1 className="font-serif text-5xl leading-tight text-white sm:text-6xl lg:text-7xl">
               {pkg.name}
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-white/88 sm:text-lg">
+            <p className="mt-6 max-w-3xl text-base font-medium leading-8 text-soft-gold sm:text-lg">
               {pkg.description}
             </p>
           </div>

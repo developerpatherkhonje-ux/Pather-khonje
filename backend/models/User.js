@@ -34,9 +34,24 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['user', 'manager', 'admin'],
+    enum: ['user', 'manager', 'admin', 'super_admin', 'sales_manager', 'agent', 'branch_manager', 'hr', 'accounts'],
     default: 'user',
     index: true
+  },
+  permissions: {
+    type: [String],
+    default: []
+  },
+  branch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    default: null,
+    index: true
+  },
+  salary: {
+    base: { type: Number, default: 0 },
+    incentivePercent: { type: Number, default: 0 },
+    target: { type: Number, default: 0 }
   },
   designation: {
     type: String,
@@ -166,6 +181,7 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ isActive: 1 });
+userSchema.index({ branch: 1 });
 userSchema.index({ createdAt: -1 });
 userSchema.index({ lastLogin: -1 });
 userSchema.index({ 'address.city': 1 });

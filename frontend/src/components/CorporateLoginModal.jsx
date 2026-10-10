@@ -77,7 +77,7 @@ const CorporateLoginModal = ({ isOpen = true, onClose }) => {
 
       if (success) {
         const user = JSON.parse(localStorage.getItem("user"));
-        if (user?.role === "admin") {
+        if (["admin", "super_admin"].includes(user?.role)) {
           onClose?.();
           navigate("/dashboard");
         } else {

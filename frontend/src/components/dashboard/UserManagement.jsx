@@ -226,6 +226,12 @@ function UserManagement() {
                 <option value="user">User</option>
                 <option value="manager">Manager</option>
                 <option value="admin">Admin</option>
+                <option value="super_admin">Super Admin</option>
+                <option value="sales_manager">Sales Manager</option>
+                <option value="branch_manager">Branch Manager</option>
+                <option value="agent">Agent</option>
+                <option value="hr">HR</option>
+                <option value="accounts">Accounts</option>
               </select>
               <label className="flex items-center gap-3 rounded-lg border border-gray-300 px-4 py-3">
                 <input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} />

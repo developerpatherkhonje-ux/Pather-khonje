@@ -14,6 +14,12 @@ const paymentVoucherSchema = new mongoose.Schema({
     index: true
   },
   // Payee Information
+  payee: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Payee',
+    default: null,
+    index: true
+  },
   payeeName: {
     type: String,
     required: [true, 'Payee name is required'],

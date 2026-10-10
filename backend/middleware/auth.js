@@ -82,7 +82,7 @@ const authenticateToken = async (req, res, next) => {
 // Middleware to check if user is admin
 const requireAdmin = async (req, res, next) => {
   try {
-    if (req.user.role !== 'admin') {
+    if (!['admin', 'super_admin'].includes(req.user.role)) {
       // Log unauthorized access attempt
       await AuditLog.logEvent({
         action: 'READ',
@@ -114,7 +114,7 @@ const requireAdmin = async (req, res, next) => {
 // Middleware to check if user is admin or manager
 const requireAdminOrManager = async (req, res, next) => {
   try {
-    if (!['admin', 'manager'].includes(req.user.role)) {
+    if (!['admin', 'super_admin', 'manager', 'sales_manager', 'branch_manager'].includes(req.user.role)) {
       // Log unauthorized access attempt
       await AuditLog.logEvent({
         action: 'READ',

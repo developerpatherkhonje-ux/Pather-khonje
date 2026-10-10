@@ -483,20 +483,11 @@ const About = () => {
                 viewport={{ once: true }}
                 variants={fadeUp}
                 transition={{ delay: 0.2 }}
-                className="w-full max-w-5xl bg-white flex flex-col md:flex-row items-center gap-12 p-8 md:p-12 lg:p-16 shadow-2xl rounded-sm relative"
+                className="w-full max-w-4xl bg-white p-8 md:p-12 lg:p-16 shadow-2xl rounded-sm relative"
               >
                 <div className="absolute top-0 left-0 w-2 h-full bg-soft-gold"></div>
-                
-                <div className="w-full md:w-1/3 flex-shrink-0">
-                  <div className="mx-auto flex h-56 w-56 flex-col items-center justify-center rounded-full border-[6px] border-ice-blue bg-[radial-gradient(circle_at_35%_25%,rgba(198,167,94,0.28),transparent_34%),linear-gradient(145deg,#071c23,#0b4a42)] p-6 text-center shadow-inner md:h-72 md:w-72">
-                    <span className="font-serif text-6xl text-soft-gold md:text-7xl">PK</span>
-                    <span className="mt-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/80">
-                      Founder led
-                    </span>
-                  </div>
-                </div>
 
-                <div className="w-full md:w-2/3 text-center md:text-left space-y-6">
+                <div className="w-full text-center md:text-left space-y-6">
                   <div>
                     <h3 className="font-serif text-4xl text-midnight-ocean mb-2">
                       {member.name}

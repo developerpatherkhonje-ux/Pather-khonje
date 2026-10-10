@@ -1,4 +1,6 @@
-const Invoice = require('../models/Invoice'); 
+const Invoice = require('../models/Invoice');
+const Customer = require('../models/Customer');
+const BusinessSettings = require('../models/BusinessSettings');
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
@@ -30,7 +32,9 @@ const drawKeyValue = (doc, label, value, x, y, width = 220) => {
 
 // Generate invoice number helper (prefix + padded count)
 async function generateInvoiceNumber(type) {
-  const prefix = type === 'hotel' ? 'HTL' : 'TUR';
+  const settings = await BusinessSettings.findOne({ key: 'default' }).lean();
+  const templatePrefix = settings?.invoice?.templates?.[type]?.prefix;
+  const prefix = templatePrefix || (type === 'hotel' ? 'HTL' : type === 'car' ? 'CAR' : 'TUR');
   
   // Find the highest existing invoice number for this type
   const lastInvoice = await Invoice.findOne({ type })
@@ -54,6 +58,52 @@ async function generateInvoiceNumber(type) {
   return generatedNumber;
 }
 
+async function upsertCustomerFromInvoice(data, userId) {
+  if (data.customerRef) return data.customerRef;
+  const customer = data.customer || {};
+  if (!customer.name && !customer.phone && !customer.email) return null;
+
+  const existing = await Customer.findOne({
+    isActive: true,
+    $or: [
+      ...(customer.phone ? [{ phone: customer.phone }] : []),
+      ...(customer.email ? [{ email: String(customer.email).toLowerCase() }] : []),
+    ],
+  });
+
+  if (existing) {
+    existing.name = customer.name || existing.name;
+    existing.phone = customer.phone || existing.phone;
+    existing.email = customer.email || existing.email;
+    existing.address = customer.address || existing.address;
+    await existing.save();
+    return existing._id;
+  }
+
+  const created = await Customer.create({
+    name: customer.name || 'Unnamed Customer',
+    phone: customer.phone,
+    email: customer.email,
+    address: customer.address,
+    branch: data.branch || null,
+    createdBy: userId,
+  });
+  return created._id;
+}
+
+function applySettingsDefaults(data, settings) {
+  const gstEnabled = Boolean(settings?.invoice?.gstEnabled);
+  const defaultGstPercent = Number(settings?.invoice?.defaultGstPercent || 0);
+  if (gstEnabled && !Number(data.gstPercent || 0)) {
+    data.gstPercent = defaultGstPercent;
+  }
+  if (gstEnabled && Number(data.gstPercent || 0) > 0 && !Number(data.tax || 0)) {
+    const taxable = Math.max(Number(data.subtotal || 0) - Number(data.discount || 0), 0);
+    data.tax = Math.round((taxable * Number(data.gstPercent || 0)) / 100);
+    data.total = taxable + Number(data.tax || 0);
+  }
+}
+
 exports.createInvoice = async (req, res, next) => {
   try {
     const data = req.body;
@@ -65,16 +115,17 @@ exports.createInvoice = async (req, res, next) => {
     
     while (attempts < maxAttempts) {
       try {
+        const settings = await BusinessSettings.findOne({ key: 'default' }).lean();
+        applySettingsDefaults(data, settings);
         if (!data.invoiceNumber) {
           data.invoiceNumber = await generateInvoiceNumber(data.type);
         }
+        data.customerRef = await upsertCustomerFromInvoice(data, req.user?._id);
         data.dueAmount = Number(data.total || 0) - Number(data.advancePaid || 0);
         data.createdBy = req.user?._id;
         
         // Set initial status based on due amount if not provided
-        if (!data.status) {
-          data.status = data.dueAmount <= 0 ? 'paid' : 'pending';
-        }
+        data.status = data.dueAmount <= 0 ? 'paid' : Number(data.advancePaid || 0) > 0 ? 'partial' : 'pending';
         
         console.log('Backend - Data before saving:', JSON.stringify(data, null, 2));
         const invoice = await Invoice.create(data);
@@ -105,8 +156,8 @@ exports.updateInvoice = async (req, res, next) => {
     const data = req.body;
     
     // If updating status, validate it
-    if (data.status && !['pending', 'paid', 'overdue'].includes(data.status)) {
-      return res.status(400).json({ success: false, message: 'Invalid status. Must be pending, paid, or overdue.' });
+    if (data.status && !['draft', 'pending', 'partial', 'paid', 'overdue', 'cancelled'].includes(data.status)) {
+      return res.status(400).json({ success: false, message: 'Invalid status.' });
     }
     
     // If updating financial fields, recalculate dueAmount
@@ -121,11 +172,16 @@ exports.updateInvoice = async (req, res, next) => {
         if (data.status === undefined) {
           if (data.dueAmount <= 0) {
             data.status = 'paid';
+          } else if (Number(advancePaid || 0) > 0) {
+            data.status = 'partial';
           } else {
             data.status = 'pending';
           }
         }
       }
+    }
+    if (data.customer) {
+      data.customerRef = await upsertCustomerFromInvoice(data, req.user?._id);
     }
     
     console.log('Backend - Updating invoice:', req.params.id, 'with data:', JSON.stringify(data, null, 2));
@@ -147,9 +203,10 @@ exports.deleteInvoice = async (req, res, next) => {
 
 exports.getInvoices = async (req, res, next) => {
   try {
-    const { page = 1, limit = 20, type, search } = req.query;
+    const { page = 1, limit = 20, type, search, customerId } = req.query;
     const filter = {};
     if (type) filter.type = type;
+    if (customerId) filter.customerRef = customerId;
     if (search) {
       filter.$or = [
         { invoiceNumber: { $regex: search, $options: 'i' } },
@@ -158,6 +215,7 @@ exports.getInvoices = async (req, res, next) => {
       ];
     }
     const invoices = await Invoice.find(filter)
+      .populate('customerRef', 'name phone email')
       .sort({ createdAt: -1 })
       .skip((Number(page) - 1) * Number(limit))
       .limit(Number(limit));
@@ -169,7 +227,7 @@ exports.getInvoices = async (req, res, next) => {
       console.log(`Backend - Updating ${invoicesToUpdate.length} invoices without status field`);
       for (const invoice of invoicesToUpdate) {
         const dueAmount = Number(invoice.total || 0) - Number(invoice.advancePaid || 0);
-        const status = dueAmount <= 0 ? 'paid' : 'pending';
+        const status = dueAmount <= 0 ? 'paid' : Number(invoice.advancePaid || 0) > 0 ? 'partial' : 'pending';
         await Invoice.findByIdAndUpdate(invoice._id, { status });
         invoice.status = status; // Update the local object for response
       }
@@ -182,7 +240,7 @@ exports.getInvoices = async (req, res, next) => {
 
 exports.getInvoiceById = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findById(req.params.id);
+    const invoice = await Invoice.findById(req.params.id).populate('customerRef', 'name phone email address');
     if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
     res.json({ success: true, data: invoice });
   } catch (error) { next(error); }
@@ -191,7 +249,7 @@ exports.getInvoiceById = async (req, res, next) => {
 // Stream PDF directly to response, do not store binary in DB
 exports.downloadInvoicePdf = async (req, res, next) => {
   try {
-    const invoice = await Invoice.findById(req.params.id);
+    const invoice = await Invoice.findById(req.params.id).populate('customerRef', 'name phone email address');
     if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
 
     const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, autoFirstPage: true });
@@ -203,7 +261,7 @@ exports.downloadInvoicePdf = async (req, res, next) => {
     if (fs.existsSync(logoPath)) {
       doc.image(logoPath, 40, 28, { width: 58 });
     }
-    const title = invoice.type === 'hotel' ? 'Hotel Booking Invoice' : 'Tour Package Invoice';
+    const title = invoice.type === 'hotel' ? 'Hotel Booking Invoice' : invoice.type === 'car' ? 'Car Rental Invoice' : 'Tour Package Invoice';
 
     doc.font('Helvetica-Bold').fontSize(22).fillColor('#071c23').text('Pather Khonje', 112, 35);
     doc.font('Helvetica').fontSize(9).fillColor('#64748b').text('A Tour That Never Seen Before', 112, 62);
@@ -225,7 +283,7 @@ exports.downloadInvoicePdf = async (req, res, next) => {
 
     drawSection(doc, 'Invoice Details', 232, 74);
     drawKeyValue(doc, 'Date', formatDate(invoice.date), 52, 270, 120);
-    drawKeyValue(doc, 'Type', invoice.type === 'hotel' ? 'Hotel Booking' : 'Tour Package', 196, 270, 140);
+    drawKeyValue(doc, 'Type', invoice.type === 'hotel' ? 'Hotel Booking' : invoice.type === 'car' ? 'Car Rental' : 'Tour Package', 196, 270, 140);
     drawKeyValue(doc, 'Payment Method', invoice.paymentMethod || 'Cash', 360, 270, 170);
 
     let y = 323;
@@ -249,7 +307,7 @@ exports.downloadInvoicePdf = async (req, res, next) => {
         drawKeyValue(doc, 'Additional Benefits', d.additionalBenefits, 310, y + 38, 220);
         y += 96;
       }
-    } else {
+    } else if (invoice.type === 'tour') {
       const t = invoice.tourDetails || {};
       const transport = invoice.transportDetails || {};
       drawSection(doc, 'Tour Package Details', y, 130);
@@ -277,6 +335,19 @@ exports.downloadInvoicePdf = async (req, res, next) => {
         });
         y += sectionHeight + 18;
       }
+    } else {
+      const c = invoice.carDetails || {};
+      drawSection(doc, 'Car Rental Details', y, 132);
+      drawKeyValue(doc, 'Car', c.carName, 52, y + 38, 190);
+      drawKeyValue(doc, 'Vehicle No.', c.vehicleNumber, 260, y + 38, 120);
+      drawKeyValue(doc, 'Route', c.route, 396, y + 38, 130);
+      drawKeyValue(doc, 'Start Date', formatDate(c.startDate), 52, y + 70, 120);
+      drawKeyValue(doc, 'End Date', formatDate(c.endDate), 182, y + 70, 120);
+      drawKeyValue(doc, 'Days', String(c.days || 0), 312, y + 70, 80);
+      drawKeyValue(doc, 'Rate / Day', formatCurrency(c.ratePerDay), 410, y + 70, 120);
+      drawKeyValue(doc, 'Pickup', c.pickupPoint, 52, y + 102, 235);
+      drawKeyValue(doc, 'Drop', c.dropPoint, 310, y + 102, 220);
+      y += 150;
     }
 
     if (y > 610) {
@@ -355,5 +426,88 @@ exports.downloadInvoicePdf = async (req, res, next) => {
 
     doc.end();
   } catch (error) { next(error); }
+};
+
+exports.addInvoicePayment = async (req, res, next) => {
+  try {
+    const invoice = await Invoice.findById(req.params.id);
+    if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+
+    const amount = Number(req.body.amount || 0);
+    if (amount <= 0) {
+      return res.status(400).json({ success: false, message: 'Payment amount must be greater than zero' });
+    }
+
+    const receiptNumber = `RCT${String(Date.now()).slice(-8)}`;
+    invoice.payments.push({
+      amount,
+      date: req.body.date || new Date(),
+      method: req.body.method || req.body.paymentMethod || 'Cash',
+      reference: req.body.reference,
+      notes: req.body.notes,
+      receiptNumber,
+      receivedBy: req.user?._id,
+    });
+    invoice.recalculatePaymentStatus();
+    await invoice.save();
+
+    res.status(201).json({
+      success: true,
+      data: {
+        invoice,
+        payment: invoice.payments[invoice.payments.length - 1],
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.downloadPaymentReceiptPdf = async (req, res, next) => {
+  try {
+    const invoice = await Invoice.findById(req.params.id).populate('customerRef', 'name phone email address');
+    if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
+
+    const payment = invoice.payments.id(req.params.paymentId) || invoice.payments.find((item) => String(item._id) === req.params.paymentId);
+    if (!payment) return res.status(404).json({ success: false, message: 'Payment receipt not found' });
+
+    const doc = new PDFDocument({ size: 'A4', margin: 44 });
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename=${payment.receiptNumber || 'receipt'}.pdf`);
+    doc.pipe(res);
+
+    if (fs.existsSync(logoPath)) doc.image(logoPath, 44, 32, { width: 56 });
+    doc.font('Helvetica-Bold').fontSize(22).fillColor('#071c23').text('Pather Khonje', 112, 38);
+    doc.font('Helvetica').fontSize(9).fillColor('#64748b').text('A Tour That Never Seen Before', 112, 64);
+    doc.font('Helvetica-Bold').fontSize(18).fillColor('#0b4a42').text('Payment Receipt', 380, 42, { width: 160, align: 'right' });
+    doc.strokeColor('#e8b85c').lineWidth(1.4).moveTo(44, 96).lineTo(552, 96).stroke();
+
+    drawSection(doc, 'Receipt Details', 120, 116);
+    drawKeyValue(doc, 'Receipt No.', payment.receiptNumber, 56, 160, 150);
+    drawKeyValue(doc, 'Invoice No.', invoice.invoiceNumber, 226, 160, 150);
+    drawKeyValue(doc, 'Payment Date', formatDate(payment.date), 396, 160, 130);
+    drawKeyValue(doc, 'Customer', invoice.customer?.name || invoice.customerRef?.name, 56, 194, 210);
+    drawKeyValue(doc, 'Phone', invoice.customer?.phone || invoice.customerRef?.phone, 286, 194, 120);
+    drawKeyValue(doc, 'Method', payment.method, 426, 194, 100);
+
+    drawSection(doc, 'Payment Amount', 260, 126);
+    doc.font('Helvetica-Bold').fontSize(28).fillColor('#0b4a42').text(formatCurrency(payment.amount), 56, 306);
+    doc.font('Helvetica').fontSize(10).fillColor('#64748b').text(`Reference: ${payment.reference || 'N/A'}`, 56, 344);
+    doc.text(`Notes: ${payment.notes || 'N/A'}`, 56, 362, { width: 470 });
+
+    drawSection(doc, 'Updated Invoice Balance', 420, 116);
+    drawKeyValue(doc, 'Invoice Total', formatCurrency(invoice.total), 56, 466, 140);
+    drawKeyValue(doc, 'Total Paid', formatCurrency(invoice.advancePaid), 226, 466, 140);
+    drawKeyValue(doc, 'Balance Due', formatCurrency(invoice.dueAmount), 396, 466, 140);
+
+    const signX = 390;
+    if (fs.existsSync(stampPath)) doc.image(stampPath, signX + 32, 586, { width: 92 });
+    doc.strokeColor('#071c23').moveTo(signX, 674).lineTo(signX + 150, 674).stroke();
+    doc.font('Helvetica-Bold').fontSize(9).fillColor('#071c23').text('Authorized Signatory', signX, 682, { width: 150, align: 'center' });
+    doc.font('Helvetica').fontSize(8).fillColor('#94a3b8').text('Generated by Pather Khonje Corporate Dashboard', 44, 812, { width: 508, align: 'center' });
+    doc.end();
+  } catch (error) {
+    next(error);
+  }
 };
 

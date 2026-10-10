@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Search, FileText, Download, Eye, Calendar, IndianRupee } from 'lucide-react';
+import { Plus, Search, FileText, IndianRupee } from 'lucide-react';
 import HotelInvoiceForm from '../invoices/HotelInvoiceForm';
 import TourInvoiceForm from '../invoices/TourInvoiceForm';
 import InvoiceList from '../invoices/InvoiceList';
@@ -121,8 +121,8 @@ function InvoiceManagement() {
   const totalDue = useMemo(() => {
     return invoices.reduce((sum, invoice) => {
       const status = getInvoiceStatus(invoice);
-      // Only count due amounts for pending and overdue invoices
-      if (status === 'pending' || status === 'overdue') {
+      // Count due amounts for invoices that are not fully paid
+      if (status === 'pending' || status === 'partial' || status === 'overdue') {
         const dueAmount = Number(invoice.dueAmount || Math.max((invoice.total || 0) - (invoice.advancePaid || 0), 0));
         return sum + dueAmount;
       }
@@ -180,6 +180,13 @@ function InvoiceManagement() {
           >
             <Plus className="h-5 w-5" />
             <span>Tour Invoice</span>
+          </button>
+          <button
+            onClick={() => handleCreateInvoice('car')}
+            className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition-colors flex items-center space-x-2"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Car Invoice</span>
           </button>
         </div>
       </div>
@@ -284,6 +291,7 @@ function InvoiceManagement() {
             <option value="all">All Types</option>
             <option value="hotel">Hotel Invoices</option>
             <option value="tour">Tour Invoices</option>
+            <option value="car">Car Invoices</option>
           </select>
 
           <select
@@ -293,6 +301,7 @@ function InvoiceManagement() {
           >
             <option value="all">All Status</option>
             <option value="paid">Paid</option>
+            <option value="partial">Partial</option>
             <option value="pending">Pending</option>
             <option value="overdue">Overdue</option>
           </select>
@@ -343,6 +352,12 @@ function InvoiceManagement() {
                 className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
               >
                 Create Tour Invoice
+              </button>
+              <button
+                onClick={() => handleCreateInvoice('car')}
+                className="bg-emerald-600 text-white px-6 py-3 rounded-lg hover:bg-emerald-700 transition-colors"
+              >
+                Create Car Invoice
               </button>
             </div>
           )}

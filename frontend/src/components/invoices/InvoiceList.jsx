@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Edit, Trash2, Edit3, Check, X } from 'lucide-react';
+import { Download, Edit, IndianRupee, ReceiptText, Trash2, X } from 'lucide-react';
 import api from '../../services/api';
 import { formatDisplayDate } from '../../utils/dateUtils';
 import toast from 'react-hot-toast';
@@ -7,8 +7,8 @@ import toast from 'react-hot-toast';
 function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: externalItems }) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editingStatus, setEditingStatus] = useState(null);
-  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [paymentInvoice, setPaymentInvoice] = useState(null);
+  const [paymentForm, setPaymentForm] = useState({ amount: '', method: 'Cash', date: new Date().toISOString().slice(0, 10), reference: '', notes: '' });
 
   const fetchData = async () => {
     setLoading(true);
@@ -46,40 +46,31 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
     }
   };
 
-  const updateStatus = async (invoiceId, newStatus) => {
-    setUpdatingStatus(true);
+  const addPayment = async (event) => {
+    event.preventDefault();
     try {
-      const updatedInvoice = await api.updateInvoice(invoiceId, { status: newStatus });
-      
-      // Update local state
+      const res = await api.addInvoicePayment(paymentInvoice._id, paymentForm);
+      const updatedInvoice = res.data?.invoice || res.data;
       setItems(prevItems => 
         prevItems.map(item => 
-          item._id === invoiceId 
-            ? { ...item, status: newStatus }
+          item._id === paymentInvoice._id
+            ? updatedInvoice
             : item
         )
       );
-      
-      // Notify parent component to refresh data
       if (typeof onStatusUpdated === 'function') {
         onStatusUpdated();
       }
-      
-      toast.success(`Status updated to ${newStatus}`);
-      setEditingStatus(null);
+      const payment = res.data?.payment;
+      if (payment?._id) {
+        await api.downloadPaymentReceiptPdf(updatedInvoice._id, payment._id, payment.receiptNumber);
+      }
+      toast.success('Payment received and receipt generated');
+      setPaymentInvoice(null);
+      setPaymentForm({ amount: '', method: 'Cash', date: new Date().toISOString().slice(0, 10), reference: '', notes: '' });
     } catch (error) {
-      toast.error(error.message || 'Failed to update status');
-    } finally {
-      setUpdatingStatus(false);
+      toast.error(error.message || 'Failed to add payment');
     }
-  };
-
-  const startEditingStatus = (invoiceId) => {
-    setEditingStatus(invoiceId);
-  };
-
-  const cancelEditingStatus = () => {
-    setEditingStatus(null);
   };
 
   const download = async (inv) => {
@@ -105,6 +96,8 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
     switch (status) {
       case 'paid':
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Paid</span>;
+      case 'partial':
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-sky-100 text-sky-800">Partial</span>;
       case 'overdue':
         return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Overdue</span>;
       case 'pending':
@@ -118,6 +111,8 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
       return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Hotel</span>;
     } else if (type === 'tour') {
       return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Tour</span>;
+    } else if (type === 'car') {
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">Car</span>;
     }
     return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 capitalize">{type}</span>;
   };
@@ -127,6 +122,8 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
       return inv.hotelDetails?.hotelName || 'Hotel Booking';
     } else if (inv.type === 'tour') {
       return inv.tourDetails?.packageName || 'Tour Package';
+    } else if (inv.type === 'car') {
+      return inv.carDetails?.carName || inv.carDetails?.route || 'Car Rental';
     }
     return 'Package';
   };
@@ -170,38 +167,10 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {editingStatus === inv._id ? (
-                    <div className="flex items-center space-x-2">
-                      <select
-                        className="text-xs border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        defaultValue={inv.status || 'pending'}
-                        onChange={(e) => updateStatus(inv._id, e.target.value)}
-                        disabled={updatingStatus}
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="paid">Paid</option>
-                        <option value="overdue">Overdue</option>
-                      </select>
-                      <button
-                        onClick={cancelEditingStatus}
-                        className="text-gray-400 hover:text-gray-600"
-                        disabled={updatingStatus}
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2">
-                      {getStatusBadge(inv)}
-                      <button
-                        onClick={() => startEditingStatus(inv._id)}
-                        className="text-gray-400 hover:text-blue-600 transition-colors"
-                        title="Edit Status"
-                      >
-                        <Edit3 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  )}
+                  <div className="space-y-1">
+                    {getStatusBadge(inv)}
+                    <div className="text-[11px] text-gray-500">Auto from payments</div>
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center text-sm text-gray-500">
@@ -213,6 +182,16 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-3">
+                    <button
+                      onClick={() => {
+                        setPaymentInvoice(inv);
+                        setPaymentForm((prev) => ({ ...prev, amount: Math.max(Number(inv.dueAmount ?? dueAmount), 0) || '' }));
+                      }}
+                      className="text-gray-400 hover:text-emerald-600 transition-colors"
+                      title="Receive Payment"
+                    >
+                      <IndianRupee className="h-5 w-5" />
+                    </button>
                     <button
                       onClick={() => onEdit && onEdit(inv)}
                       className="text-gray-400 hover:text-blue-600 transition-colors"
@@ -241,6 +220,33 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
           })}
         </tbody>
       </table>
+      {paymentInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <form onSubmit={addPayment} className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="flex items-center gap-2 text-xl font-bold"><ReceiptText className="h-5 w-5 text-emerald-600" /> Receive Payment</h2>
+                <p className="text-sm text-gray-500">{paymentInvoice.invoiceNumber} · Due ₹{Number(paymentInvoice.dueAmount || 0).toLocaleString('en-IN')}</p>
+              </div>
+              <button type="button" onClick={() => setPaymentInvoice(null)} className="rounded-full p-2 hover:bg-gray-100"><X className="h-5 w-5" /></button>
+            </div>
+            <div className="grid gap-3">
+              <input required type="number" min="1" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} placeholder="Amount received" className="rounded-xl border px-4 py-3" />
+              <input type="date" value={paymentForm.date} onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })} className="rounded-xl border px-4 py-3" />
+              <select value={paymentForm.method} onChange={(e) => setPaymentForm({ ...paymentForm, method: e.target.value })} className="rounded-xl border px-4 py-3">
+                <option>Cash</option>
+                <option>UPI</option>
+                <option>Bank Transfer</option>
+                <option>Card</option>
+                <option>Cheque</option>
+              </select>
+              <input value={paymentForm.reference} onChange={(e) => setPaymentForm({ ...paymentForm, reference: e.target.value })} placeholder="Reference / transaction id" className="rounded-xl border px-4 py-3" />
+              <textarea value={paymentForm.notes} onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })} placeholder="Notes" className="rounded-xl border px-4 py-3" />
+            </div>
+            <button className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white">Save Payment & Download Receipt</button>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

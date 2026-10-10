@@ -12,7 +12,7 @@
     "start": "vite"
   },
   "engines": {
-    "node": "24.0.0"
+    "node": "^20.0.0"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.4.1",

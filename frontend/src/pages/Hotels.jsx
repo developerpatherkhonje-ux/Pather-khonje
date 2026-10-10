@@ -17,16 +17,141 @@ import SEO from "../components/SEO";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
-const fallbackImage = "/assets/hero13.jpg";
+const fallbackImages = [
+  "/assets/hero13.jpg",
+  "/assets/home-hill-resort.png",
+  "/assets/home-cloud-forest.png",
+  "/assets/home-river-retreat.png",
+  "/assets/home-boutique-homestay.png",
+];
+const fallbackImage = fallbackImages[0];
 
-const getPlaceImage = (place) =>
-  apiService.toAbsoluteUrl(
-    place?.image?.url ||
-      place?.image ||
-      place?.images?.[0]?.url ||
-      place?.images?.[0]?.secure_url ||
-      place?.images?.[0],
-  ) || fallbackImage;
+const getPlaceImages = (place) => {
+  const candidates = [
+    place?.cardImage,
+    place?.coverImage,
+    place?.thumbnail,
+    place?.image?.url,
+    place?.image?.secure_url,
+    place?.image,
+    ...(Array.isArray(place?.images)
+      ? place.images.map(
+          (image) =>
+            image?.url ||
+            image?.secure_url ||
+            image?.path ||
+            image?.src ||
+            image,
+        )
+      : []),
+  ]
+    .filter(Boolean)
+    .map((image) => apiService.toAbsoluteUrl(image))
+    .filter(Boolean);
+
+  return [...new Set([...candidates, ...fallbackImages])];
+};
+
+function DestinationCard({ place, index, onWhatsAppEnquiry }) {
+  const images = useMemo(() => getPlaceImages(place), [place]);
+  const [imageIndex, setImageIndex] = useState(0);
+  const imageSrc = images[imageIndex] || fallbackImages[0];
+
+  const handleImageError = () => {
+    setImageIndex((current) =>
+      current < images.length - 1 ? current + 1 : current,
+    );
+  };
+
+  return (
+    <motion.article
+      key={place.id || place._id}
+      initial={{ opacity: 0, y: 22 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.18) }}
+      className="group flex min-h-[500px] flex-col overflow-hidden bg-white shadow-[0_22px_70px_rgba(10,46,77,0.10)] ring-1 ring-midnight-ocean/8 transition hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(10,46,77,0.15)]"
+    >
+      <div className="relative h-72 overflow-hidden bg-midnight-ocean">
+        <LazyLoadImage
+          src={imageSrc}
+          alt={place.name}
+          onError={handleImageError}
+          className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
+          wrapperClassName="h-full w-full"
+          effect="blur"
+        />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(7,28,35,0.40),rgba(7,28,35,0.12)_38%,rgba(7,28,35,0.92)),linear-gradient(90deg,rgba(7,28,35,0.46),rgba(7,28,35,0.10),rgba(7,28,35,0.38))]" />
+        <div className="absolute left-5 right-5 top-5 flex items-start justify-between gap-3">
+          <span className="border border-white/28 bg-[#071c23]/82 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white shadow-lg backdrop-blur">
+            {place.hotelsCount || 0} stays
+          </span>
+          <span className="flex items-center gap-1 border border-white/24 bg-white/92 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-midnight-ocean shadow-lg backdrop-blur">
+            <Star className="h-3 w-3 fill-soft-gold text-soft-gold" />
+            {place.rating || "4.5"}
+          </span>
+        </div>
+        <div className="absolute bottom-5 left-5 right-5">
+          <div className="inline-flex max-w-full flex-col bg-[#071c23]/72 px-4 py-3 shadow-[0_16px_42px_rgba(0,0,0,0.24)] backdrop-blur-md">
+            <h3 className="font-serif text-3xl leading-tight text-white drop-shadow">
+              {place.name}
+            </h3>
+            <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-white">
+              <MapPin className="h-4 w-4 text-soft-gold" />
+              Curated hotel collection
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col p-6">
+        <p className="line-clamp-3 text-sm leading-7 text-slate-600">
+          {place.description ||
+            "A carefully selected stay base for scenic routes, comfortable transfers, and relaxed travel pacing."}
+        </p>
+        <div className="mt-5 grid grid-cols-2 gap-3 border-y border-midnight-ocean/8 py-4 text-xs">
+          {[
+            [Building2, `${place.hotelsCount || 0} stays`, "Options"],
+            [Shield, "Verified", "Support"],
+          ].map(([Icon, value, label]) => (
+            <div key={label}>
+              <div className="mb-1 flex items-center gap-1.5 font-bold uppercase tracking-widest text-slate-400">
+                <Icon className="h-3.5 w-3.5" />
+                {label}
+              </div>
+              <div className="font-semibold text-midnight-ocean">{value}</div>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          {["Photos", "Rates", "Availability"].map((item) => (
+            <span key={item} className="flex items-center gap-1.5 bg-ice-blue px-2.5 py-1.5 text-[11px] font-semibold text-midnight-ocean">
+              <Check className="h-3 w-3 text-soft-gold" />
+              {item}
+            </span>
+          ))}
+        </div>
+        <div className="mt-auto flex items-center gap-3 pt-6">
+          <Link
+            to={`/hotels/${place.slug || place.id || place._id}`}
+            className="premium-button flex flex-1 items-center justify-center gap-2 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.17em]"
+          >
+            Explore Hotels
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => onWhatsAppEnquiry(place)}
+            className="flex h-11 w-11 items-center justify-center border border-midnight-ocean/12 text-midnight-ocean transition hover:border-soft-gold hover:text-soft-gold"
+            aria-label={`WhatsApp enquiry for ${place.name}`}
+          >
+            <MessageCircle className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
 
 const Hotels = () => {
   const [places, setPlaces] = useState([]);
@@ -113,7 +238,7 @@ const Hotels = () => {
             <h1 className="font-serif text-5xl leading-[1.02] text-white md:text-7xl lg:text-8xl">
               Stays chosen for view, comfort, and route convenience.
             </h1>
-            <p className="mt-6 max-w-2xl text-base leading-8 text-white/84 md:text-xl">
+            <p className="mt-6 max-w-2xl text-base font-medium leading-8 text-soft-gold md:text-xl">
               Browse destination-wise hotels, open real property details, and
               ask our team for WhatsApp availability with photos and rates.
             </p>
@@ -121,12 +246,12 @@ const Hotels = () => {
 
           <div className="mt-10 grid gap-3 border border-white/14 bg-white/10 p-3 backdrop-blur-md md:grid-cols-[1fr_auto]">
             <label className="relative block">
-              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-white/70" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-midnight-ocean/60" />
               <input
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search destination or stay type"
-                className="h-14 w-full bg-white/12 pl-12 pr-4 text-sm font-medium text-white placeholder:text-white/62 outline-none ring-1 ring-white/10 transition focus:ring-soft-gold"
+                className="h-14 w-full bg-white pl-12 pr-4 text-sm font-semibold text-midnight-ocean placeholder:text-slate-500 outline-none ring-1 ring-white/30 transition focus:ring-soft-gold"
               />
             </label>
             <button
@@ -183,89 +308,12 @@ const Hotels = () => {
           {!loading && !error && filteredPlaces.length > 0 && (
             <div className="grid gap-7 lg:grid-cols-3">
               {filteredPlaces.map((place, index) => (
-                <motion.article
+                <DestinationCard
                   key={place.id || place._id}
-                  initial={{ opacity: 0, y: 22 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-80px" }}
-                  transition={{ duration: 0.45, delay: Math.min(index * 0.05, 0.18) }}
-                  className="group flex min-h-[500px] flex-col overflow-hidden bg-white shadow-[0_22px_70px_rgba(10,46,77,0.10)] ring-1 ring-midnight-ocean/8 transition hover:-translate-y-1 hover:shadow-[0_30px_90px_rgba(10,46,77,0.15)]"
-                >
-                  <div className="relative h-72 overflow-hidden">
-                    <LazyLoadImage
-                      src={getPlaceImage(place)}
-                      alt={place.name}
-                      className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
-                      wrapperClassName="h-full w-full"
-                      effect="blur"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-midnight-ocean/82 via-midnight-ocean/16 to-transparent" />
-                    <div className="absolute left-5 right-5 top-5 flex items-start justify-between gap-3">
-                      <span className="bg-white/90 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-midnight-ocean backdrop-blur">
-                        {place.hotelsCount || 0} stays
-                      </span>
-                      <span className="flex items-center gap-1 bg-midnight-ocean/84 px-3 py-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur">
-                        <Star className="h-3 w-3 fill-soft-gold text-soft-gold" />
-                        {place.rating || "4.5"}
-                      </span>
-                    </div>
-                    <div className="absolute bottom-5 left-5 right-5">
-                      <h3 className="font-serif text-3xl leading-tight text-white">
-                        {place.name}
-                      </h3>
-                      <div className="mt-3 flex items-center gap-2 text-sm text-white/86">
-                        <MapPin className="h-4 w-4 text-soft-gold" />
-                        Curated hotel collection
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-1 flex-col p-6">
-                    <p className="line-clamp-3 text-sm leading-7 text-slate-600">
-                      {place.description ||
-                        "A carefully selected stay base for scenic routes, comfortable transfers, and relaxed travel pacing."}
-                    </p>
-                    <div className="mt-5 grid grid-cols-2 gap-3 border-y border-midnight-ocean/8 py-4 text-xs">
-                      {[
-                        [Building2, `${place.hotelsCount || 0} stays`, "Options"],
-                        [Shield, "Verified", "Support"],
-                      ].map(([Icon, value, label]) => (
-                        <div key={label}>
-                          <div className="mb-1 flex items-center gap-1.5 font-bold uppercase tracking-widest text-slate-400">
-                            <Icon className="h-3.5 w-3.5" />
-                            {label}
-                          </div>
-                          <div className="font-semibold text-midnight-ocean">{value}</div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-5 flex flex-wrap gap-2">
-                      {["Photos", "Rates", "Availability"].map((item) => (
-                        <span key={item} className="flex items-center gap-1.5 bg-ice-blue px-2.5 py-1.5 text-[11px] font-semibold text-midnight-ocean">
-                          <Check className="h-3 w-3 text-soft-gold" />
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                    <div className="mt-auto flex items-center gap-3 pt-6">
-                      <Link
-                        to={`/hotels/${place.slug || place.id}`}
-                        className="premium-button flex flex-1 items-center justify-center gap-2 px-4 py-3 text-[11px] font-bold uppercase tracking-[0.17em]"
-                      >
-                        Explore Hotels
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                      <button
-                        type="button"
-                        onClick={() => handleWhatsAppEnquiry(place)}
-                        className="flex h-11 w-11 items-center justify-center border border-midnight-ocean/12 text-midnight-ocean transition hover:border-soft-gold hover:text-soft-gold"
-                        aria-label={`WhatsApp enquiry for ${place.name}`}
-                      >
-                        <MessageCircle className="h-5 w-5" />
-                      </button>
-                    </div>
-                  </div>
-                </motion.article>
+                  place={place}
+                  index={index}
+                  onWhatsAppEnquiry={handleWhatsAppEnquiry}
+                />
               ))}
             </div>
           )}

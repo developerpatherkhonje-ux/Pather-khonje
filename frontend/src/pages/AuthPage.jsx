@@ -79,7 +79,7 @@ const AuthPage = () => {
 
       if (success) {
         const user = JSON.parse(localStorage.getItem("user"));
-        if (user?.role === "admin") {
+        if (["admin", "super_admin"].includes(user?.role)) {
           navigate("/dashboard");
         } else {
           setError("Only authorized corporate users can sign in here.");

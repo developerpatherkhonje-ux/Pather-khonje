@@ -1,11 +1,11 @@
-const express = require('express'); 
+const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const AuditLog = require('../models/AuditLog');
 const Invoice = require('../models/Invoice');
 const PaymentVoucher = require('../models/PaymentVoucher');
-const {  
-  authenticateToken, 
+const {
+  authenticateToken,
   requireAdmin,
   requireAdminOrManager,
   sanitizeInput
@@ -15,6 +15,7 @@ const logger = require('../utils/logger');
 const SecurityUtils = require('../utils/security');
 
 const router = express.Router();
+const staffRoles = ['user', 'manager', 'admin', 'super_admin', 'sales_manager', 'agent', 'branch_manager', 'hr', 'accounts'];
 
 // Apply authentication and sanitization middleware to all routes
 router.use(authenticateToken);
@@ -36,8 +37,8 @@ const userUpdateValidation = [
     .withMessage('Please provide a valid email address'),
   body('role')
     .optional()
-    .isIn(['user', 'manager', 'admin'])
-    .withMessage('Role must be user, manager, or admin'),
+    .isIn(staffRoles)
+    .withMessage('Invalid role'),
   body('designation')
     .optional()
     .trim()
@@ -69,8 +70,8 @@ const userCreateValidation = [
     .withMessage(`Password must be at least ${config.SECURITY.passwordMinLength} characters`),
   body('role')
     .optional()
-    .isIn(['user', 'manager', 'admin'])
-    .withMessage('Role must be user, manager, or admin'),
+    .isIn(staffRoles)
+    .withMessage('Invalid role'),
   body('designation')
     .optional()
     .trim()
@@ -301,7 +302,7 @@ router.get('/users', requireAdmin, async (req, res) => {
 // @access  Admin only
 router.post('/users', requireAdmin, userCreateValidation, handleValidationErrors, async (req, res) => {
   try {
-    const { name, email, password, role = 'user', designation = 'Customer', phone } = req.body;
+    const { name, email, password, role = 'user', designation = 'Customer', phone, branch, permissions = [], salary = {} } = req.body;
     const adminId = req.user._id;
 
     const existingUser = await User.findByEmail(email);
@@ -319,6 +320,9 @@ router.post('/users', requireAdmin, userCreateValidation, handleValidationErrors
       role,
       designation,
       phone,
+      branch: branch || null,
+      permissions,
+      salary,
       isActive: true,
       metadata: {
         createdBy: adminId,
@@ -740,7 +744,7 @@ router.get('/analytics', requireAdmin, async (req, res) => {
     const recentTransactions = [
       ...invoices.map((invoice) => ({
         type: 'revenue',
-        description: `${invoice.type === 'hotel' ? 'Hotel' : 'Tour'} Invoice - ${invoice.invoiceNumber}`,
+        description: `${invoice.type === 'hotel' ? 'Hotel' : invoice.type === 'car' ? 'Car' : 'Tour'} Invoice - ${invoice.invoiceNumber}`,
         amount: Number(invoice.total || 0),
         date: invoice.date || invoice.createdAt,
         reference: invoice.invoiceNumber,
