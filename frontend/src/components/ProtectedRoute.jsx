@@ -25,7 +25,7 @@ function ProtectedRoute({ children, requireAdmin = false }) {
   if (!user && requireAdmin) {
     return <Navigate to="/auth" replace />;
   }
-  if (requireAdmin && !['admin', 'super_admin'].includes(user.role)) {
+  if (requireAdmin && !['admin', 'super_admin', 'manager', 'sales_manager', 'branch_manager', 'agent', 'hr', 'accounts'].includes(user.role)) {
     return <Navigate to="/website" replace />;
   }
 

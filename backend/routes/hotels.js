@@ -8,6 +8,7 @@ const {
   authenticateToken,
   requireAdmin,
   requireAdminOrManager,
+  requirePermission,
   sanitizeInput,
 } = require("../middleware/auth");
 const logger = require("../utils/logger");
@@ -89,7 +90,6 @@ const hotelValidation = [
 const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log("Validation errors:", errors.array());
     return res.status(400).json({
       success: false,
       message: "Validation failed",
@@ -272,6 +272,7 @@ router.post(
   "/",
   authenticateToken,
   requireAdmin,
+  requirePermission("content:manage"),
   hotelValidation,
   handleValidationErrors,
   async (req, res) => {
@@ -406,6 +407,7 @@ router.put(
   "/:id",
   authenticateToken,
   requireAdmin,
+  requirePermission("content:manage"),
   hotelValidation,
   handleValidationErrors,
   async (req, res) => {
@@ -510,7 +512,7 @@ router.put(
 // @route   DELETE /api/hotels/:id
 // @desc    Delete hotel (admin only)
 // @access  Admin only
-router.delete("/:id", authenticateToken, requireAdmin, async (req, res) => {
+router.delete("/:id", authenticateToken, requireAdmin, requirePermission("content:manage"), async (req, res) => {
   try {
     const hotelId = req.params.id;
     const adminId = req.user._id;
@@ -570,6 +572,7 @@ router.get(
   "/admin/stats",
   authenticateToken,
   requireAdmin,
+  requirePermission("content:manage"),
   async (req, res) => {
     try {
       const stats = await Hotel.getHotelStats();
@@ -611,6 +614,7 @@ router.post(
   "/:id/images",
   authenticateToken,
   requireAdmin,
+  requirePermission("content:manage"),
   (req, res, next) => {
     uploadMultiple(req, res, (err) => {
       if (err) {
@@ -690,6 +694,7 @@ router.delete(
   "/:id/images/:imageId",
   authenticateToken,
   requireAdmin,
+  requirePermission("content:manage"),
   async (req, res) => {
     try {
       const hotelId = req.params.id;

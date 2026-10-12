@@ -2,12 +2,13 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const Lead = require('../models/Lead');
 const AuditLog = require('../models/AuditLog');
-const { authenticateToken, requireAdmin, sanitizeInput } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, requirePermission, sanitizeInput } = require('../middleware/auth');
+const { applyBranchScope, getUserBranchId, isHeadOfficeUser } = require('../utils/branchAccess');
 const logger = require('../utils/logger');
 
 const router = express.Router();
 
-router.use(authenticateToken, requireAdmin, sanitizeInput);
+router.use(authenticateToken, requireAdmin, requirePermission('leads:manage'), sanitizeInput);
 
 const leadValidation = [
   body('name').trim().isLength({ min: 2, max: 100 }).withMessage('Name must be 2-100 characters'),
@@ -57,7 +58,7 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 50;
     const skip = (page - 1) * limit;
-    const filter = { isActive: true };
+    const filter = applyBranchScope({ isActive: true }, req.user, req.query.branch);
 
     if (req.query.stage && req.query.stage !== 'all') filter.stage = req.query.stage;
     if (req.query.queryType && req.query.queryType !== 'all') filter.queryType = req.query.queryType;
@@ -80,7 +81,7 @@ router.get('/', async (req, res) => {
         .limit(limit),
       Lead.countDocuments(filter),
       Lead.aggregate([
-        { $match: { isActive: true } },
+        { $match: filter },
         { $group: { _id: '$stage', count: { $sum: 1 } } },
       ]),
     ]);
@@ -111,6 +112,7 @@ router.post('/', leadValidation, handleValidationErrors, async (req, res) => {
   try {
     const lead = new Lead({
       ...req.body,
+      branch: isHeadOfficeUser(req.user) ? (req.body.branch || req.user.branch || null) : getUserBranchId(req.user),
       createdBy: req.user._id,
       lastModifiedBy: req.user._id,
     });
@@ -132,9 +134,14 @@ router.post('/', leadValidation, handleValidationErrors, async (req, res) => {
 
 router.put('/:id', leadValidation, handleValidationErrors, async (req, res) => {
   try {
-    const lead = await Lead.findByIdAndUpdate(
-      req.params.id,
-      { ...req.body, lastModifiedBy: req.user._id },
+    const filter = applyBranchScope({ _id: req.params.id }, req.user);
+    const lead = await Lead.findOneAndUpdate(
+      filter,
+      {
+        ...req.body,
+        branch: isHeadOfficeUser(req.user) ? (req.body.branch || undefined) : getUserBranchId(req.user),
+        lastModifiedBy: req.user._id,
+      },
       { new: true, runValidators: true },
     )
       .populate('createdBy', 'name email')
@@ -164,8 +171,8 @@ router.patch('/:id/stage', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid lead stage' });
     }
 
-    const lead = await Lead.findByIdAndUpdate(
-      req.params.id,
+    const lead = await Lead.findOneAndUpdate(
+      applyBranchScope({ _id: req.params.id }, req.user),
       { stage: req.body.stage, lastModifiedBy: req.user._id },
       { new: true, runValidators: true },
     )
@@ -191,8 +198,8 @@ router.patch('/:id/stage', async (req, res) => {
 
 router.delete('/:id', async (req, res) => {
   try {
-    const lead = await Lead.findByIdAndUpdate(
-      req.params.id,
+    const lead = await Lead.findOneAndUpdate(
+      applyBranchScope({ _id: req.params.id }, req.user),
       { isActive: false, lastModifiedBy: req.user._id },
       { new: true },
     );

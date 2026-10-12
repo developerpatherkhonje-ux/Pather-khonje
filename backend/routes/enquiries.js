@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Enquiry = require("../models/Enquiry");
-const { protect, authorize } = require("../middleware/auth");
+const { authenticateToken, requireAdmin, requirePermission } = require("../middleware/auth");
 const logger = require("../utils/logger");
 
 // @desc    Submit a new enquiry
@@ -30,7 +30,7 @@ router.post("/", async (req, res) => {
 // @desc    Get all enquiries
 // @route   GET /api/enquiries
 // @access  Private/Admin
-router.get("/", protect, authorize("admin"), async (req, res) => {
+router.get("/", authenticateToken, requireAdmin, requirePermission("leads:manage"), async (req, res) => {
   try {
     const enquiries = await Enquiry.find().sort({ createdAt: -1 });
 
@@ -51,7 +51,7 @@ router.get("/", protect, authorize("admin"), async (req, res) => {
 // @desc    Update enquiry status
 // @route   PATCH /api/enquiries/:id
 // @access  Private/Admin
-router.patch("/:id", protect, authorize("admin"), async (req, res) => {
+router.patch("/:id", authenticateToken, requireAdmin, requirePermission("leads:manage"), async (req, res) => {
   try {
     const enquiry = await Enquiry.findByIdAndUpdate(
       req.params.id,

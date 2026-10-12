@@ -21,7 +21,8 @@ import {
   Users,
   Building2,
   MessageCircle,
-  Landmark
+  Landmark,
+  Calculator
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import DashboardHome from "../components/dashboard/DashboardHome";
@@ -46,6 +47,7 @@ import PayeesManagement from "../components/dashboard/PayeesManagement";
 import InvoiceSettings from "../components/dashboard/InvoiceSettings";
 import WhatsAppWebPanel from "../components/dashboard/WhatsAppWebPanel";
 import BranchHrManagement from "../components/dashboard/BranchHrManagement";
+import PackageCalculatorSettings from "../components/dashboard/PackageCalculatorSettings";
 
 function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -62,6 +64,7 @@ function Dashboard() {
     { name: "Places", icon: MapPin, path: "/dashboard/places" },
     { name: "Hotels", icon: Hotel, path: "/dashboard/hotels" },
     { name: "Packages", icon: Package, path: "/dashboard/packages" },
+    { name: "Package Calculator", icon: Calculator, path: "/dashboard/package-calculator" },
     { name: "Gallery", icon: Image, path: "/dashboard/gallery" },
     { name: "Customers", icon: Users, path: "/dashboard/customers" },
     { name: "Invoices", icon: FileText, path: "/dashboard/invoices" },
@@ -163,6 +166,7 @@ function Dashboard() {
             <Route path="/places" element={<PlaceManagement />} />
             <Route path="/hotels" element={<HotelManagement />} />
             <Route path="/packages" element={<PackageManagement />} />
+            <Route path="/package-calculator" element={<PackageCalculatorSettings />} />
             <Route path="/gallery" element={<GalleryManagement />} />
             <Route path="/invoices" element={<InvoiceManagement />} />
             <Route path="/invoices/hotel" element={<HotelInvoicePage />} />

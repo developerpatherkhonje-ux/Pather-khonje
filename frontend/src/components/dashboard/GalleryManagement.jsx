@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Plus, 
@@ -66,11 +66,7 @@ function GalleryManagement() {
     return /\.(mp4|mov|webm|m4v)(\?|$)/.test(url) ? 'video' : 'image';
   };
 
-  useEffect(() => {
-    fetchGalleries();
-  }, [filterCategory, searchTerm]);
-
-  const fetchGalleries = async () => {
+  const fetchGalleries = useCallback(async () => {
     try {
       setLoading(true);
       const response = await apiService.getAdminGalleries({
@@ -88,7 +84,11 @@ function GalleryManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterCategory, searchTerm]);
+
+  useEffect(() => {
+    fetchGalleries();
+  }, [fetchGalleries]);
 
   // Remove client-side filtering since we're now filtering on the server
   const filteredGalleries = galleries;
@@ -159,12 +159,6 @@ function GalleryManagement() {
       // Always append image for new items, conditionally for updates
       if (formData.image) {
         submitData.append('image', formData.image);
-      }
-
-      // Debug logging
-      console.log('FormData contents:');
-      for (let [key, value] of submitData.entries()) {
-        console.log(key, value);
       }
 
       // API call

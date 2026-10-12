@@ -5,7 +5,7 @@ const {
   handleUploadError,
 } = require("../middleware/upload");
 const { uploadToCloudinary } = require("../utils/cloudinary");
-const { authenticateToken, requireAdmin } = require("../middleware/auth");
+const { authenticateToken, requireAdmin, requirePermission } = require("../middleware/auth");
 const logger = require("../utils/logger");
 const AuditLog = require("../models/AuditLog");
 const mongoose = require("mongoose");
@@ -107,14 +107,14 @@ const uploadMultipleImages = async (req, res, folder, label) => {
 // @route   POST /api/upload/image
 // @desc    Upload single image (admin only)
 // @access  Admin only
-router.post("/image", authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
+router.post("/image", authenticateToken, requireAdmin, requirePermission("content:manage"), uploadSingle, async (req, res) => {
   return uploadSingleImage(req, res, "pather-khonje/places", "Place");
 });
 
 // @route   POST /api/upload/images
 // @desc    Upload multiple images (admin only)
 // @access  Admin only
-router.post("/images", authenticateToken, requireAdmin, uploadMultiple, async (req, res) => {
+router.post("/images", authenticateToken, requireAdmin, requirePermission("content:manage"), uploadMultiple, async (req, res) => {
   return uploadMultipleImages(req, res, "pather-khonje/places", "Place");
 });
 
@@ -123,7 +123,7 @@ router.post("/images", authenticateToken, requireAdmin, uploadMultiple, async (r
 // @route   POST /api/upload/hotels/image
 // @desc    Upload single hotel image (admin only)
 // @access  Admin only
-router.post("/hotels/image", authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
+router.post("/hotels/image", authenticateToken, requireAdmin, requirePermission("content:manage"), uploadSingle, async (req, res) => {
   return uploadSingleImage(req, res, "pather-khonje/hotels", "Hotel");
 });
 
@@ -134,6 +134,7 @@ router.post(
   "/hotels/images",
   authenticateToken,
   requireAdmin,
+  requirePermission("content:manage"),
   uploadMultiple,
   async (req, res) => {
     return uploadMultipleImages(req, res, "pather-khonje/hotels", "Hotel");
@@ -145,7 +146,7 @@ router.post(
 // @route   POST /api/upload/packages/image
 // @desc    Upload single package image (admin only)
 // @access  Admin only
-router.post("/packages/image", authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
+router.post("/packages/image", authenticateToken, requireAdmin, requirePermission("content:manage"), uploadSingle, async (req, res) => {
   return uploadSingleImage(req, res, "pather-khonje/packages", "Package");
 });
 
@@ -156,6 +157,7 @@ router.post(
   "/packages/images",
   authenticateToken,
   requireAdmin,
+  requirePermission("content:manage"),
   uploadMultiple,
   async (req, res) => {
     return uploadMultipleImages(req, res, "pather-khonje/packages", "Package");
@@ -166,7 +168,7 @@ router.post(
 // @route   POST /api/upload/gridfs
 // @desc    Upload single file to Mongo GridFS (admin only)
 // @access  Admin only
-router.post("/gridfs", authenticateToken, requireAdmin, async (req, res) => {
+router.post("/gridfs", authenticateToken, requireAdmin, requirePermission("content:manage"), async (req, res) => {
   try {
     // Expect a raw binary body with header 'x-filename' OR multipart already handled
     const filename = req.headers["x-filename"] || "upload_" + Date.now();

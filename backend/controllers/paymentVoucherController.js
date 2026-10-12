@@ -1,6 +1,7 @@
 const PaymentVoucher = require('../models/PaymentVoucher');
 const Payee = require('../models/Payee');
 const logger = require('../utils/logger');
+const { applyBranchScope, getUserBranchId, isHeadOfficeUser } = require('../utils/branchAccess');
 const toPayeeType = (category) => ['hotel', 'transport', 'guide'].includes(category) ? category : 'vendor';
 
 // Generate voucher number helper
@@ -26,7 +27,6 @@ async function generateVoucherNumber() {
 exports.createPaymentVoucher = async (req, res, next) => {
   try {
     const data = req.body;
-    console.log('Backend - Received payment voucher data:', JSON.stringify(data, null, 2));
     
     // Generate voucher number if not provided
     if (!data.voucherNumber) {
@@ -35,19 +35,21 @@ exports.createPaymentVoucher = async (req, res, next) => {
     
     // Set created by
     data.createdBy = req.user?._id;
+    data.branch = isHeadOfficeUser(req.user) ? (data.branch || req.user?.branch || null) : getUserBranchId(req.user);
     if (!data.payee && data.payeeName) {
-      const existingPayee = await Payee.findOne({
+      const existingPayee = await Payee.findOne(applyBranchScope({
         isActive: true,
         $or: [
           { name: data.payeeName },
           ...(data.contact ? [{ phone: data.contact }] : []),
         ],
-      });
+      }, req.user, data.branch));
       const payee = existingPayee || await Payee.create({
         name: data.payeeName,
         type: toPayeeType(data.category),
         phone: data.contact,
         address: data.address,
+        branch: data.branch || null,
         createdBy: req.user?._id,
       });
       data.payee = payee._id;
@@ -56,9 +58,7 @@ exports.createPaymentVoucher = async (req, res, next) => {
     // Calculate due amount
     data.due = Number(data.total || 0) - Number(data.advance || 0);
     
-    console.log('Backend - Data before saving:', JSON.stringify(data, null, 2));
     const voucher = await PaymentVoucher.create(data);
-    console.log('Backend - Saved payment voucher:', voucher.voucherNumber);
     
     res.status(201).json({ 
       success: true, 
@@ -83,7 +83,7 @@ exports.createPaymentVoucher = async (req, res, next) => {
       }
     });
   } catch (error) { 
-    console.error('Backend - Create payment voucher error:', error);
+    logger.error('Create payment voucher error', { error: error.message });
     next(error); 
   }
 };
@@ -94,7 +94,7 @@ exports.updatePaymentVoucher = async (req, res, next) => {
     
     // Recalculate due amount if financial fields are updated
     if (data.total !== undefined || data.advance !== undefined) {
-      const currentVoucher = await PaymentVoucher.findById(req.params.id);
+      const currentVoucher = await PaymentVoucher.findOne(applyBranchScope({ _id: req.params.id }, req.user));
       if (currentVoucher) {
         const total = data.total !== undefined ? data.total : currentVoucher.total;
         const advance = data.advance !== undefined ? data.advance : currentVoucher.advance;
@@ -102,29 +102,28 @@ exports.updatePaymentVoucher = async (req, res, next) => {
       }
     }
     
-    console.log('Backend - Updating payment voucher:', req.params.id, 'with data:', JSON.stringify(data, null, 2));
+    data.branch = isHeadOfficeUser(req.user) ? (data.branch || undefined) : getUserBranchId(req.user);
     if (!data.payee && data.payeeName) {
-      const existingPayee = await Payee.findOne({
+      const existingPayee = await Payee.findOne(applyBranchScope({
         isActive: true,
         $or: [
           { name: data.payeeName },
           ...(data.contact ? [{ phone: data.contact }] : []),
         ],
-      });
+      }, req.user, data.branch));
       const payee = existingPayee || await Payee.create({
         name: data.payeeName,
         type: toPayeeType(data.category),
         phone: data.contact,
         address: data.address,
+        branch: data.branch || null,
         createdBy: req.user?._id,
       });
       data.payee = payee._id;
     }
-
-    const updated = await PaymentVoucher.findByIdAndUpdate(req.params.id, data, { new: true }).lean();
+    const updated = await PaymentVoucher.findOneAndUpdate(applyBranchScope({ _id: req.params.id }, req.user), data, { new: true }).lean();
     if (!updated) return res.status(404).json({ success: false, message: 'Payment voucher not found' });
     
-    console.log('Backend - Updated payment voucher:', updated.voucherNumber);
     res.json({ 
       success: true, 
       message: 'Payment voucher updated successfully',
@@ -148,21 +147,21 @@ exports.updatePaymentVoucher = async (req, res, next) => {
       }
     });
   } catch (error) { 
-    console.error('Backend - Update payment voucher error:', error);
+    logger.error('Update payment voucher error', { error: error.message });
     next(error); 
   }
 };
 
 exports.deletePaymentVoucher = async (req, res, next) => {
   try {
-    const deleted = await PaymentVoucher.findByIdAndDelete(req.params.id);
+    const deleted = await PaymentVoucher.findOneAndDelete(applyBranchScope({ _id: req.params.id }, req.user));
     if (!deleted) return res.status(404).json({ success: false, message: 'Payment voucher not found' });
     res.json({ 
       success: true, 
       message: 'Payment voucher deleted successfully'
     });
   } catch (error) { 
-    console.error('Backend - Delete payment voucher error:', error);
+    logger.error('Delete payment voucher error', { error: error.message });
     next(error); 
   }
 };
@@ -170,7 +169,7 @@ exports.deletePaymentVoucher = async (req, res, next) => {
 exports.getPaymentVouchers = async (req, res, next) => {
   try {
     const { page = 1, limit = 20, category, search, startDate, endDate } = req.query;
-    const filter = { isActive: true };
+    const filter = applyBranchScope({ isActive: true }, req.user, req.query.branch);
     
     if (category && category !== 'all') filter.category = category;
     if (search) {
@@ -215,7 +214,6 @@ exports.getPaymentVouchers = async (req, res, next) => {
       { $group: { _id: null, total: { $sum: '$total' } } }
     ]);
     
-    console.log('Backend - Retrieved payment vouchers:', vouchers.length, 'vouchers');
     res.json({ 
       success: true, 
       data: { 
@@ -251,14 +249,14 @@ exports.getPaymentVouchers = async (req, res, next) => {
       }
     });
   } catch (error) { 
-    console.error('Backend - Get payment vouchers error:', error);
+    logger.error('Get payment vouchers error', { error: error.message });
     next(error); 
   }
 };
 
 exports.getPaymentVoucherById = async (req, res, next) => {
   try {
-    const voucher = await PaymentVoucher.findById(req.params.id).populate('createdBy', 'name email').lean();
+    const voucher = await PaymentVoucher.findOne(applyBranchScope({ _id: req.params.id }, req.user)).populate('createdBy', 'name email').lean();
     if (!voucher) return res.status(404).json({ success: false, message: 'Payment voucher not found' });
     
     res.json({ 
@@ -287,7 +285,7 @@ exports.getPaymentVoucherById = async (req, res, next) => {
       }
     });
   } catch (error) { 
-    console.error('Backend - Get payment voucher by ID error:', error);
+    logger.error('Get payment voucher by ID error', { error: error.message });
     next(error); 
   }
 };
@@ -295,7 +293,7 @@ exports.getPaymentVoucherById = async (req, res, next) => {
 // Download voucher PDF
 exports.downloadPaymentVoucherPdf = async (req, res, next) => {
   try {
-    const voucher = await PaymentVoucher.findById(req.params.id).populate('createdBy', 'name email').lean();
+    const voucher = await PaymentVoucher.findOne(applyBranchScope({ _id: req.params.id }, req.user)).populate('createdBy', 'name email').lean();
     if (!voucher) return res.status(404).json({ success: false, message: 'Payment voucher not found' });
 
     const PDFDocument = require('pdfkit');
@@ -310,7 +308,7 @@ exports.downloadPaymentVoucherPdf = async (req, res, next) => {
     try {
       doc.image('../frontend/public/logo/Pather Khonje Logo.png', 40, 30, { width: 50 }).moveDown();
     } catch (logoError) {
-      console.warn('Logo could not be loaded for PDF:', logoError);
+      logger.warn('Logo could not be loaded for PDF', { error: logoError.message });
     }
     doc.fontSize(20).fillColor('#0ea5e9').text('Pather Khonje', 100, 35);
     doc.fillColor('#6b7280').fontSize(10).text('A tour that never seen before.', 100, 58);
@@ -380,12 +378,12 @@ exports.downloadPaymentVoucherPdf = async (req, res, next) => {
       doc.image('../frontend/public/assets/stamp.png', 400, ry + 20, { width: 100 });
       doc.fontSize(8).fillColor('#6b7280').text('Authorized Signature & Stamp', 400, ry + 130, { align: 'center' });
     } catch (stampError) {
-      console.warn('Stamp could not be loaded for PDF:', stampError);
+      logger.warn('Stamp could not be loaded for PDF', { error: stampError.message });
     }
 
     doc.end();
   } catch (error) { 
-    console.error('Backend - Download voucher PDF error:', error);
+    logger.error('Download voucher PDF error', { error: error.message });
     next(error); 
   }
 };

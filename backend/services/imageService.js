@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const mongoose = require('mongoose');
 const { GridFSBucket } = mongoose.mongo;
+const logger = require('../utils/logger');
 
 /**
  * Reusable Image Service for handling Cloudinary uploads
@@ -104,11 +105,11 @@ class ImageService {
         uploadedAt: new Date()
       };
     } catch (error) {
-      console.warn('Cloudinary upload failed, using persistent GridFS storage:', error.message);
+      logger.warn('Cloudinary upload failed, using persistent GridFS storage', { error: error.message });
       try {
         return await this.uploadToGridFS(file);
       } catch (gridFsError) {
-        console.warn('GridFS upload failed, using local storage:', gridFsError.message);
+        logger.warn('GridFS upload failed, using local storage', { error: gridFsError.message });
         return this.moveToLocalStorage(file, folder);
       }
     }
@@ -155,13 +156,10 @@ class ImageService {
     // Process each uploaded file
     for (const file of files) {
       try {
-        console.log('Processing file:', file.originalname, 'Size:', file.size, 'Path:', file.path);
-        
         const imageData = await this.processImage(file, folder);
-        console.log('Image upload successful:', imageData.public_id);
         uploadedImages.push(imageData);
       } catch (error) {
-        console.error('Error uploading file to Cloudinary:', file.originalname, error.message);
+        logger.error('Error uploading file', { file: file.originalname, error: error.message });
         errors.push({ file: file.originalname, error: error.message });
         
         this.cleanupTempFile(file.path);
@@ -179,13 +177,10 @@ class ImageService {
    */
   static async processSingleImage(file, folder = 'pather-khonje') {
     try {
-      console.log('Processing single file:', file.originalname, 'Size:', file.size, 'Path:', file.path);
-      
       const imageData = await this.processImage(file, folder);
-      console.log('Image upload successful:', imageData.public_id);
       return imageData;
     } catch (error) {
-      console.error('Error uploading single file to Cloudinary:', file.originalname, error.message);
+      logger.error('Error uploading single file', { file: file.originalname, error: error.message });
       
       // Clean up temporary file even on error
       this.cleanupTempFile(file.path);
@@ -202,10 +197,9 @@ class ImageService {
   static async deleteCloudinaryImage(publicId) {
     try {
       const result = await this.deleteImage(publicId);
-      console.log('Image deleted:', publicId);
       return result;
     } catch (error) {
-      console.error('Error deleting image from Cloudinary:', publicId, error.message);
+      logger.error('Error deleting image', { publicId, error: error.message });
       throw error;
     }
   }
@@ -280,10 +274,9 @@ class ImageService {
     try {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
-        console.log('Temporary file cleaned up:', filePath);
       }
     } catch (unlinkError) {
-      console.error('Error cleaning up temporary file:', filePath, unlinkError.message);
+      logger.warn('Error cleaning up temporary file', { filePath, error: unlinkError.message });
     }
   }
 

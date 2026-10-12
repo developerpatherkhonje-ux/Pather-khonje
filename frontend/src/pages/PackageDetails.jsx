@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import apiService from "../services/api";
 import SEO from "../components/SEO";
+import jsPDF from "jspdf";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 
@@ -130,42 +131,80 @@ const PackageDetails = () => {
 
   const downloadItinerary = () => {
     if (!pkg) return;
-    const content = [
-      "Pather Khonje Itinerary",
-      pkg.name,
-      "",
-      `Duration: ${pkg.duration}`,
-      `Route: ${pkg.route}`,
-      `Best Time: ${pkg.bestTime}`,
-      `Group Size: ${pkg.groupSize}`,
-      `Price: ${formatPrice(pkg.price)} per person`,
-      "",
-      "Overview",
-      pkg.description,
-      "",
-      "Day-wise Itinerary",
-      ...pkg.itinerary.flatMap((item, index) => [
-        `${item.day || `Day ${index + 1}`}: ${item.title || "Curated experience"}`,
-        item.description || "",
-        "",
-      ]),
-      "Inclusions",
-      ...pkg.inclusions.map((item) => `- ${item}`),
-      "",
-      "Exclusions",
-      ...pkg.exclusions.map((item) => `- ${item}`),
-      "",
-      "Contact: +91 7439857694",
-    ].join("\n");
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${pkg.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-itinerary.txt`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const margin = 42;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    let y = 48;
+
+    const addPageIfNeeded = (height = 40) => {
+      if (y + height > pageHeight - 48) {
+        doc.addPage();
+        y = 48;
+      }
+    };
+    const writeWrapped = (text, x, width, size = 10, color = [75, 85, 99]) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(size);
+      doc.setTextColor(...color);
+      const lines = doc.splitTextToSize(String(text || ""), width);
+      lines.forEach((line) => {
+        addPageIfNeeded(16);
+        doc.text(line, x, y);
+        y += 15;
+      });
+    };
+    const heading = (text) => {
+      addPageIfNeeded(34);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(7, 28, 35);
+      doc.text(text, margin, y);
+      y += 20;
+    };
+
+    doc.setFillColor(7, 28, 35);
+    doc.rect(0, 0, pageWidth, 116, "F");
+    doc.setTextColor(232, 184, 92);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text("PATHER KHONJE ITINERARY", margin, 42);
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.text(doc.splitTextToSize(pkg.name, pageWidth - margin * 2), margin, 74);
+    y = 148;
+
+    heading("Trip Overview");
+    writeWrapped(`Duration: ${pkg.duration} | Route: ${pkg.route}`, margin, pageWidth - margin * 2, 10);
+    writeWrapped(`Best Time: ${pkg.bestTime} | Group Size: ${pkg.groupSize} | Price: ${formatPrice(pkg.price)} per person`, margin, pageWidth - margin * 2, 10);
+    y += 8;
+    writeWrapped(pkg.description, margin, pageWidth - margin * 2, 10);
+
+    heading("Day-wise Itinerary");
+    pkg.itinerary.forEach((item, index) => {
+      addPageIfNeeded(58);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(11, 74, 66);
+      doc.text(`${item.day || `Day ${index + 1}`}: ${item.title || "Curated experience"}`, margin, y);
+      y += 17;
+      writeWrapped(item.description || pkg.description, margin + 14, pageWidth - margin * 2 - 14, 9.5);
+      y += 8;
+    });
+
+    heading("Inclusions");
+    pkg.inclusions.forEach((item) => writeWrapped(`• ${item}`, margin, pageWidth - margin * 2, 10));
+    y += 8;
+    heading("Exclusions");
+    pkg.exclusions.forEach((item) => writeWrapped(`• ${item}`, margin, pageWidth - margin * 2, 10));
+
+    addPageIfNeeded(48);
+    doc.setDrawColor(232, 184, 92);
+    doc.line(margin, y + 8, pageWidth - margin, y + 8);
+    y += 28;
+    writeWrapped("Contact: +91 7439857694 | Pather Khonje", margin, pageWidth - margin * 2, 10, [7, 28, 35]);
+
+    doc.save(`${pkg.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-itinerary.pdf`);
   };
 
   if (loading) {

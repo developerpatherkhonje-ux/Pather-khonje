@@ -83,7 +83,10 @@ const InvoiceSchema = new mongoose.Schema({
     name: { type: String, required: true },
     phone: { type: String },
     email: { type: String },
-    address: { type: String }
+    address: { type: String },
+    gstin: { type: String },
+    pan: { type: String },
+    registrationNumber: { type: String }
   },
   hotelDetails: HotelDetailsSchema,
   tourDetails: TourDetailsSchema,
@@ -101,12 +104,22 @@ const InvoiceSchema = new mongoose.Schema({
   tax: { type: Number, default: 0 },
   gstPercent: { type: Number, default: 0 },
   total: { type: Number, required: true },
+  initialAdvancePaid: { type: Number, default: 0 },
   advancePaid: { type: Number, default: 0 },
   dueAmount: { type: Number, default: 0 },
   payments: [PaymentEntrySchema],
   paymentMethod: { type: String, default: 'Cash' },
   status: { type: String, enum: ['draft', 'pending', 'partial', 'paid', 'overdue', 'cancelled'], default: 'pending' },
   notes: String,
+  customFields: [
+    {
+      key: String,
+      label: String,
+      type: { type: String, enum: ['text', 'number', 'date', 'textarea', 'select'], default: 'text' },
+      value: mongoose.Schema.Types.Mixed,
+      required: { type: Boolean, default: false },
+    },
+  ],
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
 }, { timestamps: true });
 
@@ -119,7 +132,8 @@ InvoiceSchema.methods.recalculatePaymentStatus = function() {
   const paymentTotal = Array.isArray(this.payments)
     ? this.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
     : 0;
-  this.advancePaid = Math.max(Number(this.advancePaid || 0), paymentTotal);
+  const manualAdvance = Number(this.initialAdvancePaid || 0);
+  this.advancePaid = manualAdvance + paymentTotal;
   this.dueAmount = Math.max(Number(this.total || 0) - Number(this.advancePaid || 0), 0);
   if (this.status !== 'cancelled' && this.status !== 'draft') {
     if (this.dueAmount <= 0 && Number(this.total || 0) > 0) {
@@ -133,6 +147,9 @@ InvoiceSchema.methods.recalculatePaymentStatus = function() {
 };
 
 InvoiceSchema.pre('save', function(next) {
+  if (this.isNew && !this.initialAdvancePaid) {
+    this.initialAdvancePaid = Number(this.advancePaid || 0);
+  }
   this.recalculatePaymentStatus();
   next();
 });

@@ -1,6 +1,6 @@
 const express = require('express');
 const BusinessSettings = require('../models/BusinessSettings');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, requirePermission } = require('../middleware/auth');
 
 const router = express.Router();
 router.use(authenticateToken, requireAdmin);
@@ -13,7 +13,7 @@ const getSettings = async () => {
   return settings;
 };
 
-router.get('/', async (req, res, next) => {
+router.get('/', requirePermission('settings:manage'), async (req, res, next) => {
   try {
     const settings = await getSettings();
     res.json({ success: true, data: settings });
@@ -22,7 +22,7 @@ router.get('/', async (req, res, next) => {
   }
 });
 
-router.put('/', async (req, res, next) => {
+router.put('/', requirePermission('settings:manage'), async (req, res, next) => {
   try {
     const settings = await BusinessSettings.findOneAndUpdate(
       { key: 'default' },

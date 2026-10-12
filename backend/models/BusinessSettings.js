@@ -28,6 +28,11 @@ const businessSettingsSchema = new mongoose.Schema(
       email: String,
       address: String,
       gstin: String,
+      pan: String,
+      msmeNumber: String,
+      registrationNumber: String,
+      cin: String,
+      tradeLicense: String,
       whatsappNumber: String,
     },
     invoice: {
@@ -35,6 +40,17 @@ const businessSettingsSchema = new mongoose.Schema(
       defaultGstPercent: { type: Number, default: 0 },
       autoSendEmail: { type: Boolean, default: false },
       autoSendWhatsapp: { type: Boolean, default: false },
+      customFields: [
+        {
+          key: String,
+          label: String,
+          type: { type: String, enum: ['text', 'number', 'date', 'textarea', 'select'], default: 'text' },
+          required: { type: Boolean, default: false },
+          enabled: { type: Boolean, default: true },
+          appliesTo: [{ type: String, enum: ['hotel', 'tour', 'car'] }],
+          options: [String],
+        },
+      ],
       templates: {
         hotel: { type: invoiceTemplateSchema, default: () => ({ title: 'Hotel Booking Invoice', prefix: 'HTL' }) },
         tour: { type: invoiceTemplateSchema, default: () => ({ title: 'Tour Package Invoice', prefix: 'TUR' }) },
@@ -51,6 +67,27 @@ const businessSettingsSchema = new mongoose.Schema(
       ifsc: String,
       bankName: String,
       upi: String,
+    },
+    content: {
+      invoiceTerms: {
+        type: String,
+        default: 'All payments must be made as per the agreed booking schedule.\nCancellation and refund will follow company policy.',
+      },
+      privacyPolicy: String,
+      bookingTerms: String,
+      faqs: [
+        {
+          q: String,
+          a: String,
+        },
+      ],
+      testimonials: [
+        {
+          name: String,
+          text: String,
+          location: String,
+        },
+      ],
     },
     updatedBy: {
       type: mongoose.Schema.Types.ObjectId,

@@ -2,19 +2,22 @@ import React, { useMemo, useState } from 'react';
 import { Calendar, IndianRupee, Save, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import CustomInvoiceFields, { buildCustomFields } from './CustomInvoiceFields';
 
 function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons = true, formId = 'hotel-invoice-form' }) {
   const [form, setForm] = useState({
     type: 'hotel',
-    customer: { name: '', phone: '', email: '', address: '' },
+    customer: { name: '', phone: '', email: '', address: '', gstin: '', pan: '', registrationNumber: '' },
     hotelDetails: { hotelName: '', place: '', address: '', additionalBenefits: '', checkIn: '', checkOut: '', nights: 0, days: 0, roomType: '', rooms: 1, pricePerNight: 0, adults: 1, children: 0 },
     subtotal: 0,
     discount: 0,
     tax: 0,
     total: 0,
     advancePaid: 0,
-    paymentMethod: 'Cash'
+    paymentMethod: 'Cash',
+    customFields: []
   });
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState([]);
   React.useEffect(() => {
     if (initial) {
       // Safely merge initial data ensuring no undefined values
@@ -24,7 +27,10 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
           name: initial.customer?.name || '',
           phone: initial.customer?.phone || '',
           email: initial.customer?.email || '',
-          address: initial.customer?.address || ''
+          address: initial.customer?.address || '',
+          gstin: initial.customer?.gstin || '',
+          pan: initial.customer?.pan || '',
+          registrationNumber: initial.customer?.registrationNumber || ''
         },
         hotelDetails: {
           hotelName: initial.hotelDetails?.hotelName || '',
@@ -51,13 +57,25 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
         discount: Number(initial.discount || 0),
         tax: Number(initial.tax || 0),
         total: Number(initial.total || 0),
-        advancePaid: Number(initial.advancePaid || 0),
-        paymentMethod: initial.paymentMethod || 'Cash'
+        advancePaid: Number(initial.initialAdvancePaid ?? initial.advancePaid ?? 0),
+        paymentMethod: initial.paymentMethod || 'Cash',
+        customFields: initial.customFields || []
         };
       
       setForm(safeInitial);
     }
   }, [initial]);
+  React.useEffect(() => {
+    api.getBusinessSettings()
+      .then((res) => setCustomFieldDefinitions(res.data?.invoice?.customFields || []))
+      .catch(() => setCustomFieldDefinitions([]));
+  }, []);
+  React.useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      customFields: buildCustomFields(customFieldDefinitions, prev.customFields, 'hotel'),
+    }));
+  }, [customFieldDefinitions]);
   const [loading, setLoading] = useState(false);
   const [savedId, setSavedId] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -150,14 +168,14 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
       // Check if this is an edit operation (has initial data with _id)
       if (initial && initial._id) {
         // Update existing invoice
-        const dataToSend = { ...form, _id: initial._id };
+        const dataToSend = { ...form, _id: initial._id, initialAdvancePaid: Number(form.advancePaid || 0) };
         res = await api.updateInvoice(initial._id, dataToSend);
         updatedInvoice = res.data || res;
         setSavedId(initial._id);
         toast.success(`${updatedInvoice.invoiceNumber || 'Invoice'} updated successfully`);
       } else {
         // Create new invoice
-        const dataToSend = { ...form, invoiceNumber: undefined };
+        const dataToSend = { ...form, invoiceNumber: undefined, initialAdvancePaid: Number(form.advancePaid || 0) };
         res = await api.createInvoice(dataToSend);
         updatedInvoice = res.data || res;
         setSavedId(updatedInvoice?._id);
@@ -201,6 +219,14 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
     return Math.max(0, Number(form.total || 0) - Number(form.advancePaid || 0));
   }, [form.total, form.advancePaid]);
 
+  const updateCustomField = (index, value) => {
+    setForm((prev) => {
+      const customFields = [...(prev.customFields || [])];
+      customFields[index] = { ...customFields[index], value };
+      return { ...prev, customFields };
+    });
+  };
+
   return (
     <form id={formId} onSubmit={submit} className="space-y-5">
       {/* Header with action buttons */}
@@ -235,6 +261,9 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
             <textarea className="w-full px-4 py-3 border rounded-lg" placeholder="Address" value={form.customer.address || ''} onChange={e => update('customer.address', e.target.value)} />
             <input className="w-full px-4 py-3 border rounded-lg" placeholder="Contact Number" value={form.customer.phone || ''} onChange={e => update('customer.phone', e.target.value)} />
             <input className="w-full px-4 py-3 border rounded-lg" placeholder="Email" value={form.customer.email || ''} onChange={e => update('customer.email', e.target.value)} />
+            <input className="w-full px-4 py-3 border rounded-lg" placeholder="GSTIN" value={form.customer.gstin || ''} onChange={e => update('customer.gstin', e.target.value)} />
+            <input className="w-full px-4 py-3 border rounded-lg" placeholder="PAN" value={form.customer.pan || ''} onChange={e => update('customer.pan', e.target.value)} />
+            <input className="w-full px-4 py-3 border rounded-lg" placeholder="MSME / Registration Number" value={form.customer.registrationNumber || ''} onChange={e => update('customer.registrationNumber', e.target.value)} />
           </div>
         </div>
         <div className="border rounded-xl">
@@ -304,6 +333,8 @@ function HotelInvoiceForm({ onCreated, onSaved, onCancel, initial, inlineButtons
           </div>
         </div>
       </div>
+
+      <CustomInvoiceFields fields={form.customFields} onChange={updateCustomField} />
 
       {/* Payment Details */}
       <div className="border rounded-xl">

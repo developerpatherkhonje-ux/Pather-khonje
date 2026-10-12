@@ -1,15 +1,16 @@
 const express = require('express');
 const Payee = require('../models/Payee');
 const PaymentVoucher = require('../models/PaymentVoucher');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, requirePermission } = require('../middleware/auth');
+const { applyBranchScope, getUserBranchId, isHeadOfficeUser } = require('../utils/branchAccess');
 
 const router = express.Router();
-router.use(authenticateToken, requireAdmin);
+router.use(authenticateToken, requireAdmin, requirePermission('vouchers:manage'));
 
 router.get('/', async (req, res, next) => {
   try {
     const { page = 1, limit = 50, search = '', type = '' } = req.query;
-    const filter = { isActive: true };
+    const filter = applyBranchScope({ isActive: true }, req.user, req.query.branch);
     if (type && type !== 'all') filter.type = type;
     if (search) {
       filter.$or = [
@@ -30,7 +31,7 @@ router.get('/', async (req, res, next) => {
 
     const payeeIds = items.map((item) => item._id);
     const summaries = await PaymentVoucher.aggregate([
-      { $match: { payee: { $in: payeeIds }, isActive: true } },
+      { $match: applyBranchScope({ payee: { $in: payeeIds }, isActive: true }, req.user, req.query.branch) },
       {
         $group: {
           _id: '$payee',
@@ -65,7 +66,11 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const payee = await Payee.create({ ...req.body, createdBy: req.user?._id });
+    const payee = await Payee.create({
+      ...req.body,
+      branch: isHeadOfficeUser(req.user) ? (req.body.branch || req.user.branch || null) : getUserBranchId(req.user),
+      createdBy: req.user?._id,
+    });
     res.status(201).json({ success: true, data: payee });
   } catch (error) {
     next(error);
@@ -74,9 +79,9 @@ router.post('/', async (req, res, next) => {
 
 router.get('/:id', async (req, res, next) => {
   try {
-    const payee = await Payee.findById(req.params.id).lean();
+    const payee = await Payee.findOne(applyBranchScope({ _id: req.params.id }, req.user)).populate('branch', 'name code').lean();
     if (!payee) return res.status(404).json({ success: false, message: 'Payee not found' });
-    const vouchers = await PaymentVoucher.find({ payee: payee._id, isActive: true }).sort({ date: -1 }).lean();
+    const vouchers = await PaymentVoucher.find(applyBranchScope({ payee: payee._id, isActive: true }, req.user)).sort({ date: -1 }).lean();
     res.json({ success: true, data: { payee, vouchers } });
   } catch (error) {
     next(error);
@@ -85,7 +90,11 @@ router.get('/:id', async (req, res, next) => {
 
 router.put('/:id', async (req, res, next) => {
   try {
-    const payee = await Payee.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const payload = {
+      ...req.body,
+      branch: isHeadOfficeUser(req.user) ? (req.body.branch || undefined) : getUserBranchId(req.user),
+    };
+    const payee = await Payee.findOneAndUpdate(applyBranchScope({ _id: req.params.id }, req.user), payload, { new: true, runValidators: true });
     if (!payee) return res.status(404).json({ success: false, message: 'Payee not found' });
     res.json({ success: true, data: payee });
   } catch (error) {
@@ -95,7 +104,7 @@ router.put('/:id', async (req, res, next) => {
 
 router.delete('/:id', async (req, res, next) => {
   try {
-    const payee = await Payee.findByIdAndUpdate(req.params.id, { isActive: false }, { new: true });
+    const payee = await Payee.findOneAndUpdate(applyBranchScope({ _id: req.params.id }, req.user), { isActive: false }, { new: true });
     if (!payee) return res.status(404).json({ success: false, message: 'Payee not found' });
     res.json({ success: true, message: 'Payee archived' });
   } catch (error) {

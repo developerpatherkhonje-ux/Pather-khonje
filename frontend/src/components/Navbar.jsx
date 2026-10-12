@@ -12,6 +12,7 @@ import {
   Mountain,
   Phone,
   Sparkles,
+  Calculator,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import HotelsMegaMenu, { DESTINATIONS } from "./HotelsMegaMenu";
@@ -66,6 +67,7 @@ function Navbar() {
     { name: "Gallery", path: "/gallery", icon: Images },
     { name: "Hotels", path: null, icon: Mountain },
     { name: "Packages", path: "/packages", icon: Mountain },
+    { name: "Calculator", path: "/package-calculator", icon: Calculator },
     { name: "Contact", path: "/contact", icon: Phone },
   ];
 

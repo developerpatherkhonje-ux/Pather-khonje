@@ -8,7 +8,7 @@ const {
   getPaymentVoucherById,
   downloadPaymentVoucherPdf
 } = require('../controllers/paymentVoucherController');
-const { authenticateToken, requireAdmin, sanitizeInput } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, requirePermission, sanitizeInput } = require('../middleware/auth');
 const logger = require('../utils/logger');
 
 const router = express.Router();
@@ -42,7 +42,7 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 // Admin: list payment vouchers (with pagination and filters)
-router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
+router.get('/', authenticateToken, requireAdmin, requirePermission('vouchers:manage'), async (req, res, next) => {
   try {
     await getPaymentVouchers(req, res, next);
   } catch (error) {
@@ -52,7 +52,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res, next) => {
 });
 
 // Admin: create payment voucher
-router.post('/', authenticateToken, requireAdmin, voucherValidation, handleValidationErrors, async (req, res, next) => {
+router.post('/', authenticateToken, requireAdmin, requirePermission('vouchers:manage'), voucherValidation, handleValidationErrors, async (req, res, next) => {
   try {
     await createPaymentVoucher(req, res, next);
   } catch (error) {
@@ -66,7 +66,7 @@ router.post('/', authenticateToken, requireAdmin, voucherValidation, handleValid
 });
 
 // Admin: update payment voucher
-router.put('/:id', authenticateToken, requireAdmin, voucherValidation, handleValidationErrors, async (req, res, next) => {
+router.put('/:id', authenticateToken, requireAdmin, requirePermission('vouchers:manage'), voucherValidation, handleValidationErrors, async (req, res, next) => {
   try {
     await updatePaymentVoucher(req, res, next);
   } catch (error) {
@@ -80,7 +80,7 @@ router.put('/:id', authenticateToken, requireAdmin, voucherValidation, handleVal
 });
 
 // Admin: delete payment voucher
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res, next) => {
+router.delete('/:id', authenticateToken, requireAdmin, requirePermission('vouchers:manage'), async (req, res, next) => {
   try {
     await deletePaymentVoucher(req, res, next);
   } catch (error) {
@@ -90,7 +90,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res, next) =>
 });
 
 // Admin: get payment voucher by ID
-router.get('/:id', authenticateToken, requireAdmin, async (req, res, next) => {
+router.get('/:id', authenticateToken, requireAdmin, requirePermission('vouchers:manage'), async (req, res, next) => {
   try {
     await getPaymentVoucherById(req, res, next);
   } catch (error) {
@@ -100,7 +100,7 @@ router.get('/:id', authenticateToken, requireAdmin, async (req, res, next) => {
 });
 
 // Admin: download payment voucher PDF
-router.get('/:id/pdf', authenticateToken, requireAdmin, async (req, res, next) => {
+router.get('/:id/pdf', authenticateToken, requireAdmin, requirePermission('vouchers:manage'), async (req, res, next) => {
   try {
     await downloadPaymentVoucherPdf(req, res, next);
   } catch (error) {

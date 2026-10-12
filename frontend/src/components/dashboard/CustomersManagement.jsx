@@ -1,15 +1,17 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Search, Trash2, X, ReceiptText } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 
-const emptyCustomer = { name: "", phone: "", email: "", address: "", gstin: "", notes: "" };
+const emptyCustomer = { name: "", phone: "", email: "", address: "", gstin: "", pan: "", registrationNumber: "", branch: "", notes: "" };
 
 function CustomersManagement() {
   const [customers, setCustomers] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [selected, setSelected] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [search, setSearch] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
   const [form, setForm] = useState(emptyCustomer);
   const [showForm, setShowForm] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -21,19 +23,22 @@ function CustomersManagement() {
     return acc;
   }, { billed: 0, paid: 0, due: 0 }), [customers]);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.listCustomers({ search, limit: 200 });
+      const res = await api.listCustomers({ search, branch: branchFilter, limit: 200 });
       setCustomers(res.data?.items || []);
     } catch (error) {
       toast.error(error.message || "Failed to load customers");
     } finally {
       setLoading(false);
     }
-  };
+  }, [branchFilter, search]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    api.listBranches().then((res) => setBranches(res.data?.branches || [])).catch(() => {});
+  }, [load]);
 
   const openCustomer = async (customer) => {
     setSelected(customer);
@@ -85,11 +90,15 @@ function CustomersManagement() {
       </div>
 
       <div className="rounded-2xl bg-white p-4 shadow-sm border">
-        <div className="flex gap-3">
+        <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} placeholder="Search customer, phone, email..." className="w-full rounded-xl border px-4 py-3 pl-10" />
           </div>
+          <select value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)} className="rounded-xl border px-4 py-3">
+            <option value="">All branches</option>
+            {branches.map((branch) => <option key={branch._id} value={branch._id}>{branch.name}</option>)}
+          </select>
           <button onClick={load} className="rounded-xl border px-5 py-3 font-medium hover:bg-gray-50">Search</button>
         </div>
       </div>
@@ -103,7 +112,7 @@ function CustomersManagement() {
             <tbody className="divide-y">
               {loading ? <tr><td className="p-6" colSpan="4">Loading...</td></tr> : customers.map((customer) => (
                 <tr key={customer._id} className="hover:bg-gray-50">
-                  <td className="p-4"><button onClick={() => openCustomer(customer)} className="text-left"><div className="font-semibold text-gray-900">{customer.name}</div><div className="text-gray-500">{customer.phone || "No phone"} · {customer.email || "No email"}</div></button></td>
+                  <td className="p-4"><button onClick={() => openCustomer(customer)} className="text-left"><div className="font-semibold text-gray-900">{customer.name}</div><div className="text-gray-500">{customer.phone || "No phone"} · {customer.email || "No email"}</div><div className="text-xs text-sky-700">{customer.branch?.name || "No branch"}</div></button></td>
                   <td className="p-4">{customer.summary?.invoiceCount || 0}</td>
                   <td className="p-4 font-semibold">₹{Number(customer.summary?.totalDue || 0).toLocaleString("en-IN")}</td>
                   <td className="p-4"><div className="flex justify-end gap-2"><button onClick={() => { setForm(customer); setShowForm(true); }} className="rounded-lg border px-3 py-2">Edit</button><button onClick={() => remove(customer)} className="rounded-lg bg-red-50 px-3 py-2 text-red-600"><Trash2 className="h-4 w-4" /></button></div></td>
@@ -142,6 +151,12 @@ function CustomersManagement() {
               <input value={form.phone || ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" className="rounded-xl border px-4 py-3" />
               <input type="email" value={form.email || ""} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" className="rounded-xl border px-4 py-3" />
               <input value={form.gstin || ""} onChange={(e) => setForm({ ...form, gstin: e.target.value })} placeholder="GSTIN" className="rounded-xl border px-4 py-3" />
+              <input value={form.pan || ""} onChange={(e) => setForm({ ...form, pan: e.target.value })} placeholder="PAN" className="rounded-xl border px-4 py-3" />
+              <input value={form.registrationNumber || ""} onChange={(e) => setForm({ ...form, registrationNumber: e.target.value })} placeholder="Registration / MSME / trade no." className="rounded-xl border px-4 py-3" />
+              <select value={form.branch || ""} onChange={(e) => setForm({ ...form, branch: e.target.value })} className="rounded-xl border px-4 py-3 md:col-span-2">
+                <option value="">Assign branch</option>
+                {branches.map((branch) => <option key={branch._id} value={branch._id}>{branch.name}</option>)}
+              </select>
               <textarea value={form.address || ""} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Address" className="rounded-xl border px-4 py-3 md:col-span-2" />
               <textarea value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes" className="rounded-xl border px-4 py-3 md:col-span-2" />
             </div>

@@ -51,6 +51,12 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
     },
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      default: null,
+      index: true,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -70,6 +76,7 @@ const leadSchema = new mongoose.Schema(
 );
 
 leadSchema.index({ createdAt: -1 });
+leadSchema.index({ branch: 1, createdAt: -1 });
 leadSchema.index({ name: 1, phone: 1 });
 
 leadSchema.methods.getPublicProfile = function() {
@@ -84,6 +91,7 @@ leadSchema.methods.getPublicProfile = function() {
     stage: this.stage,
     nextFollowUp: this.nextFollowUp,
     assignedTo: this.assignedTo,
+    branch: this.branch,
     createdBy: this.createdBy,
     lastModifiedBy: this.lastModifiedBy,
     isActive: this.isActive,

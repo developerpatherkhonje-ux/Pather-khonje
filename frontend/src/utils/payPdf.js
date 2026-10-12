@@ -68,9 +68,6 @@ const getPaymentMethodLabel = (method) => {
 
 export async function generatePaymentVoucherPdf(voucher, fileName = 'payment_voucher') {
     try {
-        console.log('Payment Voucher PDF - Voucher data:', voucher);
-        console.log('Payment Voucher PDF - Company Info:', companyInfo);
-        
         // Create a temporary container for the voucher
         const voucherContainer = document.createElement('div');
         voucherContainer.style.position = 'absolute';

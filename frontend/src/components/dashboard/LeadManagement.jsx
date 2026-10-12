@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Edit, Plus, Search, Trash2, UserPlus, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -51,11 +51,7 @@ function LeadManagement() {
     [stats],
   );
 
-  useEffect(() => {
-    fetchLeads();
-  }, [stageFilter, queryTypeFilter]);
-
-  const fetchLeads = async () => {
+  const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -73,7 +69,11 @@ function LeadManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [queryTypeFilter, searchTerm, stageFilter]);
+
+  useEffect(() => {
+    fetchLeads();
+  }, [fetchLeads]);
 
   const openAddForm = () => {
     setEditingLead(null);

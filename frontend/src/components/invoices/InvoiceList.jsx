@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Download, Edit, IndianRupee, ReceiptText, Trash2, X } from 'lucide-react';
+import { Download, Edit, IndianRupee, MessageCircle, ReceiptText, Trash2, X } from 'lucide-react';
 import api from '../../services/api';
 import { formatDisplayDate } from '../../utils/dateUtils';
 import toast from 'react-hot-toast';
@@ -66,6 +66,7 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
         await api.downloadPaymentReceiptPdf(updatedInvoice._id, payment._id, payment.receiptNumber);
       }
       toast.success('Payment received and receipt generated');
+      openWhatsApp(updatedInvoice, 'receipt');
       setPaymentInvoice(null);
       setPaymentForm({ amount: '', method: 'Cash', date: new Date().toISOString().slice(0, 10), reference: '', notes: '' });
     } catch (error) {
@@ -80,6 +81,20 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
     } catch (e2) {
       toast.error(e2.message || 'Failed to download');
     }
+  };
+
+  const openWhatsApp = (inv, kind = 'invoice') => {
+    const phone = String(inv.customer?.phone || '').replace(/[^\d]/g, '');
+    if (!phone) {
+      toast.error('Customer phone number is missing');
+      return;
+    }
+    const due = Number(inv.dueAmount ?? (Number(inv.total || 0) - Number(inv.advancePaid || 0))).toLocaleString('en-IN');
+    const total = Number(inv.total || 0).toLocaleString('en-IN');
+    const message = kind === 'receipt'
+      ? `Hello ${inv.customer?.name || ''}, payment received for invoice ${inv.invoiceNumber}. Updated due amount is Rs. ${due}. - Pather Khonje`
+      : `Hello ${inv.customer?.name || ''}, your Pather Khonje invoice ${inv.invoiceNumber} is ready. Total: Rs. ${total}, Due: Rs. ${due}. Please check the PDF shared by our team.`;
+    window.open(`https://web.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
 
   if (loading) return <div className="p-6">Loading...</div>;
@@ -205,6 +220,13 @@ function InvoiceList({ onEdit, onDeleted, onStatusUpdated, reload = 0, items: ex
                       title="Download PDF"
                     >
                       <Download className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => openWhatsApp(inv)}
+                      className="text-gray-400 hover:text-emerald-600 transition-colors"
+                      title="Send WhatsApp Message"
+                    >
+                      <MessageCircle className="h-5 w-5" />
                     </button>
                     <button
                       onClick={() => remove(inv._id)}

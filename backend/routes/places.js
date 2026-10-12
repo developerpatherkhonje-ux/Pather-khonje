@@ -8,6 +8,7 @@ const {
   authenticateToken, 
   requireAdmin,
   requireAdminOrManager,
+  requirePermission,
   sanitizeInput
 } = require('../middleware/auth');
 const logger = require('../utils/logger');
@@ -109,7 +110,7 @@ router.get('/', async (req, res) => {
 // @route   GET /api/places/admin/all
 // @desc    Get all places for admin management, including empty places
 // @access  Admin only
-router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/all', authenticateToken, requireAdmin, requirePermission('content:manage'), async (req, res) => {
   try {
     const places = await Place.find({}).sort({ createdAt: -1 });
     res.json({
@@ -130,7 +131,7 @@ router.get('/admin/all', authenticateToken, requireAdmin, async (req, res) => {
 // @route   GET /api/places/admin/stats
 // @desc    Get places statistics (admin only)
 // @access  Admin only
-router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin/stats', authenticateToken, requireAdmin, requirePermission('content:manage'), async (req, res) => {
   try {
     const stats = await Place.getPlaceStats();
     await AuditLog.logEvent({
@@ -237,7 +238,7 @@ router.get('/:idOrSlug/hotels', async (req, res) => {
 // @route   POST /api/places
 // @desc    Create new place (admin only)
 // @access  Admin only
-router.post('/', authenticateToken, requireAdmin, placeValidation, handleValidationErrors, async (req, res) => {
+router.post('/', authenticateToken, requireAdmin, requirePermission('content:manage'), placeValidation, handleValidationErrors, async (req, res) => {
   try {
     const { name, description, image, rating } = req.body;
     const adminId = req.user._id;
@@ -304,7 +305,7 @@ router.post('/', authenticateToken, requireAdmin, placeValidation, handleValidat
 // @route   PUT /api/places/:id
 // @desc    Update place (admin only)
 // @access  Admin only
-router.put('/:id', authenticateToken, requireAdmin, placeValidation, handleValidationErrors, async (req, res) => {
+router.put('/:id', authenticateToken, requireAdmin, requirePermission('content:manage'), placeValidation, handleValidationErrors, async (req, res) => {
   try {
     const placeId = req.params.id;
     const updates = req.body;
@@ -386,7 +387,7 @@ router.put('/:id', authenticateToken, requireAdmin, placeValidation, handleValid
 // @route   DELETE /api/places/:id
 // @desc    Delete place (admin only)
 // @access  Admin only
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:id', authenticateToken, requireAdmin, requirePermission('content:manage'), async (req, res) => {
   try {
     const placeId = req.params.id;
     const adminId = req.user._id;
@@ -446,45 +447,10 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// @route   GET /api/places/admin/stats
-// @desc    Get places statistics (admin only)
-// @access  Admin only
-router.get('/admin/stats', authenticateToken, requireAdmin, async (req, res) => {
-  try {
-    const stats = await Place.getPlaceStats();
-    
-    // Log admin action
-    await AuditLog.logEvent({
-      action: 'READ',
-      resource: 'PLACE',
-      userId: req.user._id,
-      details: { action: 'get_place_stats' },
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent'),
-      success: true
-    });
-    
-    res.json({
-      success: true,
-      data: {
-        stats
-      }
-    });
-    
-  } catch (error) {
-    logger.error('Get place stats error', { error: error.message, userId: req.user._id });
-    
-    res.status(500).json({
-      success: false,
-      message: 'Failed to get place statistics'
-    });
-  }
-});
-
 // @route   POST /api/places/:id/images
 // @desc    Upload images for a place (admin only)
 // @access  Admin only
-router.post('/:id/images', authenticateToken, requireAdmin, uploadMultiple, async (req, res) => {
+router.post('/:id/images', authenticateToken, requireAdmin, requirePermission('content:manage'), uploadMultiple, async (req, res) => {
   try {
     const placeId = req.params.id;
     const adminId = req.user._id;
@@ -567,7 +533,7 @@ router.post('/:id/images', authenticateToken, requireAdmin, uploadMultiple, asyn
 // @route   DELETE /api/places/:id/images/:imageId
 // @desc    Delete a specific image from a place (admin only)
 // @access  Admin only
-router.delete('/:id/images/:imageId', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:id/images/:imageId', authenticateToken, requireAdmin, requirePermission('content:manage'), async (req, res) => {
   try {
     const placeId = req.params.id;
     const imageId = req.params.imageId;

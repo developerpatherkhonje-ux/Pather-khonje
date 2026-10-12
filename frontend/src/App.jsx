@@ -23,6 +23,7 @@ const HotelPlace = React.lazy(() => import("./pages/HotelPlace"));
 const HotelDetails = React.lazy(() => import("./pages/HotelDetails"));
 const Packages = React.lazy(() => import("./pages/Packages"));
 const PackageDetails = React.lazy(() => import("./pages/PackageDetails"));
+const PackageCalculator = React.lazy(() => import("./pages/PackageCalculator"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const Dashboard = React.lazy(() => import("./pages/Dashboard"));
 const Policies = React.lazy(() => import("./pages/Policies"));
@@ -87,6 +88,7 @@ function App() {
                                 element={<HotelDetails />}
                               />
                               <Route path="packages" element={<Packages />} />
+                              <Route path="package-calculator" element={<PackageCalculator />} />
                               {/* UPDATED: Now expects a 'slug' instead of 'packageId' */}
                               <Route
                                 path="package/:slug"

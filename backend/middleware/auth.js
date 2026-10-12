@@ -6,6 +6,28 @@ const config = require('../config/config');
 const logger = require('../utils/logger');
 const SecurityUtils = require('../utils/security');
 
+const rolePermissions = {
+  super_admin: ['all_branches', 'users:manage', 'security:view', 'reports:view', 'invoices:manage', 'vouchers:manage', 'leads:manage', 'customers:manage', 'settings:manage', 'content:manage', 'branches:manage'],
+  admin: ['all_branches', 'users:manage', 'security:view', 'reports:view', 'invoices:manage', 'vouchers:manage', 'leads:manage', 'customers:manage', 'settings:manage', 'content:manage', 'branches:manage'],
+  manager: ['reports:view', 'invoices:manage', 'vouchers:manage', 'leads:manage', 'customers:manage', 'content:manage'],
+  branch_manager: ['reports:view', 'invoices:manage', 'vouchers:manage', 'leads:manage', 'customers:manage'],
+  sales_manager: ['reports:view', 'invoices:manage', 'leads:manage', 'customers:manage'],
+  accounts: ['reports:view', 'invoices:manage', 'vouchers:manage', 'customers:manage'],
+  hr: ['reports:view', 'users:view'],
+  agent: ['leads:manage', 'customers:manage', 'invoices:view'],
+};
+
+const hasPermission = (user, permission) => {
+  if (!user) return false;
+  if (['admin', 'super_admin'].includes(user.role)) return true;
+  const explicit = Array.isArray(user.permissions) ? user.permissions : [];
+  if (explicit.includes(permission) || explicit.includes('*')) return true;
+  const impliedManage = permission.endsWith(':view') ? permission.replace(':view', ':manage') : null;
+  if (impliedManage && explicit.includes(impliedManage)) return true;
+  const inherited = rolePermissions[user.role] || [];
+  return inherited.includes(permission) || (impliedManage && inherited.includes(impliedManage));
+};
+
 // Middleware to verify JWT token
 const authenticateToken = async (req, res, next) => {
   try {
@@ -82,7 +104,7 @@ const authenticateToken = async (req, res, next) => {
 // Middleware to check if user is admin
 const requireAdmin = async (req, res, next) => {
   try {
-    if (!['admin', 'super_admin'].includes(req.user.role)) {
+    if (!['admin', 'super_admin', 'manager', 'sales_manager', 'branch_manager', 'agent', 'hr', 'accounts'].includes(req.user.role)) {
       // Log unauthorized access attempt
       await AuditLog.logEvent({
         action: 'READ',
@@ -97,7 +119,7 @@ const requireAdmin = async (req, res, next) => {
       
       return res.status(403).json({
         success: false,
-        message: 'Admin access required'
+        message: 'Corporate dashboard access required'
       });
     }
     
@@ -107,6 +129,36 @@ const requireAdmin = async (req, res, next) => {
     return res.status(500).json({
       success: false,
       message: 'Server error during authorization check'
+    });
+  }
+};
+
+const requirePermission = (permission) => async (req, res, next) => {
+  try {
+    if (!hasPermission(req.user, permission)) {
+      await AuditLog.logEvent({
+        action: 'READ',
+        resource: 'ADMIN',
+        userId: req.user?._id,
+        details: { attemptedPermission: permission },
+        ipAddress: req.ip,
+        userAgent: req.get('User-Agent'),
+        success: false,
+        errorMessage: 'Permission denied'
+      });
+
+      return res.status(403).json({
+        success: false,
+        message: 'You do not have permission for this action'
+      });
+    }
+
+    next();
+  } catch (error) {
+    logger.error('Permission middleware error', { error: error.message, permission });
+    return res.status(500).json({
+      success: false,
+      message: 'Server error during permission check'
     });
   }
 };
@@ -326,6 +378,8 @@ const validateAPIKey = async (req, res, next) => {
 module.exports = {
   authenticateToken,
   requireAdmin,
+  requirePermission,
+  hasPermission,
   requireAdminOrManager,
   verifyRefreshToken,
   generateToken,

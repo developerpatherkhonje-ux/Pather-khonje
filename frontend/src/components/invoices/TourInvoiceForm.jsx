@@ -2,12 +2,13 @@ import React, { useState } from 'react';
 import { Save, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../services/api';
+import CustomInvoiceFields, { buildCustomFields } from './CustomInvoiceFields';
 
 const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, onCancel, initial, inlineButtons = true, onStateChange, formId = 'tour-invoice-form' }, ref) {
   const [form, setForm] = useState({
     type: 'tour',
     invoiceNumber: '',
-    customer: { name: '', phone: '', email: '', address: '' },
+    customer: { name: '', phone: '', email: '', address: '', gstin: '', pan: '', registrationNumber: '' },
     tourDetails: { 
       packageName: '', 
       startDate: '', 
@@ -36,8 +37,10 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
     gstPercent: 0,
     total: 0,
     advancePaid: 0,
-    paymentMethod: 'Cash'
+    paymentMethod: 'Cash',
+    customFields: []
   });
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [savedId, setSavedId] = useState(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -52,7 +55,10 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
           name: initial.customer?.name || '',
           phone: initial.customer?.phone || '',
           email: initial.customer?.email || '',
-          address: initial.customer?.address || ''
+          address: initial.customer?.address || '',
+          gstin: initial.customer?.gstin || '',
+          pan: initial.customer?.pan || '',
+          registrationNumber: initial.customer?.registrationNumber || ''
         },
         tourDetails: {
           packageName: initial.tourDetails?.packageName || '',
@@ -101,13 +107,25 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
         tax: Number(initial.tax || 0),
         gstPercent: Number(initial.gstPercent || 0),
         total: Number(initial.total || 0),
-        advancePaid: Number(initial.advancePaid || 0),
-        paymentMethod: initial.paymentMethod || 'Cash'
+        advancePaid: Number(initial.initialAdvancePaid ?? initial.advancePaid ?? 0),
+        paymentMethod: initial.paymentMethod || 'Cash',
+        customFields: initial.customFields || []
       };
       
       setForm(safeInitial);
     }
   }, [initial]);
+  React.useEffect(() => {
+    api.getBusinessSettings()
+      .then((res) => setCustomFieldDefinitions(res.data?.invoice?.customFields || []))
+      .catch(() => setCustomFieldDefinitions([]));
+  }, []);
+  React.useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      customFields: buildCustomFields(customFieldDefinitions, prev.customFields, 'tour'),
+    }));
+  }, [customFieldDefinitions]);
 
   React.useEffect(() => {
     onStateChange && onStateChange({ loading, savedId, isSaved });
@@ -172,7 +190,7 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
     });
   };
 
-  const validateForm = () => {
+  const validateForm = React.useCallback(() => {
     const required = [
       { field: form.customer.name, message: 'Customer name is required' },
       { field: form.customer.phone, message: 'Customer phone is required' },
@@ -194,9 +212,9 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
     }
     
     return true;
-  };
+  }, [form]);
 
-  const saveInvoice = async () => {
+  const saveInvoice = React.useCallback(async () => {
     if (!validateForm()) return;
     
     setLoading(true);
@@ -207,6 +225,7 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
       // Prepare data with hotels in the correct structure
       const dataToSend = {
         ...form,
+        initialAdvancePaid: Number(form.advancePaid || 0),
         tourDetails: {
           ...form.tourDetails,
           hotels: form.hotels  // Move hotels into tourDetails for backend
@@ -214,11 +233,6 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
         invoiceNumber: initial && initial._id ? form.invoiceNumber : undefined,
         _id: initial && initial._id ? initial._id : undefined
       };
-      
-      // Debug: Log the data being sent
-      console.log('TourInvoiceForm - Sending data to backend:', JSON.stringify(dataToSend, null, 2));
-      console.log('TourInvoiceForm - Hotels array:', form.hotels);
-      console.log('TourInvoiceForm - TourDetails hotels:', dataToSend.tourDetails.hotels);
       
       // Check if this is an edit operation (has initial data with _id)
       if (initial && initial._id) {
@@ -246,14 +260,14 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
     } finally { 
       setLoading(false); 
     }
-  };
+  }, [form, initial, onCreated, validateForm]);
 
   const submit = async (e) => {
     e.preventDefault();
     await saveInvoice();
   };
 
-  const downloadPdf = async () => {
+  const downloadPdf = React.useCallback(async () => {
     const invoiceId = savedId || initial?._id;
     if (!invoiceId) {
       toast.error('Save the invoice before downloading PDF');
@@ -268,7 +282,7 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
       console.error('PDF download error:', err);
       toast.error('Failed to download PDF');
     }
-  };
+  }, [form.invoiceNumber, initial, savedId]);
 
   const addHotel = () => {
     const newHotel = {
@@ -303,11 +317,19 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
 
   const dueAmount = Math.max(0, Number(form.total || 0) - Number(form.advancePaid || 0));
 
+  const updateCustomField = (index, value) => {
+    setForm((prev) => {
+      const customFields = [...(prev.customFields || [])];
+      customFields[index] = { ...customFields[index], value };
+      return { ...prev, customFields };
+    });
+  };
+
   React.useImperativeHandle(ref, () => ({
     submitForm: saveInvoice,
     downloadPdf,
     getState: () => ({ loading, savedId })
-  }), [loading, savedId, saveInvoice]);
+  }), [downloadPdf, loading, savedId, saveInvoice]);
 
   return (
     <form id={formId} onSubmit={submit} className="space-y-5">
@@ -342,6 +364,9 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
           <input className="px-4 py-3 border rounded-lg" placeholder="Phone" value={form.customer.phone} onChange={e => update('customer.phone', e.target.value)} required />
           <input className="px-4 py-3 border rounded-lg" placeholder="Email" value={form.customer.email} onChange={e => update('customer.email', e.target.value)} />
           <input className="px-4 py-3 border rounded-lg" placeholder="Address" value={form.customer.address} onChange={e => update('customer.address', e.target.value)} />
+          <input className="px-4 py-3 border rounded-lg" placeholder="GSTIN" value={form.customer.gstin || ''} onChange={e => update('customer.gstin', e.target.value)} />
+          <input className="px-4 py-3 border rounded-lg" placeholder="PAN" value={form.customer.pan || ''} onChange={e => update('customer.pan', e.target.value)} />
+          <input className="px-4 py-3 border rounded-lg" placeholder="MSME / Registration Number" value={form.customer.registrationNumber || ''} onChange={e => update('customer.registrationNumber', e.target.value)} />
         </div>
       </div>
 
@@ -503,6 +528,8 @@ const TourInvoiceForm = React.forwardRef(function TourInvoiceForm({ onCreated, o
           </div>
         </div>
       </div>
+
+      <CustomInvoiceFields fields={form.customFields} onChange={updateCustomField} />
 
       {/* Payment Details */}
       <div className="border rounded-xl">

@@ -24,10 +24,26 @@ const branchSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
     },
+    type: {
+      type: String,
+      enum: ['head_office', 'branch'],
+      default: 'branch',
+      index: true,
+    },
     revenueTarget: {
       type: Number,
       default: 0,
     },
+    targets: [
+      {
+        periodType: { type: String, enum: ['weekly', 'monthly', 'quarterly', 'yearly'], default: 'monthly' },
+        period: { type: String, required: true },
+        revenueTarget: { type: Number, default: 0 },
+        bookingTarget: { type: Number, default: 0 },
+        leadTarget: { type: Number, default: 0 },
+        customerTarget: { type: Number, default: 0 },
+      },
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

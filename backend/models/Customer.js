@@ -32,6 +32,17 @@ const customerSchema = new mongoose.Schema(
       uppercase: true,
       maxlength: [20, 'GSTIN cannot exceed 20 characters'],
     },
+    pan: {
+      type: String,
+      trim: true,
+      uppercase: true,
+      maxlength: [20, 'PAN cannot exceed 20 characters'],
+    },
+    registrationNumber: {
+      type: String,
+      trim: true,
+      maxlength: [80, 'Registration number cannot exceed 80 characters'],
+    },
     sourceLead: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Lead',

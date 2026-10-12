@@ -13,6 +13,12 @@ const paymentVoucherSchema = new mongoose.Schema({
     required: [true, 'Voucher date is required'],
     index: true
   },
+  branch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    default: null,
+    index: true
+  },
   // Payee Information
   payee: {
     type: mongoose.Schema.Types.ObjectId,
@@ -106,6 +112,7 @@ paymentVoucherSchema.index({ createdAt: -1 });
 paymentVoucherSchema.index({ date: -1 });
 paymentVoucherSchema.index({ category: 1, date: -1 });
 paymentVoucherSchema.index({ payeeName: 1 });
+paymentVoucherSchema.index({ branch: 1, date: -1 });
 
 // Virtual for formatted date
 paymentVoucherSchema.virtual('formattedDate').get(function() {

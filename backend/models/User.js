@@ -53,6 +53,16 @@ const userSchema = new mongoose.Schema({
     incentivePercent: { type: Number, default: 0 },
     target: { type: Number, default: 0 }
   },
+  targets: [
+    {
+      periodType: { type: String, enum: ['weekly', 'monthly', 'quarterly', 'yearly'], default: 'monthly' },
+      period: { type: String, required: true },
+      revenueTarget: { type: Number, default: 0 },
+      bookingTarget: { type: Number, default: 0 },
+      leadTarget: { type: Number, default: 0 },
+      customerTarget: { type: Number, default: 0 },
+    }
+  ],
   designation: {
     type: String,
     trim: true,

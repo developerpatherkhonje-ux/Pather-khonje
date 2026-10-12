@@ -64,7 +64,8 @@ const customerRoutes = require("./routes/customers");
 const payeeRoutes = require("./routes/payees");
 const businessSettingsRoutes = require("./routes/businessSettings");
 const branchRoutes = require("./routes/branches");
-// const enquiryRoutes = require("./routes/enquiries");
+const packageCalculatorRoutes = require("./routes/packageCalculator");
+const enquiryRoutes = require("./routes/enquiries");
 
 const app = express();
 
@@ -421,7 +422,8 @@ app.use("/api/customers", customerRoutes);
 app.use("/api/payees", payeeRoutes);
 app.use("/api/settings", businessSettingsRoutes);
 app.use("/api/branches", branchRoutes);
-// app.use("/api/enquiries", enquiryRoutes);
+app.use("/api/package-calculator", packageCalculatorRoutes);
+app.use("/api/enquiries", enquiryRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

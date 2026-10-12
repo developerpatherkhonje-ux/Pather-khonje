@@ -5,6 +5,7 @@ const Package = require("../models/Package");
 const {
   authenticateToken,
   requireAdmin,
+  requirePermission,
   sanitizeInput,
 } = require("../middleware/auth");
 const logger = require("../utils/logger");
@@ -134,7 +135,7 @@ router.get("/", async (req, res) => {
 });
 
 // Admin: list all packages, including inactive records
-router.get("/admin/all", authenticateToken, requireAdmin, async (req, res) => {
+router.get("/admin/all", authenticateToken, requireAdmin, requirePermission("content:manage"), async (req, res) => {
   try {
     const list = await Package.find({}).sort({ createdAt: -1 });
     res.json({
@@ -177,6 +178,7 @@ router.post(
   "/",
   authenticateToken,
   requireAdmin,
+  requirePermission("content:manage"),
   pkgValidation,
   handleValidationErrors,
   async (req, res) => {
@@ -215,6 +217,7 @@ router.put(
   "/:id",
   authenticateToken,
   requireAdmin,
+  requirePermission("content:manage"),
   pkgValidation,
   handleValidationErrors,
   async (req, res) => {
@@ -252,7 +255,7 @@ router.put(
 );
 
 // Admin: delete package
-router.delete("/:id", authenticateToken, requireAdmin, async (req, res) => {
+router.delete("/:id", authenticateToken, requireAdmin, requirePermission("content:manage"), async (req, res) => {
   try {
     const pkg = await Package.findByIdAndDelete(req.params.id);
     if (!pkg)

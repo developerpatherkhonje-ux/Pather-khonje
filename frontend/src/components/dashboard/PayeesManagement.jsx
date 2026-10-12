@@ -1,26 +1,31 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Plus, Search, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
 
-const emptyPayee = { name: "", type: "vendor", phone: "", email: "", address: "", gstin: "" };
+const emptyPayee = { name: "", type: "vendor", phone: "", email: "", address: "", gstin: "", branch: "" };
 
 function PayeesManagement() {
   const [payees, setPayees] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [search, setSearch] = useState("");
+  const [branchFilter, setBranchFilter] = useState("");
   const [form, setForm] = useState(emptyPayee);
   const [showForm, setShowForm] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     try {
-      const res = await api.listPayees({ search, limit: 200 });
+      const res = await api.listPayees({ search, branch: branchFilter, limit: 200 });
       setPayees(res.data?.items || []);
     } catch (error) {
       toast.error(error.message || "Failed to load payees");
     }
-  };
+  }, [branchFilter, search]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    api.listBranches().then((res) => setBranches(res.data?.branches || [])).catch(() => {});
+  }, []);
 
   const save = async (event) => {
     event.preventDefault();
@@ -54,8 +59,12 @@ function PayeesManagement() {
       </div>
 
       <div className="rounded-2xl border bg-white p-4 shadow-sm">
-        <div className="flex gap-3">
+        <div className="grid gap-3 md:grid-cols-[1fr_220px_auto]">
           <div className="relative flex-1"><Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" /><input value={search} onChange={(e) => setSearch(e.target.value)} onKeyDown={(e) => e.key === "Enter" && load()} placeholder="Search payee..." className="w-full rounded-xl border px-4 py-3 pl-10" /></div>
+          <select value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)} className="rounded-xl border px-4 py-3">
+            <option value="">All branches</option>
+            {branches.map((branch) => <option key={branch._id} value={branch._id}>{branch.name}</option>)}
+          </select>
           <button onClick={load} className="rounded-xl border px-5 py-3">Search</button>
         </div>
       </div>
@@ -66,7 +75,7 @@ function PayeesManagement() {
           <tbody className="divide-y">
             {payees.map((payee) => (
               <tr key={payee._id}>
-                <td className="p-4"><div className="font-semibold">{payee.name}</div><div className="text-gray-500">{payee.phone || "No phone"} · {payee.email || "No email"}</div></td>
+                <td className="p-4"><div className="font-semibold">{payee.name}</div><div className="text-gray-500">{payee.phone || "No phone"} · {payee.email || "No email"}</div><div className="text-xs text-sky-700">{payee.branch?.name || "No branch"}</div></td>
                 <td className="p-4 capitalize">{payee.type}</td>
                 <td className="p-4">₹{Number(payee.summary?.totalExpense || 0).toLocaleString("en-IN")}</td>
                 <td className="p-4">₹{Number(payee.summary?.totalDue || 0).toLocaleString("en-IN")}</td>
@@ -87,6 +96,10 @@ function PayeesManagement() {
               <input value={form.phone || ""} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone" className="rounded-xl border px-4 py-3" />
               <input type="email" value={form.email || ""} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" className="rounded-xl border px-4 py-3" />
               <input value={form.gstin || ""} onChange={(e) => setForm({ ...form, gstin: e.target.value })} placeholder="GSTIN" className="rounded-xl border px-4 py-3" />
+              <select value={form.branch || ""} onChange={(e) => setForm({ ...form, branch: e.target.value })} className="rounded-xl border px-4 py-3 md:col-span-2">
+                <option value="">Assign branch</option>
+                {branches.map((branch) => <option key={branch._id} value={branch._id}>{branch.name}</option>)}
+              </select>
               <textarea value={form.address || ""} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Address" className="rounded-xl border px-4 py-3 md:col-span-2" />
             </div>
             <button className="mt-5 w-full rounded-xl bg-emerald-600 px-4 py-3 font-semibold text-white">Save Payee</button>

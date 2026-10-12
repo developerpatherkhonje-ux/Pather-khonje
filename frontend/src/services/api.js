@@ -30,14 +30,6 @@ class ApiService {
     this.fallbackBaseURL = PROD_BASE_URL;
     this.currentToken = null; // In-memory token cache
 
-    // Debug logging
-    console.log("🔧 API Service initialized:", {
-      baseURL: this.baseURL,
-      currentDomain: config.CURRENT_DOMAIN,
-      isCustomDomain: config.IS_CUSTOM_DOMAIN,
-      environment: config.NODE_ENV,
-      isLocalhost: isLocalhost
-    });
   }
 
   // Convert relative media paths to absolute URLs against the API origin
@@ -159,11 +151,6 @@ class ApiService {
   // POST request
   async post(endpoint, data, options = {}) {
     const body = data instanceof FormData ? data : JSON.stringify(data);
-    console.log("POST request:", {
-      endpoint,
-      isFormData: data instanceof FormData,
-      body,
-    });
     return this.request(endpoint, {
       method: "POST",
       body,
@@ -176,6 +163,15 @@ class ApiService {
     const body = data instanceof FormData ? data : JSON.stringify(data);
     return this.request(endpoint, {
       method: "PUT",
+      body,
+      ...options,
+    });
+  }
+
+  async patch(endpoint, data, options = {}) {
+    const body = data instanceof FormData ? data : JSON.stringify(data);
+    return this.request(endpoint, {
+      method: "PATCH",
       body,
       ...options,
     });
@@ -223,11 +219,12 @@ class ApiService {
   }
 
   // Admin specific methods
-  async getUsers(page = 1, limit = 10, search = "") {
+  async getUsers(page = 1, limit = 10, search = "", branch = "") {
     const params = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
       ...(search && { search }),
+      ...(branch && { branch }),
     });
     return this.get(`/admin/users?${params}`);
   }
@@ -723,9 +720,10 @@ class ApiService {
     }
   }
 
-  async listCustomers({ page = 1, limit = 50, search = "" } = {}) {
+  async listCustomers({ page = 1, limit = 50, search = "", branch = "" } = {}) {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) params.set("search", search);
+    if (branch) params.set("branch", branch);
     return this.get(`/customers?${params.toString()}`);
   }
 
@@ -749,10 +747,11 @@ class ApiService {
     return this.post(`/customers/from-lead/${leadId}`, {});
   }
 
-  async listPayees({ page = 1, limit = 50, search = "", type = "" } = {}) {
+  async listPayees({ page = 1, limit = 50, search = "", type = "", branch = "" } = {}) {
     const params = new URLSearchParams({ page: String(page), limit: String(limit) });
     if (search) params.set("search", search);
     if (type) params.set("type", type);
+    if (branch) params.set("branch", branch);
     return this.get(`/payees?${params.toString()}`);
   }
 
@@ -776,8 +775,17 @@ class ApiService {
     return this.put("/settings", settings);
   }
 
-  async listBranches() {
-    return this.get("/branches");
+  async listBranches(params = {}) {
+    const query = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value) query.set(key, value);
+    });
+    const suffix = query.toString() ? `?${query.toString()}` : "";
+    return this.get(`/branches${suffix}`);
+  }
+
+  async getBranchReports(params = {}) {
+    return this.listBranches(params);
   }
 
   async createBranch(branch) {
@@ -790,6 +798,30 @@ class ApiService {
 
   async deleteBranch(id) {
     return this.delete(`/branches/${id}`);
+  }
+
+  async getPackageCalculatorPublicSettings() {
+    return this.get("/package-calculator/settings/public", { includeAuth: false });
+  }
+
+  async calculatePackageEstimate(payload) {
+    return this.post("/package-calculator/calculate", payload, { includeAuth: false });
+  }
+
+  async getPackageCalculatorSettings() {
+    return this.get("/package-calculator/settings");
+  }
+
+  async updatePackageCalculatorSettings(settings) {
+    return this.put("/package-calculator/settings", settings);
+  }
+
+  async listEnquiries() {
+    return this.get("/enquiries");
+  }
+
+  async updateEnquiryStatus(id, status) {
+    return this.patch(`/enquiries/${id}`, { status });
   }
 
   // Gallery API - Simplified

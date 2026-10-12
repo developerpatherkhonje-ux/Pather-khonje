@@ -23,10 +23,10 @@ const Footer = () => {
           {/* Brand Info */}
           <div>
             {!imageError ? (
-              <img 
+              <img
                 src="/logo/pather-khonje-logo.png"
-                alt="Pather Khonje" 
-                className="h-16 mb-6 object-contain" 
+                alt="Pather Khonje"
+                className="h-16 mb-6 object-contain"
                 onError={() => setImageError(true)}
               />
             ) : (

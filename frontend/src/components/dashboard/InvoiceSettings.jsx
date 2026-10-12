@@ -40,6 +40,62 @@ function InvoiceSettings() {
     }
   };
 
+  const addCustomField = () => {
+    setSettings((prev) => ({
+      ...prev,
+      invoice: {
+        ...(prev.invoice || {}),
+        customFields: [
+          ...(prev.invoice?.customFields || []),
+          { key: `field_${Date.now()}`, label: "New Field", type: "text", required: false, enabled: true, appliesTo: ["hotel", "tour", "car"], options: [] },
+        ],
+      },
+    }));
+  };
+
+  const updateCustomField = (index, field, value) => {
+    setSettings((prev) => {
+      const next = structuredClone(prev || {});
+      next.invoice = next.invoice || {};
+      next.invoice.customFields = next.invoice.customFields || [];
+      next.invoice.customFields[index][field] = value;
+      return next;
+    });
+  };
+
+  const updateCustomFieldType = (index, invoiceType, checked) => {
+    setSettings((prev) => {
+      const next = structuredClone(prev || {});
+      const item = next.invoice.customFields[index];
+      const current = new Set(item.appliesTo || []);
+      if (checked) current.add(invoiceType);
+      else current.delete(invoiceType);
+      item.appliesTo = Array.from(current);
+      return next;
+    });
+  };
+
+  const updateCustomFieldOptions = (index, value) => {
+    updateCustomField(
+      index,
+      "options",
+      value
+        .split(",")
+        .map((option) => option.trim())
+        .filter(Boolean),
+    );
+  };
+
+  const removeCustomField = (index) => {
+    setSettings((prev) => ({
+      ...prev,
+      invoice: {
+        ...(prev.invoice || {}),
+        customFields: (prev.invoice?.customFields || []).filter((_, itemIndex) => itemIndex !== index),
+      },
+    }));
+  };
+
   if (!settings) return <div className="p-6">Loading settings...</div>;
 
   const input = "w-full rounded-xl border border-gray-300 px-4 py-3 focus:border-sky-500 focus:ring-2 focus:ring-sky-500";
@@ -62,6 +118,11 @@ function InvoiceSettings() {
           <input className={input} value={settings.company?.phone || ""} onChange={(e) => update("company.phone", e.target.value)} placeholder="Phone" />
           <input className={input} value={settings.company?.email || ""} onChange={(e) => update("company.email", e.target.value)} placeholder="Email" />
           <input className={input} value={settings.company?.gstin || ""} onChange={(e) => update("company.gstin", e.target.value)} placeholder="GSTIN" />
+          <input className={input} value={settings.company?.pan || ""} onChange={(e) => update("company.pan", e.target.value)} placeholder="PAN" />
+          <input className={input} value={settings.company?.msmeNumber || ""} onChange={(e) => update("company.msmeNumber", e.target.value)} placeholder="MSME Number" />
+          <input className={input} value={settings.company?.registrationNumber || ""} onChange={(e) => update("company.registrationNumber", e.target.value)} placeholder="Registration Number" />
+          <input className={input} value={settings.company?.cin || ""} onChange={(e) => update("company.cin", e.target.value)} placeholder="CIN" />
+          <input className={input} value={settings.company?.tradeLicense || ""} onChange={(e) => update("company.tradeLicense", e.target.value)} placeholder="Trade License" />
           <input className={input} value={settings.company?.whatsappNumber || ""} onChange={(e) => update("company.whatsappNumber", e.target.value)} placeholder="Company WhatsApp number" />
           <textarea className={`${input} md:col-span-2`} value={settings.company?.address || ""} onChange={(e) => update("company.address", e.target.value)} placeholder="Company address" />
         </div>
@@ -88,6 +149,58 @@ function InvoiceSettings() {
               <textarea className={input} value={settings.invoice?.templates?.[type]?.notes || ""} onChange={(e) => update(`invoice.templates.${type}.notes`, e.target.value)} placeholder="Default notes / template instructions" />
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="rounded-2xl border bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-bold">Invoice Custom Fields</h2>
+            <p className="text-sm text-gray-500">Choose extra invoice fields, type, required status and invoice type.</p>
+          </div>
+          <button type="button" onClick={addCustomField} className="rounded-xl border px-4 py-2 text-sm font-semibold hover:bg-gray-50">Add Field</button>
+        </div>
+        <div className="space-y-4">
+          {(settings.invoice?.customFields || []).map((field, index) => (
+            <div key={field.key || index} className="rounded-2xl border p-4">
+              <div className="grid gap-3 lg:grid-cols-[1fr_1fr_150px_110px_110px]">
+                <input className={input} value={field.key || ""} onChange={(e) => updateCustomField(index, "key", e.target.value)} placeholder="field_key" />
+                <input className={input} value={field.label || ""} onChange={(e) => updateCustomField(index, "label", e.target.value)} placeholder="Display label" />
+                <select className={input} value={field.type || "text"} onChange={(e) => updateCustomField(index, "type", e.target.value)}>
+                  <option value="text">Text</option>
+                  <option value="number">Number</option>
+                  <option value="date">Date</option>
+                  <option value="textarea">Textarea</option>
+                  <option value="select">Select</option>
+                </select>
+                <label className="flex items-center gap-2 rounded-xl border px-3 text-sm"><input type="checkbox" checked={field.required || false} onChange={(e) => updateCustomField(index, "required", e.target.checked)} /> Required</label>
+                <label className="flex items-center gap-2 rounded-xl border px-3 text-sm"><input type="checkbox" checked={field.enabled !== false} onChange={(e) => updateCustomField(index, "enabled", e.target.checked)} /> Enabled</label>
+              </div>
+              <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_220px_110px]">
+                <input
+                  className={input}
+                  value={(field.options || []).join(", ")}
+                  onChange={(e) => updateCustomFieldOptions(index, e.target.value)}
+                  placeholder="Select options: Permit, Hotel, Transport"
+                  disabled={field.type !== "select"}
+                />
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 text-sm">
+                  {["hotel", "tour", "car"].map((type) => (
+                    <label key={type} className="flex items-center gap-1 capitalize">
+                      <input
+                        type="checkbox"
+                        checked={(field.appliesTo || []).includes(type)}
+                        onChange={(e) => updateCustomFieldType(index, type, e.target.checked)}
+                      />
+                      {type}
+                    </label>
+                  ))}
+                </div>
+                <button type="button" onClick={() => removeCustomField(index)} className="rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-600">Delete</button>
+              </div>
+            </div>
+          ))}
+          {(settings.invoice?.customFields || []).length === 0 && <p className="rounded-xl bg-gray-50 p-4 text-sm text-gray-500">No custom invoice fields yet.</p>}
         </div>
       </section>
 

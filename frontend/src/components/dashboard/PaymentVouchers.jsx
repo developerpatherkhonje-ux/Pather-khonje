@@ -1,10 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Search, Receipt, Download, Eye, Calendar, IndianRupee, TrendingDown, Edit, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../../services/api';
 import toast from 'react-hot-toast';
 import { generatePaymentVoucherPdf } from '../../utils/payPdf';
+
+const calculateAnalytics = (vouchersList) => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const analytics = vouchersList.reduce((acc, voucher) => {
+    const voucherDate = new Date(voucher.date);
+    const isCurrentMonth = voucherDate.getMonth() === currentMonth && voucherDate.getFullYear() === currentYear;
+
+    acc.totalExpenses += voucher.total || 0;
+    acc.totalAdvance += voucher.advance || 0;
+    acc.totalDue += voucher.due || 0;
+
+    if (isCurrentMonth) {
+      acc.monthlyExpenses += voucher.total || 0;
+    }
+
+    return acc;
+  }, {
+    totalExpenses: 0,
+    totalAdvance: 0,
+    totalDue: 0,
+    monthlyExpenses: 0
+  });
+
+  return {
+    ...analytics,
+    totalVouchers: vouchersList.length
+  };
+};
 
 const PaymentVouchers = () => {
   const navigate = useNavigate();
@@ -28,74 +59,11 @@ const PaymentVouchers = () => {
     { value: 'other', label: 'Other', color: 'bg-gray-100 text-gray-800' }
   ];
 
-  // Function to calculate analytics from vouchers
-  const calculateAnalytics = (vouchersList) => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const analytics = vouchersList.reduce((acc, voucher) => {
-      const voucherDate = new Date(voucher.date);
-      const isCurrentMonth = voucherDate.getMonth() === currentMonth && voucherDate.getFullYear() === currentYear;
-      
-      acc.totalExpenses += voucher.total || 0;
-      acc.totalAdvance += voucher.advance || 0;
-      acc.totalDue += voucher.due || 0;
-      
-      if (isCurrentMonth) {
-        acc.monthlyExpenses += voucher.total || 0;
-      }
-      
-      return acc;
-    }, {
-      totalExpenses: 0,
-      totalAdvance: 0,
-      totalDue: 0,
-      monthlyExpenses: 0
-    });
-
-    return {
-      ...analytics,
-      totalVouchers: vouchersList.length
-    };
-  };
-
   const paymentMethods = [
     { value: 'cash', label: 'Cash' },
     { value: 'bank', label: 'Bank Transfer / NEFT' },
     { value: 'upi', label: 'UPI' }
   ];
-
-  // Load vouchers from backend
-  useEffect(() => {
-    const loadVouchers = async () => {
-      try {
-        setLoading(true);
-        const res = await apiService.listPaymentVouchers({
-          category: filterCategory === 'all' ? '' : filterCategory,
-          search: searchTerm
-        });
-        if (res.success) {
-          const vouchersList = res.data.items || [];
-          const sortedVouchers = vouchersList.sort((a, b) => {
-            const aNumber = a.voucherNumber || '';
-            const bNumber = b.voucherNumber || '';
-            return aNumber.localeCompare(bNumber, undefined, { numeric: true });
-          });
-          setVouchers(sortedVouchers);
-          // Calculate analytics from the loaded vouchers
-          const calculatedSummary = calculateAnalytics(sortedVouchers);
-          setSummary(calculatedSummary);
-        }
-      } catch (error) {
-        console.error('Error loading vouchers:', error);
-        toast.error('Failed to load payment vouchers');
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadVouchers();
-  }, [filterCategory, searchTerm]);
 
   const filteredVouchers = vouchers;
 
@@ -139,12 +107,11 @@ const PaymentVouchers = () => {
   };
 
   const handleViewVoucher = (voucher) => {
-    // Navigate to voucher details page or show in modal
-    console.log('View voucher:', voucher);
+    // Reserved for a future voucher detail drawer.
   };
 
   // Function to refresh vouchers and analytics
-  const refreshVouchers = async () => {
+  const refreshVouchers = useCallback(async () => {
     try {
       setLoading(true);
       const res = await apiService.listPaymentVouchers({
@@ -168,7 +135,11 @@ const PaymentVouchers = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterCategory, searchTerm]);
+
+  useEffect(() => {
+    refreshVouchers();
+  }, [refreshVouchers]);
 
   // Refresh vouchers when component mounts (useful when returning from create/edit)
   useEffect(() => {
@@ -178,7 +149,7 @@ const PaymentVouchers = () => {
     
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [filterCategory, searchTerm]);
+  }, [refreshVouchers]);
 
   return (
     <div className="space-y-6">

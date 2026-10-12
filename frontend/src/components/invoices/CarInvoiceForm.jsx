@@ -2,11 +2,12 @@ import React, { useMemo, useState } from "react";
 import { Download, Save } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../services/api";
+import CustomInvoiceFields, { buildCustomFields } from "./CustomInvoiceFields";
 
 function CarInvoiceForm({ onCreated, onCancel, inlineButtons = true, formId = "car-invoice-form" }) {
   const [form, setForm] = useState({
     type: "car",
-    customer: { name: "", phone: "", email: "", address: "" },
+    customer: { name: "", phone: "", email: "", address: "", gstin: "", pan: "", registrationNumber: "" },
     carDetails: { carName: "", vehicleNumber: "", route: "", pickupPoint: "", dropPoint: "", startDate: "", endDate: "", days: 1, ratePerDay: 0, driverName: "", driverPhone: "", inclusions: "", exclusions: "" },
     subtotal: 0,
     discount: 0,
@@ -15,9 +16,24 @@ function CarInvoiceForm({ onCreated, onCancel, inlineButtons = true, formId = "c
     total: 0,
     advancePaid: 0,
     paymentMethod: "Cash",
+    customFields: [],
   });
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(null);
+  const [customFieldDefinitions, setCustomFieldDefinitions] = useState([]);
+
+  React.useEffect(() => {
+    api.getBusinessSettings()
+      .then((res) => setCustomFieldDefinitions(res.data?.invoice?.customFields || []))
+      .catch(() => setCustomFieldDefinitions([]));
+  }, []);
+
+  React.useEffect(() => {
+    setForm((prev) => ({
+      ...prev,
+      customFields: buildCustomFields(customFieldDefinitions, prev.customFields, "car"),
+    }));
+  }, [customFieldDefinitions]);
 
   const recompute = (next) => {
     const days = Number(next.carDetails.days || 0);
@@ -49,11 +65,19 @@ function CarInvoiceForm({ onCreated, onCancel, inlineButtons = true, formId = "c
 
   const due = useMemo(() => Math.max(Number(form.total || 0) - Number(form.advancePaid || 0), 0), [form.total, form.advancePaid]);
 
+  const updateCustomField = (index, value) => {
+    setForm((prev) => {
+      const customFields = [...(prev.customFields || [])];
+      customFields[index] = { ...customFields[index], value };
+      return { ...prev, customFields };
+    });
+  };
+
   const submit = async (event) => {
     event.preventDefault();
     setLoading(true);
     try {
-      const res = await api.createInvoice({ ...form });
+      const res = await api.createInvoice({ ...form, initialAdvancePaid: Number(form.advancePaid || 0) });
       const invoice = res.data || res;
       setSaved(invoice);
       toast.success(`${invoice.invoiceNumber || "Car invoice"} saved`);
@@ -84,6 +108,9 @@ function CarInvoiceForm({ onCreated, onCancel, inlineButtons = true, formId = "c
             <input className={inputClass} placeholder="Phone" value={form.customer.phone} onChange={(e) => update("customer.phone", e.target.value)} />
             <input type="email" className={inputClass} placeholder="Email" value={form.customer.email} onChange={(e) => update("customer.email", e.target.value)} />
             <textarea className={inputClass} placeholder="Address" value={form.customer.address} onChange={(e) => update("customer.address", e.target.value)} />
+            <input className={inputClass} placeholder="GSTIN" value={form.customer.gstin} onChange={(e) => update("customer.gstin", e.target.value)} />
+            <input className={inputClass} placeholder="PAN" value={form.customer.pan} onChange={(e) => update("customer.pan", e.target.value)} />
+            <input className={inputClass} placeholder="MSME / Registration Number" value={form.customer.registrationNumber} onChange={(e) => update("customer.registrationNumber", e.target.value)} />
           </div>
         </section>
         <section className="rounded-2xl border bg-white">
@@ -101,6 +128,8 @@ function CarInvoiceForm({ onCreated, onCancel, inlineButtons = true, formId = "c
           </div>
         </section>
       </div>
+
+      <CustomInvoiceFields fields={form.customFields} onChange={updateCustomField} />
 
       <section className="rounded-2xl border bg-white">
         <div className="border-b px-4 py-3 font-semibold">Payment Summary</div>

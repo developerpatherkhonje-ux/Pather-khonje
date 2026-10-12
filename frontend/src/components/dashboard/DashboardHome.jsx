@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Activity,
@@ -53,7 +53,7 @@ function DashboardHome() {
 
   const userName = user?.name || user?.email?.split("@")[0] || "Team";
 
-  const fetchDashboardData = async ({ silent = false } = {}) => {
+  const fetchDashboardData = useCallback(async ({ silent = false } = {}) => {
     try {
       if (!silent) setLoading(true);
       setRefreshing(true);
@@ -83,7 +83,7 @@ function DashboardHome() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchDashboardData();
@@ -92,11 +92,11 @@ function DashboardHome() {
     }, 30000);
 
     return () => window.clearInterval(intervalId);
-  }, []);
+  }, [fetchDashboardData]);
 
-  const metrics = overview?.metrics || {};
-  const userStats = adminStats?.users || {};
-  const securityStats = adminStats?.security || {};
+  const metrics = useMemo(() => overview?.metrics || {}, [overview]);
+  const userStats = useMemo(() => adminStats?.users || {}, [adminStats]);
+  const securityStats = useMemo(() => adminStats?.security || {}, [adminStats]);
 
   const financeCards = useMemo(
     () => [

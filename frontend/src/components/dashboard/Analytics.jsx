@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, IndianRupee, Users, Package, Hotel, Calendar, BarChart3, AlertCircle } from 'lucide-react';
 import analyticsService from '../../services/analyticsService';
@@ -9,11 +9,7 @@ function Analytics() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchAnalyticsData();
-  }, [selectedPeriod]);
-
-  const fetchAnalyticsData = async () => {
+  const fetchAnalyticsData = useCallback(async () => {
     try {
       setLoading(true);
       const result = await analyticsService.getAnalyticsData(selectedPeriod);
@@ -71,7 +67,11 @@ function Analytics() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedPeriod]);
+
+  useEffect(() => {
+    fetchAnalyticsData();
+  }, [fetchAnalyticsData]);
 
   const StatCard = ({ title, value, change, trend, icon: Icon, color, lowerIsGood = false }) => {
     const positiveState = lowerIsGood ? change <= 0 : change >= 0;

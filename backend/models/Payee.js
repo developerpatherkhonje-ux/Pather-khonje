@@ -43,6 +43,12 @@ const payeeSchema = new mongoose.Schema(
       bankName: String,
       upi: String,
     },
+    branch: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Branch',
+      default: null,
+      index: true,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -57,5 +63,6 @@ const payeeSchema = new mongoose.Schema(
 );
 
 payeeSchema.index({ name: 'text', phone: 'text', email: 'text' });
+payeeSchema.index({ branch: 1, isActive: 1 });
 
 module.exports = mongoose.model('Payee', payeeSchema);

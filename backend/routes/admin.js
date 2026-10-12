@@ -8,11 +8,13 @@ const {
   authenticateToken,
   requireAdmin,
   requireAdminOrManager,
+  requirePermission,
   sanitizeInput
 } = require('../middleware/auth');
 const config = require('../config/config');
 const logger = require('../utils/logger');
 const SecurityUtils = require('../utils/security');
+const { applyBranchScope, getUserBranchId, isHeadOfficeUser } = require('../utils/branchAccess');
 
 const router = express.Router();
 const staffRoles = ['user', 'manager', 'admin', 'super_admin', 'sales_manager', 'agent', 'branch_manager', 'hr', 'accounts'];
@@ -223,15 +225,19 @@ const buildTopPerformers = (invoices, type) => {
 // @route   GET /api/admin/users
 // @desc    Get all users with pagination and filtering
 // @access  Admin only
-router.get('/users', requireAdmin, async (req, res) => {
+router.get('/users', requireAdmin, requirePermission('users:view'), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
     
     // Build filter object
-    const filter = {};
+    const filter = isHeadOfficeUser(req.user) ? {} : { branch: req.user.branch || null };
     
+    if (req.query.branch && req.query.branch !== 'all' && isHeadOfficeUser(req.user)) {
+      filter.branch = req.query.branch;
+    }
+
     if (req.query.role) {
       filter.role = req.query.role;
     }
@@ -300,10 +306,14 @@ router.get('/users', requireAdmin, async (req, res) => {
 // @route   POST /api/admin/users
 // @desc    Create a user from admin panel
 // @access  Admin only
-router.post('/users', requireAdmin, userCreateValidation, handleValidationErrors, async (req, res) => {
+router.post('/users', requireAdmin, requirePermission('users:manage'), userCreateValidation, handleValidationErrors, async (req, res) => {
   try {
-    const { name, email, password, role = 'user', designation = 'Customer', phone, branch, permissions = [], salary = {} } = req.body;
+    const { name, email, password, role = 'user', designation = 'Customer', phone, branch, permissions = [], salary = {}, targets = [] } = req.body;
     const adminId = req.user._id;
+    const assignedBranch = isHeadOfficeUser(req.user) ? (branch || null) : getUserBranchId(req.user);
+    if (['admin', 'super_admin'].includes(role) && !isHeadOfficeUser(req.user)) {
+      return res.status(403).json({ success: false, message: 'Head office access required to create admin roles' });
+    }
 
     const existingUser = await User.findByEmail(email);
     if (existingUser) {
@@ -320,9 +330,10 @@ router.post('/users', requireAdmin, userCreateValidation, handleValidationErrors
       role,
       designation,
       phone,
-      branch: branch || null,
-      permissions,
+      branch: assignedBranch,
+      permissions: isHeadOfficeUser(req.user) ? permissions : [],
       salary,
+      targets,
       isActive: true,
       metadata: {
         createdBy: adminId,
@@ -369,7 +380,7 @@ router.post('/users', requireAdmin, userCreateValidation, handleValidationErrors
 // @route   GET /api/admin/users/:id
 // @desc    Get user by ID
 // @access  Admin only
-router.get('/users/:id', requireAdmin, async (req, res) => {
+router.get('/users/:id', requireAdmin, requirePermission('users:view'), async (req, res) => {
   try {
     const userId = req.params.id;
     
@@ -414,7 +425,7 @@ router.get('/users/:id', requireAdmin, async (req, res) => {
 // @route   PUT /api/admin/users/:id
 // @desc    Update user
 // @access  Admin only
-router.put('/users/:id', requireAdmin, userUpdateValidation, handleValidationErrors, async (req, res) => {
+router.put('/users/:id', requireAdmin, requirePermission('users:manage'), userUpdateValidation, handleValidationErrors, async (req, res) => {
   try {
     const userId = req.params.id;
     const updates = req.body;
@@ -429,7 +440,7 @@ router.put('/users/:id', requireAdmin, userUpdateValidation, handleValidationErr
     }
     
     // Check if user exists
-    const existingUser = await User.findById(userId);
+    const existingUser = await User.findOne(isHeadOfficeUser(req.user) ? { _id: userId } : { _id: userId, branch: req.user.branch || null });
     if (!existingUser) {
       return res.status(404).json({
         success: false,
@@ -453,10 +464,19 @@ router.put('/users/:id', requireAdmin, userUpdateValidation, handleValidationErr
     const oldRole = existingUser.role;
     
     // Update user
-    const user = await User.findByIdAndUpdate(
-      userId,
+    const safeUpdates = { ...updates };
+    if (!isHeadOfficeUser(req.user)) {
+      delete safeUpdates.permissions;
+      if (safeUpdates.role && ['admin', 'super_admin'].includes(safeUpdates.role)) {
+        return res.status(403).json({ success: false, message: 'Head office access required to assign admin roles' });
+      }
+      safeUpdates.branch = getUserBranchId(req.user);
+    }
+
+    const user = await User.findOneAndUpdate(
+      isHeadOfficeUser(req.user) ? { _id: userId } : { _id: userId, branch: req.user.branch || null },
       { 
-        ...updates,
+        ...safeUpdates,
         'metadata.lastModifiedBy': adminId
       },
       { new: true, runValidators: true }
@@ -520,7 +540,7 @@ router.put('/users/:id', requireAdmin, userUpdateValidation, handleValidationErr
 // @route   DELETE /api/admin/users/:id
 // @desc    Delete user
 // @access  Admin only
-router.delete('/users/:id', requireAdmin, async (req, res) => {
+router.delete('/users/:id', requireAdmin, requirePermission('users:manage'), async (req, res) => {
   try {
     const userId = req.params.id;
     const adminId = req.user._id;
@@ -534,7 +554,7 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
     }
     
     // Check if user exists
-    const user = await User.findById(userId);
+    const user = await User.findOne(isHeadOfficeUser(req.user) ? { _id: userId } : { _id: userId, branch: req.user.branch || null });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -583,7 +603,7 @@ router.delete('/users/:id', requireAdmin, async (req, res) => {
 // @route   GET /api/admin/stats
 // @desc    Get admin dashboard statistics
 // @access  Admin only
-router.get('/stats', requireAdmin, async (req, res) => {
+router.get('/stats', requireAdmin, requirePermission('reports:view'), async (req, res) => {
   try {
     // Get user statistics
     const userStats = await User.getUserStats();
@@ -672,20 +692,20 @@ router.get('/stats', requireAdmin, async (req, res) => {
 // @route   GET /api/admin/analytics
 // @desc    Get dynamic income, expense, profit, and performance analytics
 // @access  Admin only
-router.get('/analytics', requireAdmin, async (req, res) => {
+router.get('/analytics', requireAdmin, requirePermission('reports:view'), async (req, res) => {
   try {
     const period = req.query.period || 'month';
     const currentRange = getPeriodRange(period, 0);
     const previousRange = period === 'all' ? currentRange : getPeriodRange(period, -1);
 
-    const invoiceFilter = buildDateFilter('date', currentRange.startDate, currentRange.endDate);
+    const invoiceFilter = applyBranchScope(buildDateFilter('date', currentRange.startDate, currentRange.endDate), req.user, req.query.branch);
     const voucherFilter = {
-      isActive: true,
+      ...applyBranchScope({ isActive: true }, req.user, req.query.branch),
       ...buildDateFilter('date', currentRange.startDate, currentRange.endDate),
     };
-    const previousInvoiceFilter = buildDateFilter('date', previousRange.startDate, previousRange.endDate);
+    const previousInvoiceFilter = applyBranchScope(buildDateFilter('date', previousRange.startDate, previousRange.endDate), req.user, req.query.branch);
     const previousVoucherFilter = {
-      isActive: true,
+      ...applyBranchScope({ isActive: true }, req.user, req.query.branch),
       ...buildDateFilter('date', previousRange.startDate, previousRange.endDate),
     };
 
@@ -837,7 +857,7 @@ router.get('/analytics', requireAdmin, async (req, res) => {
 // @route   GET /api/admin/audit
 // @desc    Get audit logs
 // @access  Admin only
-router.get('/audit', requireAdmin, async (req, res) => {
+router.get('/audit', requireAdmin, requirePermission('security:view'), async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
@@ -917,7 +937,7 @@ router.get('/audit', requireAdmin, async (req, res) => {
 // @route   GET /api/admin/security
 // @desc    Get security events
 // @access  Admin only
-router.get('/security', requireAdmin, async (req, res) => {
+router.get('/security', requireAdmin, requirePermission('security:view'), async (req, res) => {
   try {
     const hours = parseInt(req.query.hours) || 24;
     
@@ -987,7 +1007,7 @@ router.get('/security', requireAdmin, async (req, res) => {
 // @route   POST /api/admin/users/:id/unlock
 // @desc    Unlock user account
 // @access  Admin only
-router.post('/users/:id/unlock', requireAdmin, async (req, res) => {
+router.post('/users/:id/unlock', requireAdmin, requirePermission('users:manage'), async (req, res) => {
   try {
     const userId = req.params.id;
     const adminId = req.user._id;

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Gallery = require('../models/Gallery');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, requirePermission } = require('../middleware/auth');
 const { uploadSingle } = require('../middleware/upload');
 const fs = require('fs');
 const ImageService = require('../services/imageService');
@@ -65,7 +65,7 @@ router.get('/', async (req, res) => {
 // @route   GET /api/gallery/admin
 // @desc    Get all gallery items for admin
 // @access  Admin only
-router.get('/admin', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/admin', authenticateToken, requireAdmin, requirePermission('content:manage'), async (req, res) => {
   try {
     const { category, search, page = 1, limit = 20 } = req.query;
     
@@ -145,7 +145,7 @@ router.get('/:id', async (req, res) => {
 // @route   POST /api/gallery
 // @desc    Create new gallery item
 // @access  Admin only
-router.post('/', authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
+router.post('/', authenticateToken, requireAdmin, requirePermission('content:manage'), uploadSingle, async (req, res) => {
   try {
     const { title, description, category, displayOrder = 0 } = req.body;
     const adminId = req.user._id;
@@ -222,7 +222,7 @@ router.post('/', authenticateToken, requireAdmin, uploadSingle, async (req, res)
 // @route   PUT /api/gallery/:id
 // @desc    Update gallery item
 // @access  Admin only
-router.put('/:id', authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
+router.put('/:id', authenticateToken, requireAdmin, requirePermission('content:manage'), uploadSingle, async (req, res) => {
   try {
     const { title, description, category, displayOrder, isActive } = req.body;
     const adminId = req.user._id;
@@ -277,7 +277,7 @@ router.put('/:id', authenticateToken, requireAdmin, uploadSingle, async (req, re
 // @route   PUT /api/gallery/:id/image
 // @desc    Update gallery item image
 // @access  Admin only
-router.put('/:id/image', authenticateToken, requireAdmin, uploadSingle, async (req, res) => {
+router.put('/:id/image', authenticateToken, requireAdmin, requirePermission('content:manage'), uploadSingle, async (req, res) => {
   try {
     const adminId = req.user._id;
 
@@ -334,7 +334,7 @@ router.put('/:id/image', authenticateToken, requireAdmin, uploadSingle, async (r
 // @route   DELETE /api/gallery/:id
 // @desc    Delete gallery item
 // @access  Admin only
-router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
+router.delete('/:id', authenticateToken, requireAdmin, requirePermission('content:manage'), async (req, res) => {
   try {
     const gallery = await Gallery.findById(req.params.id);
     if (!gallery) {
@@ -368,7 +368,7 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
 // @route   PUT /api/gallery/:id/toggle
 // @desc    Toggle gallery item active status
 // @access  Admin only
-router.put('/:id/toggle', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/:id/toggle', authenticateToken, requireAdmin, requirePermission('content:manage'), async (req, res) => {
   try {
     const gallery = await Gallery.findById(req.params.id);
     if (!gallery) {
@@ -400,7 +400,7 @@ router.put('/:id/toggle', authenticateToken, requireAdmin, async (req, res) => {
 // @route   GET /api/gallery/stats/overview
 // @desc    Get gallery statistics
 // @access  Admin only
-router.get('/stats/overview', authenticateToken, requireAdmin, async (req, res) => {
+router.get('/stats/overview', authenticateToken, requireAdmin, requirePermission('content:manage'), async (req, res) => {
   try {
     const total = await Gallery.countDocuments();
     const active = await Gallery.countDocuments({ isActive: true });
