@@ -351,28 +351,36 @@ class ApiService {
     const fetchOpts = {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     };
-    try {
-      let response = await fetch(url, fetchOpts);
-      if (!response.ok) throw new Error("Failed to download invoice PDF");
+    const savePdfResponse = async (response) => {
+      const contentType = response.headers.get("content-type") || "";
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.message || "Failed to download invoice PDF");
+      }
+      if (!contentType.includes("application/pdf")) {
+        throw new Error("The server did not return a valid invoice PDF");
+      }
       const blob = await response.blob();
       const link = document.createElement("a");
-      link.href = window.URL.createObjectURL(blob);
+      const objectUrl = window.URL.createObjectURL(blob);
+      link.href = objectUrl;
       link.download = `${fileName || `invoice-${id}`}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 0);
+    };
+    try {
+      const response = await fetch(url, fetchOpts);
+      await savePdfResponse(response);
     } catch (err) {
-      if (this.baseURL.includes("localhost") || this.baseURL.includes("127.0.0.1")) {
+      // Only fall back when the local API is unreachable. A real API error must
+      // be shown to the user instead of requesting an unrelated production ID.
+      const localApiUnavailable = err instanceof TypeError && String(err.message).toLowerCase().includes("fetch");
+      if (localApiUnavailable && (this.baseURL.includes("localhost") || this.baseURL.includes("127.0.0.1"))) {
         const fallbackUrl = `${this.fallbackBaseURL}/invoices/${id}/pdf`;
         const response = await fetch(fallbackUrl, fetchOpts);
-        if (!response.ok) throw new Error("Failed to download invoice PDF");
-        const blob = await response.blob();
-        const link = document.createElement("a");
-        link.href = window.URL.createObjectURL(blob);
-        link.download = `${fileName || `invoice-${id}`}.pdf`;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
+        await savePdfResponse(response);
         return;
       }
       throw err;

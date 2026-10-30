@@ -391,6 +391,12 @@ exports.downloadInvoicePdf = async (req, res, next) => {
     const invoice = await Invoice.findOne(applyBranchScope({ _id: req.params.id }, req.user)).populate('customerRef', 'name phone email address gstin pan registrationNumber');
     if (!invoice) return res.status(404).json({ success: false, message: 'Invoice not found' });
 
+    // Load the configured business details before rendering.  The PDF layout uses
+    // both `company` and `settings` below; leaving them undefined caused every
+    // invoice download to fail with a server-side ReferenceError.
+    const settings = await BusinessSettings.findOne({ key: 'default' }).lean();
+    const company = settings?.company || {};
+
     const doc = new PDFDocument({ size: 'A4', margin: 40, bufferPages: true, autoFirstPage: true });
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename=${invoice.invoiceNumber}.pdf`);
@@ -707,4 +713,3 @@ exports.downloadPaymentReceiptPdf = async (req, res, next) => {
     next(error);
   }
 };
-
